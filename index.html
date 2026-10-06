@@ -63,6 +63,13 @@ a{color:inherit}
 .download{display:inline-flex;align-items:center;justify-content:center;min-width:105px;padding:9px 12px;border-radius:6px;background:var(--text);color:var(--bg);text-decoration:none;font-size:13px;font-weight:700}
 .download:hover{opacity:.85}
 .request{margin-top:52px;border-top:1px solid var(--line);padding-top:30px}
+.channel-box{margin:0 0 20px;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:16px;box-shadow:var(--shadow)}
+.channel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.channel-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:5px}
+.channel-name{font-size:17px;font-weight:800}
+.channel-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 11px;border:1px solid var(--line);border-radius:6px;background:var(--surface2);text-decoration:none;font-size:12px;font-weight:700}
+.channel-link:hover{border-color:var(--text)}
+.channel-status{font-size:12px;color:var(--muted);margin-top:8px}
 .request h2{margin:0 0 7px;font-size:20px}
 .request p{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 20px}
 .login-required{padding:17px;background:var(--surface);border:1px solid var(--line);border-radius:7px;color:var(--muted)}
@@ -123,7 +130,7 @@ footer{border-top:1px solid var(--line);padding:24px 0 35px;color:var(--muted);f
 <section id="home" class="page active">
 <div class="hero"><div class="kicker">Le Mans Ultimate</div><h1>Setups, die auf die Strecke gehören.</h1><p>Eine zentrale Setup-Datenbank für LMU. Fahrzeug auswählen, Strecke auswählen und Setup herunterladen.</p></div>
 <div id="categories"></div>
-<div class="request"><h2>Setup Request</h2><p>Fehlt dir ein Setup? Eingeloggte Mitglieder können hier direkt einen Request an den Discord-Setup-Kanal senden.</p><div id="loginRequired" class="login-required">Melde dich mit Discord an, um einen Request zu senden.</div>
+<div class="request"><h2>Setup Request</h2><p>Fehlt dir ein Setup? Eingeloggte Mitglieder können hier direkt einen Request an den Discord-Setup-Kanal senden.</p><div id="loginRequired" class="login-required">Melde dich mit Discord an, um den Setup-Request-Kanal zu sehen und einen Request zu senden.</div><div id="channelBox" class="channel-box hidden"><div class="channel-head"><div><div class="channel-label">Discord Setup-Request-Kanal</div><div id="channelName" class="channel-name">#setup-request-test</div></div><a id="channelLink" class="channel-link" href="#" target="_blank" rel="noopener">In Discord öffnen</a></div><div id="channelStatus" class="channel-status">Der hinterlegte Kanal ist aktiv.</div></div>
 <form id="requestForm" class="request-form hidden"><div class="field"><label for="vehicle">Fahrzeug</label><input id="vehicle" maxlength="100" required placeholder="z. B. Porsche 963"></div><div class="field"><label for="track">Strecke</label><input id="track" maxlength="100" required placeholder="z. B. Le Mans"></div><div class="field"><label for="message">Nachricht</label><textarea id="message" maxlength="1000" placeholder="Optional: Was soll das Setup können?"></textarea></div><button class="submit" type="submit">Request senden</button><div id="result" class="result"></div></form>
 </div>
 </section>
@@ -222,10 +229,18 @@ function showCar(category,name){
  v.setups.forEach(s=>{const row=document.createElement("div");row.className="setup";row.innerHTML='<div><div class="setup-track">'+esc(s.track)+'</div><div class="setup-meta">v'+esc(s.version)+' · '+esc(s.date)+'</div></div><a class="download" href="'+attr(s.download)+'" download>Download</a>';list.appendChild(row)});
 }
 function showHome(){$("car").classList.remove("active");$("home").classList.add("active");window.scrollTo(0,0)}
+async function loadChannel(){
+ try{const r=await fetch("/api/channel",{cache:"no-store"});const d=await r.json();
+  if(!d.success)throw new Error(d.error||"Channel konnte nicht geladen werden.");
+  $("channelName").textContent="#"+d.channel.name;
+  $("channelLink").href="https://discord.com/channels/1367893409234161846/"+encodeURIComponent(d.channel.id);
+  $("channelStatus").textContent="Dieser Kanal ist für Setup Requests hinterlegt.";
+ }catch(e){$("channelName").textContent="#setup-request-test";$("channelStatus").textContent="Der hinterlegte Kanal konnte gerade nicht geladen werden.";console.error(e)}
+}
 async function checkLogin(){
  try{const r=await fetch("/api/me",{cache:"no-store"});const d=await r.json();
-  if(d.loggedIn){$("login").classList.add("hidden");$("user").style.display="flex";$("userName").textContent=d.user.username;$("loginRequired").classList.add("hidden");$("requestForm").classList.remove("hidden")}
-  else{$("login").classList.remove("hidden");$("user").style.display="none";$("loginRequired").classList.remove("hidden");$("requestForm").classList.add("hidden")}
+  if(d.loggedIn){$("login").classList.add("hidden");$("user").style.display="flex";$("userName").textContent=d.user.username;$("loginRequired").classList.add("hidden");$("channelBox").classList.remove("hidden");$("requestForm").classList.remove("hidden");loadChannel()}
+  else{$("login").classList.remove("hidden");$("user").style.display="none";$("loginRequired").classList.remove("hidden");$("channelBox").classList.add("hidden");$("requestForm").classList.add("hidden")}
  }catch(e){console.error(e)}
 }
 function logout(){location.href="/auth/logout"}
