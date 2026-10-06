@@ -120,7 +120,7 @@ async function listSetups(request,env){
   .filter(item=>item.type==="file"&&/\\.zip$/i.test(item.name))
   .map(item=>({
     name:item.name,
-    download:item.download_url||`https://raw.githubusercontent.com/${env.GITHUB_OWNER||"lukasracinglmu"}/${env.GITHUB_REPO||"Le-Mans-Ultimate-Setups"}/${env.GITHUB_BRANCH||"main"}/${item.path.split("/").map(encodeURIComponent).join("/")}`
+    download:`https://raw.githubusercontent.com/${env.GITHUB_OWNER||"lukasracinglmu"}/${env.GITHUB_REPO||"Le-Mans-Ultimate-Setups"}/${env.GITHUB_BRANCH||"main"}/${item.path.split("/").map(encodeURIComponent).join("/")}`
   }));
  return json({success:true,setups});
 }
@@ -224,6 +224,59 @@ main>.discord-area{width:360px!important;height:600px!important;min-height:600px
 @media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;order:2}}
 @media(max-width:650px){main{width:calc(100% - 20px)!important;padding:0 0 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
 </style>
+<style>
+.upload-area{display:flex;align-items:center;gap:10px;margin:18px 0 20px}
+.upload-button{border:0;background:#111;color:#fff;border-radius:6px;padding:10px 14px;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}
+.upload-button:disabled{opacity:.5;cursor:wait}
+.upload-status{font-size:12px;color:#666}
+.upload-status.error{color:#c00}
+.upload-status.success{color:#16803c}
+</style>
+<script>
+(function(){
+ function addUploadUI(){
+  const carPage=document.getElementById("carPage"),subtitle=document.getElementById("carSubtitle");
+  if(!carPage||!subtitle||document.getElementById("liveUploadArea"))return;
+  const area=document.createElement("div");area.id="liveUploadArea";area.className="upload-area";area.style.display="none";
+  area.innerHTML='<input id="liveSetupFileInput" type="file" accept=".zip,application/zip" multiple hidden><button id="liveUploadButton" class="upload-button" type="button">Setups hochladen</button><span id="liveUploadStatus" class="upload-status"></span>';
+  subtitle.after(area);
+  document.getElementById("liveUploadButton").onclick=()=>document.getElementById("liveSetupFileInput").click();
+  document.getElementById("liveSetupFileInput").onchange=uploadFiles;
+ }
+ async function refreshPermission(){
+  try{const r=await fetch("/api/me",{cache:"no-store"}),d=await r.json();window.currentUser=d.loggedIn?d.user:null;const a=document.getElementById("liveUploadArea");if(a)a.style.display=d.loggedIn&&d.user.canUpload?"flex":"none"}catch(e){}
+ }
+ async function loadLiveSetups(category,vehicle){
+  const list=document.getElementById("setupList");if(!list)return;
+  list.innerHTML='<div class="empty">Setups werden geladen...</div>';
+  try{
+   const r=await fetch("/api/setups?category="+encodeURIComponent(category)+"&vehicle="+encodeURIComponent(vehicle),{cache:"no-store"}),d=await r.json();
+   if(!r.ok||!d.success)throw new Error(d.error||"Setups konnten nicht geladen werden.");
+   if(!d.setups.length){list.innerHTML='<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>';return}
+   list.innerHTML="";
+   d.setups.forEach(s=>{const el=document.createElement("div");el.className="setup";el.innerHTML='<div class="setup-info"><div class="setup-track">'+escapeHtml(s.name)+'</div><div class="setup-meta">ZIP-Setup</div></div><a class="download" href="'+escapeAttribute(s.download)+'" download>Download</a>';list.appendChild(el)})
+  }catch(e){list.innerHTML='<div class="empty">'+escapeHtml(e.message)+'</div>'}
+ }
+ async function uploadFiles(){
+  const input=document.getElementById("liveSetupFileInput"),files=[...input.files],status=document.getElementById("liveUploadStatus"),button=document.getElementById("liveUploadButton");
+  if(!files.length)return;
+  if(!window.currentUser?.canUpload){status.textContent="Keine Upload-Berechtigung.";status.className="upload-status error";return}
+  button.disabled=true;status.className="upload-status";status.textContent=files.length===1?"Upload läuft...":files.length+" Setups werden hochgeladen...";
+  try{
+   const form=new FormData();form.append("category",window.liveUploadCategory);form.append("vehicle",window.liveUploadVehicle);files.forEach(f=>form.append("files",f,f.name));
+   const r=await fetch("/api/setups/upload",{method:"POST",body:form}),d=await r.json();
+   if(!r.ok||!d.success)throw new Error(d.error||"Upload fehlgeschlagen.");
+   status.textContent=d.uploaded.length+" Setup(s) erfolgreich hochgeladen.";status.className="upload-status success";input.value="";
+   await loadLiveSetups(window.liveUploadCategory,window.liveUploadVehicle);
+  }catch(e){status.textContent=e.message;status.className="upload-status error"}finally{button.disabled=false}
+ }
+ const originalShowCar=window.showCar;
+ window.showCar=function(category,vehicle){
+  originalShowCar(category,vehicle);window.liveUploadCategory=category;window.liveUploadVehicle=vehicle;addUploadUI();refreshPermission();loadLiveSetups(category,vehicle);
+ };
+ addUploadUI();refreshPermission();
+})();
+</script>
 <script>
 (function(){
  const main=document.querySelector("main");
