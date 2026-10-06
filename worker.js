@@ -117,23 +117,26 @@ main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!impo
 </style>
 <script>
 (function(){
- const area=document.createElement("aside");
- area.className="discord-area";
- area.innerHTML=
- '<div id="discordLogin" class="discord-login"><div><h2>Discord</h2><p>Melde dich mit Discord an, um den Discord-Server direkt hier zu öffnen.</p><a href="/auth/discord" style="text-decoration:none"><button class="discord-button">Mit Discord anmelden</button></a></div></div>'+
- '<div id="discordClient" class="discord-client" style="display:none">'+
- '<div class="discord-topbar"><div><div class="discord-server-name">LMU Discord</div><div class="discord-online">Verbunden</div></div></div>'+
- '<div class="discord-body"><div id="discordChannels" class="discord-channels"><div class="discord-empty">Kanäle werden geladen...</div></div>'+
- '<div class="discord-messages"><div class="discord-channel-header"># <span id="discordCurrentChannel">Kanal auswählen</span></div>'+
- '<div id="discordMessageList" class="discord-message-list"><div class="discord-empty">Wähle links einen Kanal aus.</div></div>'+
- '<div class="discord-input"><form id="discordMessageForm"><input id="discordMessageInput" maxlength="2000" autocomplete="off" placeholder="Nachricht schreiben..."><button>Senden</button></form><div id="discordStatus" class="discord-status"></div></div></div></div></div>';
  const main=document.querySelector("main");
  if(main){
-  const content=document.createElement("div");
-  content.className="content";
-  while(main.firstChild)content.appendChild(main.firstChild);
-  main.appendChild(content);
-  main.appendChild(area);
+  let area=main.querySelector(":scope > .discord-area");
+  if(!area){
+   area=main.querySelector(".discord-area");
+   if(area)main.appendChild(area);
+  }
+  if(!area){
+   area=document.createElement("aside");
+   area.className="discord-area";
+   area.innerHTML=
+    '<div id="discordLogin" class="discord-login"><div><h2>Discord</h2><p>Melde dich mit Discord an, um den Discord-Server direkt hier zu öffnen.</p><a href="/auth/discord" style="text-decoration:none"><button class="discord-button">Mit Discord anmelden</button></a></div></div>'+
+    '<div id="discordClient" class="discord-client" style="display:none">'+
+    '<div class="discord-topbar"><div><div class="discord-server-name">LMU Discord</div><div class="discord-online">Verbunden</div></div></div>'+
+    '<div class="discord-body"><div id="discordChannels" class="discord-channels"><div class="discord-empty">Kanäle werden geladen...</div></div>'+
+    '<div class="discord-messages"><div class="discord-channel-header"># <span id="discordCurrentChannel">Kanal auswählen</span></div>'+
+    '<div id="discordMessageList" class="discord-message-list"><div class="discord-empty">Wähle links einen Kanal aus.</div></div>'+
+    '<div class="discord-input"><form id="discordMessageForm"><input id="discordMessageInput" maxlength="2000" autocomplete="off" placeholder="Nachricht schreiben..."><button>Senden</button></form><div id="discordStatus" class="discord-status"></div></div></div></div></div>';
+   main.appendChild(area);
+  }
  }
  let channels=[],current=null;
  const esc=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
