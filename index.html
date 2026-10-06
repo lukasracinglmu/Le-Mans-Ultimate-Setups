@@ -1,339 +1,519 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMU SETUPS</title>
 
-    <title>LMU Setups</title>
+<style>
+* {
+    box-sizing: border-box;
+}
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+:root {
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --surface-2: #f0f0f0;
+    --text: #111111;
+    --muted: #707070;
+    --border: #dedede;
+    --accent: #111111;
+    --button-text: #ffffff;
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #0b0d10;
-            color: #ffffff;
-            min-height: 100vh;
-        }
+body.dark {
+    --bg: #111111;
+    --surface: #1a1a1a;
+    --surface-2: #242424;
+    --text: #f5f5f5;
+    --muted: #999999;
+    --border: #303030;
+    --accent: #ffffff;
+    --button-text: #111111;
+}
 
-        .container {
-            width: min(1100px, calc(100% - 32px));
-            margin: 0 auto;
-            padding: 50px 0 70px;
-        }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    transition: background .2s, color .2s;
+}
 
-        header {
-            margin-bottom: 40px;
-        }
+header {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
 
-        .logo {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
+.header-inner {
+    max-width: 1200px;
+    margin: auto;
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
 
-        .subtitle {
-            margin-top: 8px;
-            color: #8d939c;
-            font-size: 15px;
-        }
+.logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
 
-        .search-box {
-            margin-top: 28px;
-        }
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
 
-        .search-box input {
-            width: 100%;
-            padding: 16px 18px;
-            border: 1px solid #252a31;
-            border-radius: 12px;
-            background: #14171c;
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
+.icon-button {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 17px;
+}
 
-        .search-box input:focus {
-            border-color: #555d68;
-        }
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 48px 24px 80px;
+}
 
-        .search-box input::placeholder {
-            color: #686f79;
-        }
+.hero {
+    margin-bottom: 35px;
+}
 
-        .category {
-            margin-top: 42px;
-        }
+.hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(32px, 5vw, 52px);
+    letter-spacing: -2px;
+}
 
-        .category-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
+.hero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 16px;
+}
 
-        .category-title {
-            font-size: 21px;
-            font-weight: 750;
-        }
+.search {
+    width: 100%;
+    padding: 15px 17px;
+    margin: 25px 0 45px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+}
 
-        .category-count {
-            color: #777f89;
-            font-size: 14px;
-        }
+.search:focus {
+    border-color: var(--text);
+}
 
-        .cars {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
+.category {
+    margin-bottom: 42px;
+}
 
-        .car {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 18px;
-            background: #14171c;
-            border: 1px solid #20242a;
-            border-radius: 12px;
-            transition: 0.15s ease;
-        }
+.category-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
 
-        .car:hover {
-            background: #191d23;
-            border-color: #343a43;
-            transform: translateY(-1px);
-        }
+.category-title h2 {
+    margin: 0;
+    font-size: 19px;
+}
 
-        .car-name {
-            font-size: 15px;
-            font-weight: 600;
-        }
+.category-count {
+    color: var(--muted);
+    font-size: 13px;
+}
 
-        .car-button {
-            flex-shrink: 0;
-            padding: 9px 13px;
-            border: 0;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #0b0d10;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+.cars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+}
 
-        .car-button:hover {
-            background: #dddddd;
-        }
+.car {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 17px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
 
-        .empty {
-            padding: 30px;
-            text-align: center;
-            color: #777f89;
-            background: #14171c;
-            border-radius: 12px;
-        }
+.car-name {
+    font-size: 14px;
+    font-weight: 600;
+}
 
-        footer {
-            margin-top: 60px;
-            padding-top: 20px;
-            border-top: 1px solid #20242a;
-            color: #606771;
-            font-size: 13px;
-            text-align: center;
-        }
+.car-button {
+    border: 0;
+    background: var(--accent);
+    color: var(--button-text);
+    padding: 9px 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+}
 
-        @media (max-width: 700px) {
-            .container {
-                width: min(100% - 22px, 1100px);
-                padding-top: 30px;
-            }
+.car-button:hover {
+    opacity: .8;
+}
 
-            .logo {
-                font-size: 27px;
-            }
+#carView {
+    display: none;
+}
 
-            .cars {
-                grid-template-columns: 1fr;
-            }
+.back {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    margin-bottom: 30px;
+}
 
-            .car {
-                padding: 16px;
-            }
+.car-header {
+    margin-bottom: 30px;
+}
 
-            .car-button {
-                padding: 8px 11px;
-            }
-        }
-    </style>
+.car-header h1 {
+    margin: 0 0 7px;
+    font-size: 34px;
+    letter-spacing: -1px;
+}
+
+.car-header p {
+    color: var(--muted);
+    margin: 0;
+}
+
+.setup-list {
+    border-top: 1px solid var(--border);
+}
+
+.setup {
+    display: grid;
+    grid-template-columns: 1fr 180px 120px 110px;
+    gap: 15px;
+    align-items: center;
+    padding: 17px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.setup-track {
+    font-weight: 600;
+}
+
+.setup-version,
+.setup-date {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.download {
+    text-align: center;
+    text-decoration: none;
+    background: var(--accent);
+    color: var(--button-text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.empty {
+    color: var(--muted);
+    padding: 30px 0;
+}
+
+footer {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.footer-inner {
+    max-width: 1200px;
+    margin: auto;
+    padding: 22px 24px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    main {
+        padding: 35px 16px 60px;
+    }
+
+    .header-inner {
+        padding: 17px 16px;
+    }
+
+    .cars {
+        grid-template-columns: 1fr;
+    }
+
+    .setup {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .setup-track {
+        grid-column: 1 / -1;
+    }
+
+    .download {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <div class="container">
+<header>
+    <div class="header-inner">
+        <div class="logo">LMU SETUPS</div>
 
-        <header>
-            <div class="logo">LMU SETUPS</div>
-
-            <div class="subtitle">
-                Le Mans Ultimate Setup Database
-            </div>
-
-            <div class="search-box">
-                <input
-                    type="text"
-                    id="search"
-                    placeholder="Fahrzeug suchen..."
-                    autocomplete="off"
-                >
-            </div>
-        </header>
-
-        <main id="content">
-            <div class="empty">
-                Lade Fahrzeuge...
-            </div>
-        </main>
-
-        <footer>
-            LMU Setup Database
-        </footer>
-
+        <div class="header-actions">
+            <button class="icon-button" id="themeButton" onclick="toggleTheme()" aria-label="Theme wechseln">☾</button>
+        </div>
     </div>
+</header>
 
-    <script>
-        const content = document.getElementById("content");
-        const searchInput = document.getElementById("search");
+<main>
 
-        let setupData = {};
+    <section id="homeView">
 
-        async function loadCars() {
-            try {
-                const response = await fetch("setups.json");
+        <div class="hero">
+            <h1>LMU SETUPS</h1>
+            <p>Le Mans Ultimate Setup Database</p>
+        </div>
 
-                if (!response.ok) {
-                    throw new Error("setups.json konnte nicht geladen werden.");
-                }
+        <input
+            id="search"
+            class="search"
+            type="search"
+            placeholder="Fahrzeug suchen..."
+            autocomplete="off"
+        >
 
-                setupData = await response.json();
+        <div id="categories"></div>
 
-                renderCars();
+    </section>
 
-            } catch (error) {
-                content.innerHTML = `
-                    <div class="empty">
-                        Die Fahrzeugliste konnte nicht geladen werden.
-                        <br><br>
-                        Bitte überprüfe, ob die Datei
-                        <strong>setups.json</strong>
-                        im Hauptverzeichnis liegt.
-                    </div>
-                `;
+    <section id="carView">
 
-                console.error(error);
-            }
+        <button class="back" onclick="showHome()">← Zurück</button>
+
+        <div class="car-header">
+            <h1 id="carTitle"></h1>
+            <p id="carClass"></p>
+        </div>
+
+        <div id="setupList" class="setup-list"></div>
+
+    </section>
+
+</main>
+
+<footer>
+    <div class="footer-inner">
+        LMU SETUPS · Le Mans Ultimate Setup Database
+    </div>
+</footer>
+
+<script>
+let database = {};
+let currentCar = "";
+
+async function loadDatabase() {
+    try {
+        const response = await fetch("setups.json");
+
+        if (!response.ok) {
+            throw new Error("setups.json konnte nicht geladen werden.");
         }
 
-        function renderCars() {
-            const search = searchInput.value
-                .toLowerCase()
-                .trim();
+        database = await response.json();
+        renderCategories();
+    } catch (error) {
+        document.getElementById("categories").innerHTML =
+            '<div class="empty">Die Setup-Daten konnten nicht geladen werden.</div>';
 
-            content.innerHTML = "";
+        console.error(error);
+    }
+}
 
-            let foundCars = 0;
+function renderCategories(filter = "") {
+    const container = document.getElementById("categories");
+    container.innerHTML = "";
 
-            for (const [category, cars] of Object.entries(setupData)) {
+    const search = filter.toLowerCase().trim();
 
-                const filteredCars = cars.filter(car =>
-                    car.toLowerCase().includes(search)
-                );
+    for (const [category, cars] of Object.entries(database)) {
 
-                if (filteredCars.length === 0) {
-                    continue;
-                }
+        const filteredCars = cars.filter(car =>
+            car.name.toLowerCase().includes(search)
+        );
 
-                foundCars += filteredCars.length;
+        if (!filteredCars.length) continue;
 
-                const categoryElement = document.createElement("section");
-                categoryElement.className = "category";
+        const section = document.createElement("section");
+        section.className = "category";
 
-                categoryElement.innerHTML = `
-                    <div class="category-header">
-                        <div class="category-title">
-                            ${category}
-                        </div>
+        section.innerHTML = `
+            <div class="category-title">
+                <h2>${escapeHtml(category)}</h2>
+                <span class="category-count">${filteredCars.length} Fahrzeuge</span>
+            </div>
 
-                        <div class="category-count">
-                            ${filteredCars.length}
-                            ${filteredCars.length === 1 ? "Fahrzeug" : "Fahrzeuge"}
-                        </div>
-                    </div>
-
-                    <div class="cars"></div>
-                `;
-
-                const carsContainer =
-                    categoryElement.querySelector(".cars");
-
-                filteredCars.forEach(car => {
-
-                    const carElement = document.createElement("div");
-                    carElement.className = "car";
-
-                    carElement.innerHTML = `
-                        <div class="car-name">
-                            ${car}
-                        </div>
-
-                        <button
-                            class="car-button"
-                            onclick="openCar('${escapeQuotes(car)}', '${escapeQuotes(category)}')"
-                        >
+            <div class="cars">
+                ${filteredCars.map(car => `
+                    <div class="car">
+                        <div class="car-name">${escapeHtml(car.name)}</div>
+                        <button class="car-button"
+                            onclick="openCar('${escapeJs(car.name)}')">
                             Setups
                         </button>
-                    `;
-
-                    carsContainer.appendChild(carElement);
-                });
-
-                content.appendChild(categoryElement);
-            }
-
-            if (foundCars === 0) {
-                content.innerHTML = `
-                    <div class="empty">
-                        Kein Fahrzeug gefunden.
                     </div>
-                `;
+                `).join("")}
+            </div>
+        `;
+
+        container.appendChild(section);
+    }
+
+    if (!container.children.length) {
+        container.innerHTML =
+            '<div class="empty">Kein Fahrzeug gefunden.</div>';
+    }
+}
+
+function openCar(name) {
+    let car = null;
+    let category = "";
+
+    for (const [className, cars] of Object.entries(database)) {
+        const found = cars.find(c => c.name === name);
+
+        if (found) {
+            car = found;
+            category = className;
+            break;
+        }
+    }
+
+    if (!car) return;
+
+    currentCar = name;
+
+    document.getElementById("homeView").style.display = "none";
+    document.getElementById("carView").style.display = "block";
+
+    document.getElementById("carTitle").textContent = car.name;
+    document.getElementById("carClass").textContent = category;
+
+    renderSetups(car);
+    window.scrollTo(0, 0);
+}
+
+function renderSetups(car) {
+    const container = document.getElementById("setupList");
+
+    if (!car.setups || !car.setups.length) {
+        container.innerHTML =
+            '<div class="empty">Für dieses Fahrzeug sind aktuell keine Setups verfügbar.</div>';
+        return;
+    }
+
+    container.innerHTML = car.setups.map(setup => `
+        <div class="setup">
+            <div class="setup-track">
+                ${escapeHtml(setup.track)}
+            </div>
+
+            <div class="setup-version">
+                v${escapeHtml(setup.version)}
+            </div>
+
+            <div class="setup-date">
+                ${escapeHtml(setup.date)}
+            </div>
+
+            ${
+                setup.download
+                ? `<a class="download"
+                     href="${escapeHtml(setup.download)}"
+                     download>
+                     Download ZIP
+                   </a>`
+                : `<span class="setup-date">Noch nicht verfügbar</span>`
             }
-        }
+        </div>
+    `).join("");
+}
 
-        function escapeQuotes(text) {
-            return text
-                .replace(/\\/g, "\\\\")
-                .replace(/'/g, "\\'");
-        }
+function showHome() {
+    document.getElementById("carView").style.display = "none";
+    document.getElementById("homeView").style.display = "block";
+    window.scrollTo(0, 0);
+}
 
-        function openCar(car, category) {
-            alert(
-                car +
-                "\n\n" +
-                category +
-                "\n\n" +
-                "Die Setup-Seite bauen wir als Nächstes."
-            );
-        }
+function toggleTheme() {
+    document.body.classList.toggle("dark");
 
-        searchInput.addEventListener("input", renderCars);
+    const dark = document.body.classList.contains("dark");
 
-        loadCars();
-    </script>
+    localStorage.setItem("theme", dark ? "dark" : "light");
+
+    document.getElementById("themeButton").textContent =
+        dark ? "☀" : "☾";
+}
+
+function loadTheme() {
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+        document.getElementById("themeButton").textContent = "☀";
+    }
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function escapeJs(value) {
+    return String(value)
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'");
+}
+
+document.getElementById("search").addEventListener("input", event => {
+    renderCategories(event.target.value);
+});
+
+loadTheme();
+loadDatabase();
+</script>
 
 </body>
 </html>
