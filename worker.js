@@ -188,7 +188,7 @@ async function serveHome(request,env){
 <style>
 main{position:relative!important;max-width:1100px!important;margin:0 auto!important;padding:60px 24px 80px!important;display:block!important}
 main>.content{min-width:0!important;padding:0!important}
-main>.discord-area{width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:fixed!important;top:74px!important;left:calc(50% + 564px)!important;right:auto!important;margin:0!important;border:1px solid #111!important;z-index:19!important}
+main>.discord-area{width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:fixed!important;top:64px!important;left:calc(50% + 564px)!important;right:auto!important;margin:0!important;border:1px solid #111!important;z-index:30!important}
 .discord-area{color:#dbdee1;font-family:Arial,Helvetica,sans-serif}
 .discord-client{height:100%;background:#313338;display:flex;flex-direction:column;overflow:hidden}
 .discord-topbar{height:52px;flex:0 0 52px;background:#2b2d31;border-bottom:1px solid #1f2023;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
@@ -222,7 +222,7 @@ main>.discord-area{width:360px!important;height:600px!important;min-height:600px
 .discord-error,.discord-empty{color:#949ba4;font-size:12px;line-height:1.4;padding:20px 8px;text-align:center}
 .discord-status{padding:6px 10px 0;color:#949ba4;font-size:10px}
 #homePage .request-section{display:none!important}
-@media(max-width:950px){main{max-width:none!important;padding:40px 15px 60px!important}main>.discord-area{position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;margin-top:40px!important}}
+@media(max-width:950px){main{max-width:none!important;padding:40px 15px 60px!important}main>.discord-area{position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;margin-top:40px!important;z-index:1!important}}
 @media(max-width:650px){main{width:calc(100% - 20px)!important;padding:0 0 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
 </style>
 <style>
