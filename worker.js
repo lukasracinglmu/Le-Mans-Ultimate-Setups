@@ -76,17 +76,22 @@ async function discordLogin(env) {
     state
   });
 
-  const response = Response.redirect(
-    `${DISCORD_OAUTH}/authorize?${params.toString()}`,
-    302
+  const headers = new Headers();
+
+  headers.set(
+    "Location",
+    `${DISCORD_OAUTH}/authorize?${params.toString()}`
   );
 
-  response.headers.append(
+  headers.append(
     "Set-Cookie",
     `${STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
   );
 
-  return response;
+  return new Response(null, {
+    status: 302,
+    headers
+  });
 }
 
 async function discordCallback(request, env) {
@@ -160,10 +165,13 @@ async function discordCallback(request, env) {
       },
       body: new URLSearchParams({
         client_id: env.DISCORD_CLIENT_ID,
-        client_secret: env.DISCORD_CLIENT_SECRET,
-        grant_type: "authorization_code",
+        client_secret:
+          env.DISCORD_CLIENT_SECRET,
+        grant_type:
+          "authorization_code",
         code,
-        redirect_uri: redirectUri
+        redirect_uri:
+          redirectUri
       })
     }
   );
@@ -248,6 +256,7 @@ a {
 </head>
 <body>
 <div class="box">
+<div class="box">
 <h1>Kein Zugriff</h1>
 <p>Dein Discord-Account besitzt keinen Zugriff auf die LMU Setup Database.</p>
 <p>Dir fehlt die erforderliche Database-Rolle.</p>
@@ -274,7 +283,9 @@ a {
 
   const sessionData = {
     id: user.id,
-    username: user.username,
+    username:
+      user.global_name ||
+      user.username,
     exp:
       Math.floor(Date.now() / 1000) +
       604800
@@ -286,13 +297,26 @@ a {
       env.SESSION_SECRET
     );
 
+  const headers = new Headers();
+
+  headers.set(
+    "Location",
+    "/"
+  );
+
+  headers.append(
+    "Set-Cookie",
+    `${COOKIE_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
+  );
+
+  headers.append(
+    "Set-Cookie",
+    `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
+
   return new Response(null, {
     status: 302,
-    headers: {
-      Location: "/",
-      "Set-Cookie":
-        `${COOKIE_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
-    }
+    headers
   });
 }
 
@@ -380,6 +404,17 @@ async function createSetupRequest(
   request,
   env
 ) {
+  if (!env.SESSION_SECRET) {
+    return json(
+      {
+        success: false,
+        error:
+          "SESSION_SECRET fehlt in Cloudflare."
+      },
+      500
+    );
+  }
+
   const session =
     await getSession(
       request,
@@ -410,6 +445,28 @@ async function createSetupRequest(
           "Keine Database-Berechtigung."
       },
       403
+    );
+  }
+
+  if (!env.DISCORD_BOT_TOKEN) {
+    return json(
+      {
+        success: false,
+        error:
+          "DISCORD_BOT_TOKEN fehlt in Cloudflare."
+      },
+      500
+    );
+  }
+
+  if (!env.DISCORD_CHANNEL_ID) {
+    return json(
+      {
+        success: false,
+        error:
+          "DISCORD_CHANNEL_ID fehlt in Cloudflare."
+      },
+      500
     );
   }
 
@@ -470,7 +527,8 @@ ${message ? `**Nachricht:**\n${message}` : ""}`;
             "application/json"
         },
         body: JSON.stringify({
-          content: discordMessage
+          content:
+            discordMessage
         })
       }
     );
@@ -647,13 +705,26 @@ function timingSafeEqual(
 }
 
 function logout() {
+  const headers = new Headers();
+
+  headers.set(
+    "Location",
+    "/"
+  );
+
+  headers.append(
+    "Set-Cookie",
+    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
+
+  headers.append(
+    "Set-Cookie",
+    `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  );
+
   return new Response(null, {
     status: 302,
-    headers: {
-      Location: "/",
-      "Set-Cookie":
-        `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-    }
+    headers
   });
 }
 
