@@ -12,6 +12,8 @@ export default {
    if(url.pathname==="/auth/discord/callback")return discordCallback(request,env);
    if(url.pathname==="/auth/logout")return logout();
    if(url.pathname==="/api/me"&&request.method==="GET")return currentUser(request,env);
+   if(url.pathname==="/api/setups"&&request.method==="GET")return listSetups(request,env);
+   if(url.pathname==="/api/setups/upload"&&request.method==="POST")return uploadSetups(request,env);
    if(url.pathname==="/api/channel"&&request.method==="GET")return channelInfo(request,env);
    if(url.pathname==="/api/discord/channels"&&request.method==="GET")return discordChannels(request,env);
    if(url.pathname==="/api/discord/messages"&&request.method==="GET")return discordMessages(request,env);
@@ -65,7 +67,112 @@ async function discordCallback(request,env){
 async function currentUser(request,env){
  const s=await readSession(request,env.SESSION_SECRET);
  if(!s)return json({loggedIn:false});
- return json({loggedIn:true,user:{id:s.id,username:s.username}});
+ const canUpload=await hasUploaderRole(s.id,env);
+ return json({loggedIn:true,user:{id:s.id,username:s.username,canUpload}});
+}
+
+
+const GITHUB_API="https://api.github.com";
+const MAX_SETUP_BYTES=25*1024*1024;
+
+async function hasUploaderRole(userId,env){
+ if(!userId||!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID||!env.DISCORD_ROLE_ID)return false;
+ const r=await discordFetch(\`/guilds/\${env.DISCORD_GUILD_ID}/members/\${userId}\`,{
+  headers:{Authorization:\`Bot \${env.DISCORD_BOT_TOKEN}\`}
+ });
+ if(!r.ok)return false;
+ const member=await r.json();
+ return Array.isArray(member.roles)&&member.roles.includes(env.DISCORD_ROLE_ID);
+}
+
+function githubHeaders(env){
+ const h={
+  Accept:"application/vnd.github+json",
+  "X-GitHub-Api-Version":"2026-03-10"
+ };
+ if(env.GITHUB_TOKEN)h.Authorization=\`Bearer \${env.GITHUB_TOKEN}\`;
+ return h;
+}
+
+function githubRepo(env){
+ return \`repos/\${encodeURIComponent(env.GITHUB_OWNER||"lukasracinglmu")}/\${encodeURIComponent(env.GITHUB_REPO||"Le-Mans-Ultimate-Setups")}\`;
+}
+
+function safePathPart(value){
+ return String(value||"").trim().replace(/[\\\\/]+/g,"").replace(/\\.\\./g,"");
+}
+
+async function githubRequest(path,options={},env){
+ return fetch(GITHUB_API+path,{...options,headers:{...githubHeaders(env),...(options.headers||{})}});
+}
+
+async function listSetups(request,env){
+ const url=new URL(request.url);
+ const category=safePathPart(url.searchParams.get("category"));
+ const vehicle=safePathPart(url.searchParams.get("vehicle"));
+ if(!category||!vehicle)return json({success:false,error:"Fahrzeug fehlt."},400);
+ const path=\`/\${githubRepo(env)}/contents/setups/\${encodeURIComponent(category)}/\${encodeURIComponent(vehicle)}?ref=\${encodeURIComponent(env.GITHUB_BRANCH||"main")}\`;
+ const r=await githubRequest(path,{},env);
+ if(r.status===404)return json({success:true,setups:[]});
+ if(!r.ok)return json({success:false,error:"Setups konnten nicht geladen werden."},502);
+ const items=await r.json();
+ const setups=(Array.isArray(items)?items:[])
+  .filter(item=>item.type==="file"&&/\\.zip$/i.test(item.name))
+  .map(item=>({
+    name:item.name,
+    download:item.download_url||\`https://raw.githubusercontent.com/\${env.GITHUB_OWNER||"lukasracinglmu"}/\${env.GITHUB_REPO||"Le-Mans-Ultimate-Setups"}/\${env.GITHUB_BRANCH||"main"}/\${item.path.split("/").map(encodeURIComponent).join("/")}\`
+  }));
+ return json({success:true,setups});
+}
+
+async function uploadSetups(request,env){
+ const s=await readSession(request,env.SESSION_SECRET);
+ if(!s)return json({success:false,error:"Du musst mit Discord angemeldet sein."},401);
+ if(!(await hasUploaderRole(s.id,env)))return json({success:false,error:"Du hast keine Berechtigung zum Uploaden."},403);
+ if(!env.GITHUB_TOKEN)return json({success:false,error:"Der Upload-Dienst ist noch nicht konfiguriert."},503);
+
+ const form=await request.formData();
+ const category=safePathPart(form.get("category"));
+ const vehicle=safePathPart(form.get("vehicle"));
+ if(!category||!vehicle)return json({success:false,error:"Fahrzeugdaten fehlen."},400);
+
+ const files=form.getAll("files").filter(x=>x&&typeof x.arrayBuffer==="function");
+ if(!files.length)return json({success:false,error:"Keine ZIP-Datei ausgewählt."},400);
+
+ const results=[];
+ for(const file of files){
+  const name=safePathPart(file.name);
+  if(!/\\.zip$/i.test(name))return json({success:false,error:\`Nur ZIP-Dateien sind erlaubt: \${file.name}\`},400);
+  if(file.size>MAX_SETUP_BYTES)return json({success:false,error:\`\${file.name} ist größer als 25 MB.\`},400);
+  const path=\`setups/\${category}/\${vehicle}/\${name}\`;
+  const encodedPath=path.split("/").map(encodeURIComponent).join("/");
+  const existing=await githubRequest(\`/\${githubRepo(env)}/contents/\${encodedPath}?ref=\${encodeURIComponent(env.GITHUB_BRANCH||"main")}\`,{},env);
+  if(existing.ok)return json({success:false,error:\`Das Setup existiert bereits: \${name}\`},409);
+  if(existing.status!==404)return json({success:false,error:\`Setup konnte nicht geprüft werden: \${name}\`},502);
+
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  const content=btoa(binary);
+
+  const put=await githubRequest(\`/\${githubRepo(env)}/contents/\${encodedPath}\`,{
+   method:"PUT",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    message:\`Add setup: \${vehicle} - \${name}\`,
+    content,
+    branch:env.GITHUB_BRANCH||"main"
+   })
+  },env);
+  if(!put.ok){
+   console.error("GitHub upload error",put.status,await put.text());
+   return json({success:false,error:\`Upload fehlgeschlagen: \${name}\`},502);
+  }
+  const data=await put.json();
+  results.push({name,download:data.content?.download_url||null});
+ }
+ return json({success:true,uploaded:results});
 }
 
 async function serveHome(request,env){
@@ -80,7 +187,7 @@ async function serveHome(request,env){
 <style>
 main{position:relative!important;width:min(1400px,calc(100% - 24px))!important;max-width:1400px!important;margin:0 auto!important;padding:10px 0 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 360px!important;gap:14px!important;align-items:start!important}
 main>.content{grid-column:1!important;grid-row:1!important;min-width:0;padding:40px 12px 40px}
-main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:fixed!important;top:74px!important;right:max(12px,calc((100vw - 1400px)/2))!important;margin:0!important;align-self:start!important;border:1px solid #111!important;z-index:19!important}
+main>.discord-area{width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:fixed!important;top:74px!important;left:calc(50% + 340px)!important;right:auto!important;margin:0!important;border:1px solid #111!important;z-index:19!important}
 .discord-area{color:#dbdee1;font-family:Arial,Helvetica,sans-serif}
 .discord-client{height:100%;background:#313338;display:flex;flex-direction:column;overflow:hidden}
 .discord-topbar{height:52px;flex:0 0 52px;background:#2b2d31;border-bottom:1px solid #1f2023;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
@@ -114,7 +221,7 @@ main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!impo
 .discord-error,.discord-empty{color:#949ba4;font-size:12px;line-height:1.4;padding:20px 8px;text-align:center}
 .discord-status{padding:6px 10px 0;color:#949ba4;font-size:10px}
 #homePage .request-section{display:none!important}
-@media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative!important;top:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;order:2}}
+@media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;order:2}}
 @media(max-width:650px){main{width:calc(100% - 20px)!important;padding:0 0 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
 </style>
 <script>
