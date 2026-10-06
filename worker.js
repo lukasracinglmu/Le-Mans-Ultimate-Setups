@@ -2,6 +2,7 @@ const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_OAUTH = "https://discord.com/oauth2";
 
 const COOKIE_NAME = "lmu_session";
+const STATE_COOKIE = "lmu_oauth_state";
 
 export default {
   async fetch(request, env) {
@@ -9,7 +10,7 @@ export default {
 
     // Discord Login starten
     if (url.pathname === "/auth/discord") {
-      return discordLogin(env);
+      return discordLogin(request, env);
     }
 
     // Discord OAuth2 Callback
@@ -23,7 +24,10 @@ export default {
     }
 
     // Setup Request
-    if (url.pathname === "/api/request" && request.method === "POST") {
+    if (
+      url.pathname === "/api/request" &&
+      request.method === "POST"
+    ) {
       return createSetupRequest(request, env);
     }
 
@@ -32,17 +36,20 @@ export default {
       return logout();
     }
 
-    // Alles andere → Website
+    // Website ausliefern
     return env.ASSETS.fetch(request);
   }
 };
 
 
-/* =========================
-   DISCORD LOGIN
-========================= */
+// ============================================================
+// DISCORD LOGIN
+// ============================================================
 
-function discordLogin(env) {
+async function discordLogin(request, env) {
+
+  const state = crypto.randomUUID();
+
   const redirectUri =
     `${env.SITE_URL}/auth/discord/callback`;
 
@@ -50,277 +57,511 @@ function discordLogin(env) {
     client_id: env.DISCORD_CLIENT_ID,
     response_type: "code",
     redirect_uri: redirectUri,
-    scope: "identify"
+    scope: "identify",
+    state: state
   });
 
-  return Response.redirect(
+  const response = Response.redirect(
     `${DISCORD_OAUTH}/authorize?${params.toString()}`,
     302
   );
+
+  response.headers.append(
+    "Set-Cookie",
+    `${STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+  );
+
+  return response;
 }
 
 
-/* =========================
-   DISCORD CALLBACK
-========================= */
+// ============================================================
+// DISCORD CALLBACK
+// ============================================================
 
 async function discordCallback(request, env) {
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
 
+  const url = new URL(request.url);
+
+  const code =
+    url.searchParams.get("code");
+
+  const returnedState =
+    url.searchParams.get("state");
+
+  const discordError =
+    url.searchParams.get("error");
+
+  const errorDescription =
+    url.searchParams.get("error_description");
+
+  // Discord hat einen Fehler zurückgegeben
+  if (discordError) {
+
+    return errorResponse(
+      `Discord OAuth2 Fehler: ${discordError}${
+        errorDescription
+          ? ` – ${errorDescription}`
+          : ""
+      }`,
+      400
+    );
+  }
+
+  // Kein Authorization Code
   if (!code) {
-    return errorResponse("Kein Discord Authorization Code vorhanden.", 400);
+
+    return errorResponse(
+      "Kein Discord Authorization Code vorhanden.",
+      400
+    );
+  }
+
+  // State aus Cookie lesen
+  const cookieHeader =
+    request.headers.get("Cookie") || "";
+
+  const cookies =
+    parseCookies(cookieHeader);
+
+  const savedState =
+    cookies[STATE_COOKIE];
+
+  // OAuth State prüfen
+  if (
+    !savedState ||
+    !returnedState ||
+    savedState !== returnedState
+  ) {
+
+    return errorResponse(
+      "Ungültiger OAuth2 State. Bitte erneut anmelden.",
+      400
+    );
   }
 
   const redirectUri =
     `${env.SITE_URL}/auth/discord/callback`;
 
-  // Authorization Code gegen Access Token tauschen
-  const tokenResponse = await fetch(
-    `${DISCORD_API}/oauth2/token`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: new URLSearchParams({
-        client_id: env.DISCORD_CLIENT_ID,
-        client_secret: env.DISCORD_CLIENT_SECRET,
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri
-      })
-    }
-  );
+
+  // ==========================================================
+  // AUTHORIZATION CODE → ACCESS TOKEN
+  // ==========================================================
+
+  const tokenResponse =
+    await fetch(
+      `${DISCORD_API}/oauth2/token`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/x-www-form-urlencoded"
+        },
+
+        body:
+          new URLSearchParams({
+            client_id:
+              env.DISCORD_CLIENT_ID,
+
+            client_secret:
+              env.DISCORD_CLIENT_SECRET,
+
+            grant_type:
+              "authorization_code",
+
+            code:
+              code,
+
+            redirect_uri:
+              redirectUri
+          })
+      }
+    );
+
 
   if (!tokenResponse.ok) {
+
+    const errorText =
+      await tokenResponse.text();
+
     return errorResponse(
-      "Discord OAuth2 Token konnte nicht abgerufen werden.",
+      `Discord Token Fehler (${tokenResponse.status}): ${errorText}`,
       500
     );
   }
 
-  const tokenData = await tokenResponse.json();
 
-  // Discord Benutzer abrufen
-  const userResponse = await fetch(
-    `${DISCORD_API}/users/@me`,
-    {
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`
+  const tokenData =
+    await tokenResponse.json();
+
+
+  // ==========================================================
+  // DISCORD USER ABRUFEN
+  // ==========================================================
+
+  const userResponse =
+    await fetch(
+      `${DISCORD_API}/users/@me`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${tokenData.access_token}`
+        }
       }
-    }
-  );
+    );
+
 
   if (!userResponse.ok) {
+
+    const errorText =
+      await userResponse.text();
+
     return errorResponse(
-      "Discord Benutzer konnte nicht abgerufen werden.",
+      `Discord Benutzer Fehler (${userResponse.status}): ${errorText}`,
       500
     );
   }
 
-  const user = await userResponse.json();
 
-  // Prüfen, ob Benutzer die erforderliche Rolle besitzt
-  const hasAccess = await checkDatabaseAccess(
-    user.id,
-    env
-  );
+  const user =
+    await userResponse.json();
+
+
+  // ==========================================================
+  // DISCORD ROLLE PRÜFEN
+  // ==========================================================
+
+  const hasAccess =
+    await checkDatabaseAccess(
+      user.id,
+      env
+    );
+
 
   if (!hasAccess) {
+
     return new Response(
       `
-      <!DOCTYPE html>
-      <html lang="de">
-      <head>
-        <meta charset="UTF-8">
-        <title>Kein Zugriff</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-          }
-          .box {
-            max-width: 500px;
-            padding: 35px;
-            text-align: center;
-          }
-          a {
-            color: white;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="box">
-          <h1>Kein Zugriff</h1>
-          <p>
-            Dein Discord-Account besitzt keinen Zugriff auf
-            die LMU Setup Database.
-          </p>
-          <p>
-            Dir fehlt die erforderliche Database-Rolle.
-          </p>
-          <p>
-            <a href="/">Zurück zur Website</a>
-          </p>
-        </div>
-      </body>
-      </html>
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+<meta charset="UTF-8">
+<title>Kein Zugriff</title>
+
+<style>
+
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box {
+  max-width: 500px;
+  padding: 35px;
+  text-align: center;
+}
+
+a {
+  color: white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>Kein Zugriff</h1>
+
+<p>
+Dein Discord-Account besitzt keinen Zugriff
+auf die LMU Setup Database.
+</p>
+
+<p>
+Dir fehlt die erforderliche Database-Rolle.
+</p>
+
+<p>
+<a href="/">Zurück zur Website</a>
+</p>
+
+</div>
+
+</body>
+
+</html>
       `,
       {
         status: 403,
+
         headers: {
-          "Content-Type": "text/html; charset=UTF-8"
+          "Content-Type":
+            "text/html; charset=UTF-8"
         }
       }
     );
   }
 
-  // Session erstellen
+
+  // ==========================================================
+  // SESSION ERSTELLEN
+  // ==========================================================
+
   const sessionData = {
-    id: user.id,
-    username: user.username
+
+    id:
+      user.id,
+
+    username:
+      user.username,
+
+    exp:
+      Math.floor(
+        Date.now() / 1000
+      ) + 604800
   };
 
-  const session = await createSession(
-    sessionData,
-    env.SESSION_SECRET
-  );
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      "Location": "/",
-      "Set-Cookie":
-        `${COOKIE_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
-    }
-  });
-}
+  const session =
+    await createSession(
+      sessionData,
+      env.SESSION_SECRET
+    );
 
 
-/* =========================
-   ROLLENPRÜFUNG
-========================= */
-
-async function checkDatabaseAccess(userId, env) {
-  if (!env.DISCORD_BOT_TOKEN) {
-    return false;
-  }
-
-  const response = await fetch(
-    `${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,
+  return new Response(
+    null,
     {
+      status: 302,
+
       headers: {
-        Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
+
+        "Location": "/",
+
+        "Set-Cookie":
+          `${COOKIE_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
       }
     }
   );
+}
+
+
+// ============================================================
+// DISCORD ROLLENPRÜFUNG
+// ============================================================
+
+async function checkDatabaseAccess(
+  userId,
+  env
+) {
+
+  if (
+    !env.DISCORD_BOT_TOKEN ||
+    !env.DISCORD_GUILD_ID ||
+    !env.DISCORD_ROLE_ID
+  ) {
+    return false;
+  }
+
+
+  const response =
+    await fetch(
+      `${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,
+      {
+        headers: {
+          Authorization:
+            `Bot ${env.DISCORD_BOT_TOKEN}`
+        }
+      }
+    );
+
 
   if (!response.ok) {
     return false;
   }
 
-  const member = await response.json();
 
-  return Array.isArray(member.roles) &&
-    member.roles.includes(env.DISCORD_ROLE_ID);
+  const member =
+    await response.json();
+
+
+  return (
+    Array.isArray(member.roles) &&
+    member.roles.includes(
+      env.DISCORD_ROLE_ID
+    )
+  );
 }
 
 
-/* =========================
-   USER INFORMATION
-========================= */
+// ============================================================
+// AKTUELLEN BENUTZER PRÜFEN
+// ============================================================
 
-async function getCurrentUser(request, env) {
-  const session = await getSession(
-    request,
-    env.SESSION_SECRET
-  );
+async function getCurrentUser(
+  request,
+  env
+) {
+
+  const session =
+    await getSession(
+      request,
+      env.SESSION_SECRET
+    );
+
 
   if (!session) {
+
     return json({
       loggedIn: false
     });
   }
 
-  // Rolle jedes Mal erneut überprüfen
-  const hasAccess = await checkDatabaseAccess(
-    session.id,
-    env
-  );
+
+  const hasAccess =
+    await checkDatabaseAccess(
+      session.id,
+      env
+    );
+
 
   if (!hasAccess) {
+
     return json({
       loggedIn: false
     });
   }
+
 
   return json({
     loggedIn: true,
+
     user: {
-      id: session.id,
-      username: session.username
+      id:
+        session.id,
+
+      username:
+        session.username
     }
   });
 }
 
 
-/* =========================
-   SETUP REQUEST
-========================= */
+// ============================================================
+// SETUP REQUEST
+// ============================================================
 
-async function createSetupRequest(request, env) {
-  const session = await getSession(
-    request,
-    env.SESSION_SECRET
-  );
+async function createSetupRequest(
+  request,
+  env
+) {
+
+  const session =
+    await getSession(
+      request,
+      env.SESSION_SECRET
+    );
+
 
   if (!session) {
-    return json({
-      success: false,
-      error: "Nicht angemeldet."
-    }, 401);
+
+    return json(
+      {
+        success: false,
+        error: "Nicht angemeldet."
+      },
+      401
+    );
   }
 
-  const hasAccess = await checkDatabaseAccess(
-    session.id,
-    env
-  );
+
+  const hasAccess =
+    await checkDatabaseAccess(
+      session.id,
+      env
+    );
+
 
   if (!hasAccess) {
-    return json({
-      success: false,
-      error: "Keine Database-Berechtigung."
-    }, 403);
+
+    return json(
+      {
+        success: false,
+        error:
+          "Keine Database-Berechtigung."
+      },
+      403
+    );
   }
+
 
   let body;
 
+
   try {
-    body = await request.json();
+
+    body =
+      await request.json();
+
   } catch {
-    return json({
-      success: false,
-      error: "Ungültige Anfrage."
-    }, 400);
+
+    return json(
+      {
+        success: false,
+        error:
+          "Ungültige Anfrage."
+      },
+      400
+    );
   }
 
-  const vehicle = String(body.vehicle || "").trim();
-  const track = String(body.track || "").trim();
-  const message = String(body.message || "").trim();
 
-  if (!vehicle || !track) {
-    return json({
-      success: false,
-      error: "Fahrzeug und Strecke sind erforderlich."
-    }, 400);
+  const vehicle =
+    String(
+      body.vehicle || ""
+    ).trim();
+
+
+  const track =
+    String(
+      body.track || ""
+    ).trim();
+
+
+  const message =
+    String(
+      body.message || ""
+    ).trim();
+
+
+  if (
+    !vehicle ||
+    !track
+  ) {
+
+    return json(
+      {
+        success: false,
+        error:
+          "Fahrzeug und Strecke sind erforderlich."
+      },
+      400
+    );
   }
+
 
   const discordMessage =
 `## Setup Request
@@ -331,28 +572,51 @@ async function createSetupRequest(request, env) {
 **Fahrzeug:** ${vehicle}
 **Strecke:** ${track}
 
-${message ? `**Nachricht:**\n${message}` : ""}`;
+${
+  message
+    ? `**Nachricht:**\n${message}`
+    : ""
+}`;
 
-  const discordResponse = await fetch(
-    `${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        content: discordMessage
-      })
-    }
-  );
+
+  const discordResponse =
+    await fetch(
+      `${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`,
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization":
+            `Bot ${env.DISCORD_BOT_TOKEN}`,
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+            content:
+              discordMessage
+          })
+      }
+    );
+
 
   if (!discordResponse.ok) {
-    return json({
-      success: false,
-      error: "Der Setup Request konnte nicht an Discord gesendet werden."
-    }, 500);
+
+    const errorText =
+      await discordResponse.text();
+
+    return json(
+      {
+        success: false,
+        error:
+          `Discord Fehler (${discordResponse.status}): ${errorText}`
+      },
+      500
+    );
   }
+
 
   return json({
     success: true
@@ -360,104 +624,185 @@ ${message ? `**Nachricht:**\n${message}` : ""}`;
 }
 
 
-/* =========================
-   SESSION
-========================= */
+// ============================================================
+// SESSION ERSTELLEN
+// ============================================================
 
-async function createSession(data, secret) {
-  const payload = base64urlEncode(
-    JSON.stringify(data)
-  );
+async function createSession(
+  data,
+  secret
+) {
 
-  const signature = await sign(
-    payload,
-    secret
-  );
+  const payload =
+    base64urlEncode(
+      JSON.stringify(data)
+    );
+
+
+  const signature =
+    await sign(
+      payload,
+      secret
+    );
+
 
   return `${payload}.${signature}`;
 }
 
 
-async function getSession(request, secret) {
-  const cookieHeader = request.headers.get("Cookie");
+// ============================================================
+// SESSION LESEN
+// ============================================================
+
+async function getSession(
+  request,
+  secret
+) {
+
+  const cookieHeader =
+    request.headers.get("Cookie");
+
 
   if (!cookieHeader) {
     return null;
   }
 
-  const cookies = {};
 
-  for (const part of cookieHeader.split(";")) {
-    const [key, ...value] = part.trim().split("=");
+  const cookies =
+    parseCookies(
+      cookieHeader
+    );
 
-    if (key) {
-      cookies[key] = value.join("=");
-    }
-  }
 
-  const session = cookies[COOKIE_NAME];
+  const session =
+    cookies[COOKIE_NAME];
+
 
   if (!session) {
     return null;
   }
 
-  const parts = session.split(".");
+
+  const parts =
+    session.split(".");
+
 
   if (parts.length !== 2) {
     return null;
   }
 
-  const [payload, signature] = parts;
 
-  const valid = await verify(
+  const [
     payload,
-    signature,
-    secret
-  );
+    signature
+  ] = parts;
+
+
+  const valid =
+    await verify(
+      payload,
+      signature,
+      secret
+    );
+
 
   if (!valid) {
     return null;
   }
 
+
   try {
-    return JSON.parse(
-      base64urlDecode(payload)
-    );
+
+    const data =
+      JSON.parse(
+        base64urlDecode(
+          payload
+        )
+      );
+
+
+    // Session abgelaufen
+    if (
+      data.exp &&
+      Math.floor(
+        Date.now() / 1000
+      ) > data.exp
+    ) {
+      return null;
+    }
+
+
+    return data;
+
   } catch {
+
     return null;
   }
 }
 
 
-async function sign(value, secret) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    {
-      name: "HMAC",
-      hash: "SHA-256"
-    },
-    false,
-    ["sign"]
-  );
+// ============================================================
+// HMAC SIGNATUR
+// ============================================================
 
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(value)
-  );
+async function sign(
+  value,
+  secret
+) {
+
+  const key =
+    await crypto.subtle.importKey(
+      "raw",
+
+      new TextEncoder()
+        .encode(secret),
+
+      {
+        name: "HMAC",
+        hash: "SHA-256"
+      },
+
+      false,
+
+      ["sign"]
+    );
+
+
+  const signature =
+    await crypto.subtle.sign(
+      "HMAC",
+
+      key,
+
+      new TextEncoder()
+        .encode(value)
+    );
+
 
   return base64urlEncode(
-    String.fromCharCode(...new Uint8Array(signature))
+    new Uint8Array(
+      signature
+    )
   );
 }
 
 
-async function verify(value, signature, secret) {
-  const expected = await sign(
-    value,
-    secret
-  );
+// ============================================================
+// SIGNATUR PRÜFEN
+// ============================================================
+
+async function verify(
+  value,
+  signature,
+  secret
+) {
+
+  const expected =
+    await sign(
+      value,
+      secret
+    );
+
 
   return timingSafeEqual(
     expected,
@@ -466,97 +811,232 @@ async function verify(value, signature, secret) {
 }
 
 
-function timingSafeEqual(a, b) {
-  if (a.length !== b.length) {
+// ============================================================
+// TIMING SAFE VERGLEICH
+// ============================================================
+
+function timingSafeEqual(
+  a,
+  b
+) {
+
+  if (
+    a.length !==
+    b.length
+  ) {
     return false;
   }
 
+
   let result = 0;
 
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+
+  for (
+    let i = 0;
+    i < a.length;
+    i++
+  ) {
+
+    result |=
+      a.charCodeAt(i) ^
+      b.charCodeAt(i);
   }
+
 
   return result === 0;
 }
 
 
-/* =========================
-   LOGOUT
-========================= */
+// ============================================================
+// LOGOUT
+// ============================================================
 
 function logout() {
-  return new Response(null, {
-    status: 302,
-    headers: {
-      "Location": "/",
-      "Set-Cookie":
-        `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-    }
-  });
-}
 
-
-/* =========================
-   HELPERS
-========================= */
-
-function base64urlEncode(input) {
-  const bytes = typeof input === "string"
-    ? new TextEncoder().encode(input)
-    : input;
-
-  let binary = "";
-
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-
-function base64urlDecode(input) {
-  const padded =
-    input
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(
-        input.length + (4 - input.length % 4) % 4,
-        "="
-      );
-
-  const binary = atob(padded);
-
-  const bytes = Uint8Array.from(
-    binary,
-    char => char.charCodeAt(0)
-  );
-
-  return new TextDecoder().decode(bytes);
-}
-
-
-function json(data, status = 200) {
   return new Response(
-    JSON.stringify(data),
+    null,
     {
-      status,
+      status: 302,
+
       headers: {
-        "Content-Type": "application/json; charset=UTF-8",
-        "Cache-Control": "no-store"
+
+        "Location": "/",
+
+        "Set-Cookie":
+          `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
       }
     }
   );
 }
 
 
-function errorResponse(message, status) {
-  return json({
-    success: false,
-    error: message
-  }, status);
+// ============================================================
+// COOKIES PARSEN
+// ============================================================
+
+function parseCookies(
+  cookieHeader
+) {
+
+  const cookies = {};
+
+
+  for (
+    const part of
+    cookieHeader.split(";")
+  ) {
+
+    const [
+      key,
+      ...value
+    ] =
+      part.trim().split("=");
+
+
+    if (key) {
+
+      cookies[key] =
+        value.join("=");
+    }
+  }
+
+
+  return cookies;
+}
+
+
+// ============================================================
+// BASE64URL ENCODE
+// ============================================================
+
+function base64urlEncode(
+  input
+) {
+
+  const bytes =
+    typeof input === "string"
+      ? new TextEncoder()
+          .encode(input)
+      : input;
+
+
+  let binary = "";
+
+
+  for (
+    const byte of bytes
+  ) {
+
+    binary +=
+      String.fromCharCode(
+        byte
+      );
+  }
+
+
+  return btoa(binary)
+    .replace(
+      /\+/g,
+      "-"
+    )
+    .replace(
+      /\//g,
+      "_"
+    )
+    .replace(
+      /=+$/,
+      ""
+    );
+}
+
+
+// ============================================================
+// BASE64URL DECODE
+// ============================================================
+
+function base64urlDecode(
+  input
+) {
+
+  const padded =
+    input
+      .replace(
+        /-/g,
+        "+"
+      )
+      .replace(
+        /_/g,
+        "/"
+      )
+      .padEnd(
+        input.length +
+        (
+          4 -
+          input.length % 4
+        ) % 4,
+        "="
+      );
+
+
+  const binary =
+    atob(padded);
+
+
+  const bytes =
+    Uint8Array.from(
+      binary,
+      char =>
+        char.charCodeAt(0)
+    );
+
+
+  return new TextDecoder()
+    .decode(bytes);
+}
+
+
+// ============================================================
+// JSON RESPONSE
+// ============================================================
+
+function json(
+  data,
+  status = 200
+) {
+
+  return new Response(
+    JSON.stringify(data),
+
+    {
+      status,
+
+      headers: {
+
+        "Content-Type":
+          "application/json; charset=UTF-8",
+
+        "Cache-Control":
+          "no-store"
+      }
+    }
+  );
+}
+
+
+// ============================================================
+// ERROR RESPONSE
+// ============================================================
+
+function errorResponse(
+  message,
+  status
+) {
+
+  return json(
+    {
+      success: false,
+      error: message
+    },
+    status
+  );
 }
