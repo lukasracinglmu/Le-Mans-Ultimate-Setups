@@ -426,8 +426,18 @@ main {
         <button class="discord-button">Mit Discord anmelden</button>
       </a>
     </div>
-    <!-- Widget wird per JS eingesetzt sobald eingeloggt -->
-    <div id="discordWidgetContainer" style="display:none; height:100%;"></div>
+    <div id="discordWidgetContainer" style="display:none; height:100%;">
+      <iframe
+        id="discordWidgetIframe"
+        src="https://discord.com/widget?id=1367893409234161846&theme=dark"
+        width="100%"
+        height="100%"
+        allowtransparency="true"
+        frameborder="0"
+        sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+        style="display:block; border:none;"
+      ></iframe>
+    </div>
   </aside>
 
 </div>
