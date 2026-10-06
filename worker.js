@@ -74,15 +74,16 @@ async function currentUser(request,env){
 
 const GITHUB_API="https://api.github.com";
 const MAX_SETUP_BYTES=25*1024*1024;
+const UPLOADER_ROLE_ID="1538601074074849330";
 
 async function hasUploaderRole(userId,env){
- if(!userId||!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID||!env.DISCORD_ROLE_ID)return false;
+ if(!userId||!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID)return false;
  const r=await discordFetch(`/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{
   headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}
  });
  if(!r.ok)return false;
  const member=await r.json();
- return Array.isArray(member.roles)&&member.roles.includes(env.DISCORD_ROLE_ID);
+ return Array.isArray(member.roles)&&member.roles.includes(UPLOADER_ROLE_ID);
 }
 
 function githubHeaders(env){
