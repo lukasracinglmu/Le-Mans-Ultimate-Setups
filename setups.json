@@ -1,0 +1,38 @@
+{
+  "Hypercar": [
+    "Alpine A424",
+    "Aston Martin Valkyrie AMR LMH",
+    "BMW M Hybrid V8",
+    "Cadillac V-Series.R",
+    "Ferrari 499P",
+    "Genesis GMR-001",
+    "Glickenhaus SCG 007",
+    "Isotta Fraschini Tipo6-C",
+    "Lamborghini SC63",
+    "Peugeot 9X8",
+    "Porsche 963",
+    "Toyota GR010",
+    "Vanwall Vandervell 680"
+  ],
+  "LMP2": [
+    "Oreca 07 Gibson"
+  ],
+  "LMP3": [
+    "Adess AD25",
+    "Duqueine D09",
+    "Ginetta G61-LT-P325",
+    "Ligier JS P325"
+  ],
+  "LMGT3": [
+    "Aston Martin Vantage AMR LMGT3",
+    "BMW M4 LMGT3",
+    "Chevrolet Corvette Z06 LMGT3.R",
+    "Ferrari 296 LMGT3",
+    "Ford Mustang LMGT3",
+    "Lamborghini Huracán LMGT3",
+    "Lexus RC F LMGT3",
+    "McLaren 720S LMGT3",
+    "Mercedes-AMG LMGT3",
+    "Porsche 911 GT3 R"
+  ]
+}
