@@ -175,7 +175,7 @@ function applyTheme(mode,name){
  root.setProperty("--text",t.text);root.setProperty("--muted",t.muted);root.setProperty("--line",t.line);root.setProperty("--accent",t.accent);
  root.setProperty("--accent2",t.accent);
  root.setProperty("--dark",t.text);
- localStorage.setItem("lmu-"+mode+"-theme",name);
+ localStorage.setItem("lmu-"+mode+"-theme",name);localStorage.setItem("lmu-theme-mode",mode);
  document.querySelector('meta[name="theme-color"]').setAttribute("content",t.bg);
  renderThemeCards();
 }
@@ -186,7 +186,7 @@ function renderThemeCards(){
   Object.entries(themes[mode]).forEach(([key,t])=>{
    const b=document.createElement("button");b.className="theme-card"+(currentTheme(mode)===key?" active":"");
    b.innerHTML='<div class="theme-preview" style="background:'+t.bg+'"><span style="background:'+t.surface2+'"></span><span class="preview-main" style="background:'+t.surface+'"></span><span style="background:'+t.accent+'"></span></div><div class="theme-card-label"><span>'+esc(t.name)+'</span><span class="theme-dot" style="background:'+t.accent+'"></span></div>';
-   b.onclick=()=>{localStorage.setItem("lmu-"+mode+"-theme",key);if(document.documentElement.dataset.theme===mode)applyTheme(mode,key);else renderThemeCards()};
+   b.onclick=()=>{localStorage.setItem("lmu-"+mode+"-theme",key);applyTheme(mode,key);};
    box.appendChild(b);
   });
  }
