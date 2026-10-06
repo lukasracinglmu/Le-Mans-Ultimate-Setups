@@ -12,6 +12,7 @@ export default {
    if(url.pathname==="/auth/discord/callback")return discordCallback(request,env);
    if(url.pathname==="/auth/logout")return logout();
    if(url.pathname==="/api/me"&&request.method==="GET")return currentUser(request,env);
+   if(url.pathname==="/api/channel"&&request.method==="GET")return channelInfo(request,env);
    if(url.pathname==="/api/request"&&request.method==="POST")return createRequest(request,env);
    return env.ASSETS.fetch(request);
   }catch(error){
@@ -61,6 +62,16 @@ async function currentUser(request,env){
  const s=await readSession(request,env.SESSION_SECRET);
  if(!s)return json({loggedIn:false});
  return json({loggedIn:true,user:{id:s.id,username:s.username}});
+}
+
+async function channelInfo(request,env){
+ const s=await readSession(request,env.SESSION_SECRET);
+ if(!s)return json({success:false,error:"Nicht angemeldet."},401);
+ if(!env.DISCORD_BOT_TOKEN||!env.DISCORD_CHANNEL_ID)return json({success:false,error:"Discord Channel ist nicht konfiguriert."},500);
+ const r=await discordFetch(`/channels/${env.DISCORD_CHANNEL_ID}`,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}});
+ if(!r.ok){console.error("Discord channel error",r.status,await r.text());return json({success:false,error:"Discord Channel konnte nicht geladen werden."},502)}
+ const channel=await r.json();
+ return json({success:true,channel:{id:channel.id,name:channel.name||"setup-request-test",type:channel.type}});
 }
 
 async function createRequest(request,env){
