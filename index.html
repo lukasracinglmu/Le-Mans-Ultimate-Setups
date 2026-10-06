@@ -265,11 +265,13 @@ main > .content {
   max-height: 600px;
   background: #ed1c24;
   padding: 4px;
-  position: sticky;
+  position: fixed;
   top: 74px;
+  right: max(12px, calc((100vw - 1400px) / 2));
   margin: 0;
   align-self: start;
   border: 1px solid #111111;
+  z-index: 19;
 }
 
 .discord-client {
@@ -539,6 +541,7 @@ main > .content {
     grid-row: 2;
     position: relative;
     top: auto;
+    right: auto;
     width: 100%;
     height: 600px;
     min-height: 600px;
@@ -922,7 +925,7 @@ async function checkLogin() {
       currentUser = data.user;
 
       document.getElementById("loginButton")
-        .classList.add("hidden");
+        .style.display = "none";
 
       document.getElementById("account")
         .style.display = "flex";
@@ -944,7 +947,7 @@ async function checkLogin() {
       currentUser = null;
 
       document.getElementById("loginButton")
-        .classList.remove("hidden");
+        .style.display = "";
 
       document.getElementById("account")
         .style.display = "none";
