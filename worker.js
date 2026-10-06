@@ -77,8 +77,8 @@ const MAX_SETUP_BYTES=25*1024*1024;
 
 async function hasUploaderRole(userId,env){
  if(!userId||!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID||!env.DISCORD_ROLE_ID)return false;
- const r=await discordFetch(\`/guilds/\${env.DISCORD_GUILD_ID}/members/\${userId}\`,{
-  headers:{Authorization:\`Bot \${env.DISCORD_BOT_TOKEN}\`}
+ const r=await discordFetch(`/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{
+  headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}
  });
  if(!r.ok)return false;
  const member=await r.json();
@@ -90,12 +90,12 @@ function githubHeaders(env){
   Accept:"application/vnd.github+json",
   "X-GitHub-Api-Version":"2026-03-10"
  };
- if(env.GITHUB_TOKEN)h.Authorization=\`Bearer \${env.GITHUB_TOKEN}\`;
+ if(env.GITHUB_TOKEN)h.Authorization=`Bearer ${env.GITHUB_TOKEN}`;
  return h;
 }
 
 function githubRepo(env){
- return \`repos/\${encodeURIComponent(env.GITHUB_OWNER||"lukasracinglmu")}/\${encodeURIComponent(env.GITHUB_REPO||"Le-Mans-Ultimate-Setups")}\`;
+ return `repos/${encodeURIComponent(env.GITHUB_OWNER||"lukasracinglmu")}/${encodeURIComponent(env.GITHUB_REPO||"Le-Mans-Ultimate-Setups")}`;
 }
 
 function safePathPart(value){
@@ -111,7 +111,7 @@ async function listSetups(request,env){
  const category=safePathPart(url.searchParams.get("category"));
  const vehicle=safePathPart(url.searchParams.get("vehicle"));
  if(!category||!vehicle)return json({success:false,error:"Fahrzeug fehlt."},400);
- const path=\`/\${githubRepo(env)}/contents/setups/\${encodeURIComponent(category)}/\${encodeURIComponent(vehicle)}?ref=\${encodeURIComponent(env.GITHUB_BRANCH||"main")}\`;
+ const path=`/${githubRepo(env)}/contents/setups/${encodeURIComponent(category)}/${encodeURIComponent(vehicle)}?ref=${encodeURIComponent(env.GITHUB_BRANCH||"main")}`;
  const r=await githubRequest(path,{},env);
  if(r.status===404)return json({success:true,setups:[]});
  if(!r.ok)return json({success:false,error:"Setups konnten nicht geladen werden."},502);
@@ -120,7 +120,7 @@ async function listSetups(request,env){
   .filter(item=>item.type==="file"&&/\\.zip$/i.test(item.name))
   .map(item=>({
     name:item.name,
-    download:item.download_url||\`https://raw.githubusercontent.com/\${env.GITHUB_OWNER||"lukasracinglmu"}/\${env.GITHUB_REPO||"Le-Mans-Ultimate-Setups"}/\${env.GITHUB_BRANCH||"main"}/\${item.path.split("/").map(encodeURIComponent).join("/")}\`
+    download:item.download_url||`https://raw.githubusercontent.com/${env.GITHUB_OWNER||"lukasracinglmu"}/${env.GITHUB_REPO||"Le-Mans-Ultimate-Setups"}/${env.GITHUB_BRANCH||"main"}/${item.path.split("/").map(encodeURIComponent).join("/")}`
   }));
  return json({success:true,setups});
 }
@@ -142,13 +142,13 @@ async function uploadSetups(request,env){
  const results=[];
  for(const file of files){
   const name=safePathPart(file.name);
-  if(!/\\.zip$/i.test(name))return json({success:false,error:\`Nur ZIP-Dateien sind erlaubt: \${file.name}\`},400);
-  if(file.size>MAX_SETUP_BYTES)return json({success:false,error:\`\${file.name} ist größer als 25 MB.\`},400);
-  const path=\`setups/\${category}/\${vehicle}/\${name}\`;
+  if(!/\\.zip$/i.test(name))return json({success:false,error:`Nur ZIP-Dateien sind erlaubt: ${file.name}`},400);
+  if(file.size>MAX_SETUP_BYTES)return json({success:false,error:`${file.name} ist größer als 25 MB.`},400);
+  const path=`setups/${category}/${vehicle}/${name}`;
   const encodedPath=path.split("/").map(encodeURIComponent).join("/");
-  const existing=await githubRequest(\`/\${githubRepo(env)}/contents/\${encodedPath}?ref=\${encodeURIComponent(env.GITHUB_BRANCH||"main")}\`,{},env);
-  if(existing.ok)return json({success:false,error:\`Das Setup existiert bereits: \${name}\`},409);
-  if(existing.status!==404)return json({success:false,error:\`Setup konnte nicht geprüft werden: \${name}\`},502);
+  const existing=await githubRequest(`/${githubRepo(env)}/contents/${encodedPath}?ref=${encodeURIComponent(env.GITHUB_BRANCH||"main")}`,{},env);
+  if(existing.ok)return json({success:false,error:`Das Setup existiert bereits: ${name}`},409);
+  if(existing.status!==404)return json({success:false,error:`Setup konnte nicht geprüft werden: ${name}`},502);
 
   const bytes=new Uint8Array(await file.arrayBuffer());
   let binary="";
@@ -156,18 +156,18 @@ async function uploadSetups(request,env){
   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
   const content=btoa(binary);
 
-  const put=await githubRequest(\`/\${githubRepo(env)}/contents/\${encodedPath}\`,{
+  const put=await githubRequest(`/${githubRepo(env)}/contents/${encodedPath}`,{
    method:"PUT",
    headers:{"Content-Type":"application/json"},
    body:JSON.stringify({
-    message:\`Add setup: \${vehicle} - \${name}\`,
+    message:`Add setup: ${vehicle} - ${name}`,
     content,
     branch:env.GITHUB_BRANCH||"main"
    })
   },env);
   if(!put.ok){
    console.error("GitHub upload error",put.status,await put.text());
-   return json({success:false,error:\`Upload fehlgeschlagen: \${name}\`},502);
+   return json({success:false,error:`Upload fehlgeschlagen: ${name}`},502);
   }
   const data=await put.json();
   results.push({name,download:data.content?.download_url||null});
