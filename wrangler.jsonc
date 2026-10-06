@@ -1,8 +1,17 @@
 {
-  "name": "le-mans-ultimate-setups",
-  "main": "worker.js",
-  "compatibility_date": "2026-10-06",
-  "assets": {
-    "directory": "."
+  "$schema":"https://unpkg.com/wrangler@latest/config-schema.json",
+  "name":"le-mans-ultimate-setups",
+  "main":"worker.js",
+  "compatibility_date":"2026-10-06",
+  "assets":{
+    "directory":".",
+    "binding":"ASSETS"
+  },
+  "vars":{
+    "DISCORD_CLIENT_ID":"1556978316404068452",
+    "DISCORD_GUILD_ID":"1464926567401652418",
+    "DISCORD_ROLE_ID":"1464926567401652420",
+    "DISCORD_CHANNEL_ID":"1511795330176520193",
+    "SITE_URL":"https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev"
   }
 }
