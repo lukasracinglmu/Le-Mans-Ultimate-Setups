@@ -1,38 +1,41 @@
 {
   "Hypercar": [
-    "Alpine A424",
-    "Aston Martin Valkyrie AMR LMH",
-    "BMW M Hybrid V8",
-    "Cadillac V-Series.R",
-    "Ferrari 499P",
-    "Genesis GMR-001",
-    "Glickenhaus SCG 007",
-    "Isotta Fraschini Tipo6-C",
-    "Lamborghini SC63",
-    "Peugeot 9X8",
-    "Porsche 963",
-    "Toyota GR010",
-    "Vanwall Vandervell 680"
+    { "name": "Alpine A424", "setups": [] },
+    { "name": "Aston Martin Valkyrie AMR LMH", "setups": [] },
+    { "name": "BMW M Hybrid V8", "setups": [] },
+    { "name": "Cadillac V-Series.R", "setups": [] },
+    { "name": "Ferrari 499P", "setups": [] },
+    { "name": "Genesis GMR-001", "setups": [] },
+    { "name": "Glickenhaus SCG 007", "setups": [] },
+    { "name": "Isotta Fraschini Tipo6-C", "setups": [] },
+    { "name": "Lamborghini SC63", "setups": [] },
+    { "name": "Peugeot 9X8", "setups": [] },
+    { "name": "Porsche 963", "setups": [] },
+    { "name": "Toyota GR010", "setups": [] },
+    { "name": "Vanwall Vandervell 680", "setups": [] }
   ],
+
   "LMP2": [
-    "Oreca 07 Gibson"
+    { "name": "Oreca 07 Gibson", "setups": [] }
   ],
+
   "LMP3": [
-    "Adess AD25",
-    "Duqueine D09",
-    "Ginetta G61-LT-P325",
-    "Ligier JS P325"
+    { "name": "Adess AD25", "setups": [] },
+    { "name": "Duqueine D09", "setups": [] },
+    { "name": "Ginetta G61-LT-P325", "setups": [] },
+    { "name": "Ligier JS P325", "setups": [] }
   ],
+
   "LMGT3": [
-    "Aston Martin Vantage AMR LMGT3",
-    "BMW M4 LMGT3",
-    "Chevrolet Corvette Z06 LMGT3.R",
-    "Ferrari 296 LMGT3",
-    "Ford Mustang LMGT3",
-    "Lamborghini Huracán LMGT3",
-    "Lexus RC F LMGT3",
-    "McLaren 720S LMGT3",
-    "Mercedes-AMG LMGT3",
-    "Porsche 911 GT3 R"
+    { "name": "Aston Martin Vantage AMR LMGT3", "setups": [] },
+    { "name": "BMW M4 LMGT3", "setups": [] },
+    { "name": "Chevrolet Corvette Z06 LMGT3.R", "setups": [] },
+    { "name": "Ferrari 296 LMGT3", "setups": [] },
+    { "name": "Ford Mustang LMGT3", "setups": [] },
+    { "name": "Lamborghini Huracán LMGT3", "setups": [] },
+    { "name": "Lexus RC F LMGT3", "setups": [] },
+    { "name": "McLaren 720S LMGT3", "setups": [] },
+    { "name": "Mercedes-AMG LMGT3", "setups": [] },
+    { "name": "Porsche 911 GT3 R", "setups": [] }
   ]
 }
