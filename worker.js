@@ -14,6 +14,7 @@ export default {
    if(url.pathname==="/api/me"&&request.method==="GET")return currentUser(request,env);
    if(url.pathname==="/api/channel"&&request.method==="GET")return channelInfo(request,env);
    if(url.pathname==="/api/request"&&request.method==="POST")return createRequest(request,env);
+   if(request.method==="GET"&&url.pathname==="/")return serveHome(request,env);
    return env.ASSETS.fetch(request);
   }catch(error){
    console.error("Worker error",error);
@@ -62,6 +63,39 @@ async function currentUser(request,env){
  const s=await readSession(request,env.SESSION_SECRET);
  if(!s)return json({loggedIn:false});
  return json({loggedIn:true,user:{id:s.id,username:s.username}});
+}
+
+async function serveHome(request,env){
+ const response=await env.ASSETS.fetch(request);
+ const type=response.headers.get("content-type")||"";
+ if(!type.includes("text/html"))return response;
+ const html=await response.text();
+ if(html.includes('id="channelBox"'))return new Response(html,response);
+ const injected=`
+<div id="channelBox" style="display:none;margin:24px 0 20px;background:#fff;border:1px solid #d8d8d2;border-radius:7px;padding:16px;font-family:Arial,Helvetica,sans-serif">
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+  <div><div style="font-size:12px;color:#60605c;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:5px">Discord Setup-Request-Kanal</div><div id="channelName" style="font-size:17px;font-weight:800">#setup-request-test</div></div>
+  <a id="channelLink" href="https://discord.com/channels/1367893409234161846/1557002876906377258" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;padding:8px 11px;border:1px solid #d8d8d2;border-radius:6px;background:#eeeeeb;text-decoration:none;font-size:12px;font-weight:700;color:#111">In Discord öffnen</a>
+ </div>
+ <div id="channelStatus" style="font-size:12px;color:#60605c;margin-top:8px">Der hinterlegte Kanal ist aktiv.</div>
+</div>
+<script>
+(async function(){
+ try{
+  const me=await fetch("/api/me",{cache:"no-store"}).then(r=>r.json());
+  const box=document.getElementById("channelBox");
+  if(!box||!me.loggedIn)return;
+  const r=await fetch("/api/channel",{cache:"no-store"});
+  const d=await r.json();
+  box.style.display="block";
+  if(d.success){
+   document.getElementById("channelName").textContent="#"+d.channel.name;
+   document.getElementById("channelLink").href="https://discord.com/channels/1367893409234161846/"+encodeURIComponent(d.channel.id);
+  }
+ }catch(e){}
+})();
+</script>`;
+ return new Response(html.replace("</body>",injected+"</body>"),response);
 }
 
 async function channelInfo(request,env){
