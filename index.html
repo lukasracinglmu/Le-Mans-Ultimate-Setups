@@ -329,6 +329,13 @@ main {
   .setup { align-items: flex-start; flex-direction: column; }
   .download { width: 100%; text-align: center; }
 }
+
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 </style>
 </head>
 
@@ -338,7 +345,7 @@ main {
   <div class="logo">LMU SETUPS</div>
   <div class="header-actions">
     <div id="account" class="account">
-      <span id="accountName" class="account-name"></span>
+      <img id="accountAvatar" class="account-avatar" src="" alt="" style="display:none;"><span id="accountName" class="account-name"></span>
       <button onclick="logout()">Logout</button>
     </div>
     <a id="loginButton" href="/auth/discord" style="text-decoration:none;">
