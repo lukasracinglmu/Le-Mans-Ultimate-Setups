@@ -13,6 +13,9 @@ export default {
    if(url.pathname==="/auth/logout")return logout();
    if(url.pathname==="/api/me"&&request.method==="GET")return currentUser(request,env);
    if(url.pathname==="/api/channel"&&request.method==="GET")return channelInfo(request,env);
+   if(url.pathname==="/api/discord/channels"&&request.method==="GET")return discordChannels(request,env);
+   if(url.pathname==="/api/discord/messages"&&request.method==="GET")return discordMessages(request,env);
+   if(url.pathname==="/api/discord/messages"&&request.method==="POST")return discordSendMessage(request,env);
    if(url.pathname==="/api/request"&&request.method==="POST")return createRequest(request,env);
    if(request.method==="GET"&&url.pathname==="/")return serveHome(request,env);
    return env.ASSETS.fetch(request);
@@ -106,6 +109,46 @@ async function channelInfo(request,env){
  if(!r.ok){console.error("Discord channel error",r.status,await r.text());return json({success:false,error:"Discord Channel konnte nicht geladen werden."},502)}
  const channel=await r.json();
  return json({success:true,channel:{id:channel.id,name:channel.name||"setup-request-test",type:channel.type}});
+}
+
+async function discordChannels(request,env){
+ const s=await readSession(request,env.SESSION_SECRET);
+ if(!s)return json({success:false,error:"Nicht angemeldet."},401);
+ if(!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID)return json({success:false,error:"Discord Server ist nicht konfiguriert."},500);
+ const r=await discordFetch(`/guilds/${env.DISCORD_GUILD_ID}/channels`,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}});
+ if(!r.ok){console.error("Discord guild channels error",r.status,await r.text());return json({success:false,error:"Discord-Kanäle konnten nicht geladen werden."},502)}
+ const channels=await r.json();
+ const visible=channels
+  .filter(c=>[0,2,5,10,11,12,13,15].includes(c.type))
+  .sort((a,b)=>(a.position??0)-(b.position??0));
+ return json({success:true,channels:visible.map(c=>({id:c.id,name:c.name,type:c.type,parent_id:c.parent_id,position:c.position}))});
+}
+
+async function discordMessages(request,env){
+ const s=await readSession(request,env.SESSION_SECRET);
+ if(!s)return json({success:false,error:"Nicht angemeldet."},401);
+ if(!env.DISCORD_BOT_TOKEN)return json({success:false,error:"Discord Bot ist nicht konfiguriert."},500);
+ const url=new URL(request.url);
+ const channelId=url.searchParams.get("channel");
+ if(!channelId||!/^[0-9]+$/.test(channelId))return json({success:false,error:"Ungültiger Kanal."},400);
+ const r=await discordFetch(`/channels/${channelId}/messages?limit=50`,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}});
+ if(!r.ok){console.error("Discord messages error",r.status,await r.text());return json({success:false,error:"Nachrichten konnten nicht geladen werden."},502)}
+ const messages=await r.json();
+ return json({success:true,messages:messages.reverse().map(m=>({id:m.id,content:m.content||"",author:{id:m.author?.id||"",name:m.author?.global_name||m.author?.username||"Unbekannt",avatar:m.author?.avatar||null},timestamp:m.timestamp,attachments:(m.attachments||[]).map(a=>({url:a.url,name:a.filename}))}))});
+}
+
+async function discordSendMessage(request,env){
+ const s=await readSession(request,env.SESSION_SECRET);
+ if(!s)return json({success:false,error:"Nicht angemeldet."},401);
+ if(!env.DISCORD_BOT_TOKEN)return json({success:false,error:"Discord Bot ist nicht konfiguriert."},500);
+ let body;try{body=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}
+ const channelId=String(body.channelId||"");
+ const message=clean(body.message,2000);
+ if(!/^[0-9]+$/.test(channelId)||!message)return json({success:false,error:"Kanal und Nachricht sind erforderlich."},400);
+ const r=await discordFetch(`/channels/${channelId}/messages`,{method:"POST",headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`,"Content-Type":"application/json"},body:JSON.stringify({content:message,allowed_mentions:{parse:[]}})});
+ if(!r.ok){console.error("Discord send error",r.status,await r.text());return json({success:false,error:"Nachricht konnte nicht gesendet werden."},502)}
+ const m=await r.json();
+ return json({success:true,message:{id:m.id,content:m.content||message,author:{id:m.author?.id||"",name:m.author?.global_name||m.author?.username||s.username,avatar:m.author?.avatar||null},timestamp:m.timestamp}});
 }
 
 async function createRequest(request,env){
