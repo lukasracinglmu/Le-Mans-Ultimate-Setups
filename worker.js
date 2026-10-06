@@ -81,9 +81,9 @@ async function serveHome(request,env){
 
  const injection=String.raw`
 <style>
-main{max-width:1400px!important;margin:0 auto!important;padding:10px 12px 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 380px!important;gap:14px!important;align-items:start!important}
-main>.content{min-width:0;padding:50px 12px 40px}
-main>.discord-area{height:calc(100vh - 84px);min-height:650px;background:#ed1c24;padding:4px;position:sticky;top:74px;border:1px solid #111;z-index:5}
+main{width:min(1400px,calc(100% - 24px))!important;max-width:1400px!important;margin:0 auto!important;padding:10px 0 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 360px!important;gap:14px!important;align-items:start!important}
+main>.content{grid-column:1!important;grid-row:1!important;min-width:0;padding:40px 12px 40px}
+main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24;padding:4px;position:sticky;top:74px;margin:0;align-self:start;border:1px solid #111;z-index:5}
 .discord-area{color:#dbdee1;font-family:Arial,Helvetica,sans-serif}
 .discord-client{height:100%;background:#313338;display:flex;flex-direction:column;overflow:hidden}
 .discord-topbar{height:52px;flex:0 0 52px;background:#2b2d31;border-bottom:1px solid #1f2023;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
@@ -117,8 +117,8 @@ main>.discord-area{height:calc(100vh - 84px);min-height:650px;background:#ed1c24
 .discord-error,.discord-empty{color:#949ba4;font-size:12px;line-height:1.4;padding:20px 8px;text-align:center}
 .discord-status{padding:6px 10px 0;color:#949ba4;font-size:10px}
 #homePage .request-section{display:none!important}
-@media(max-width:950px){main{grid-template-columns:1fr!important}main>.discord-area{position:relative;top:auto;height:600px;min-height:600px;order:2}}
-@media(max-width:650px){main{padding:0 10px 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
+@media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative;top:auto;width:100%!important;height:600px;min-height:600px;max-height:600px;order:2}}
+@media(max-width:650px){main{width:calc(100% - 20px)!important;padding:0 0 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
 </style>
 <script>
 (function(){
