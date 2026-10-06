@@ -73,12 +73,14 @@ async function serveHome(request,env){
  const type=response.headers.get("content-type")||"";
  if(!type.includes("text/html"))return response;
  const html=await response.text();
+ const session=env.SESSION_SECRET?await readSession(request,env.SESSION_SECRET):null;
+ const pageHtml=session?html.replace('id="loginButton"\n       href="/auth/discord"','id="loginButton"\n       style="display:none;"\n       href="/auth/discord"'):html;
 
  const injection=String.raw`
 <style>
 main{position:relative!important;width:min(1400px,calc(100% - 24px))!important;max-width:1400px!important;margin:0 auto!important;padding:10px 0 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 360px!important;gap:14px!important;align-items:start!important}
 main>.content{grid-column:1!important;grid-row:1!important;min-width:0;padding:40px 12px 40px}
-main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:absolute!important;top:0!important;right:0!important;margin:0!important;align-self:start!important;border:1px solid #111!important;z-index:5!important}
+main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!important;height:600px!important;min-height:600px!important;max-height:600px!important;background:#ed1c24!important;padding:4px!important;position:fixed!important;top:74px!important;right:max(12px,calc((100vw - 1400px)/2))!important;margin:0!important;align-self:start!important;border:1px solid #111!important;z-index:19!important}
 .discord-area{color:#dbdee1;font-family:Arial,Helvetica,sans-serif}
 .discord-client{height:100%;background:#313338;display:flex;flex-direction:column;overflow:hidden}
 .discord-topbar{height:52px;flex:0 0 52px;background:#2b2d31;border-bottom:1px solid #1f2023;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
@@ -112,7 +114,7 @@ main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!impo
 .discord-error,.discord-empty{color:#949ba4;font-size:12px;line-height:1.4;padding:20px 8px;text-align:center}
 .discord-status{padding:6px 10px 0;color:#949ba4;font-size:10px}
 #homePage .request-section{display:none!important}
-@media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative!important;top:auto!important;right:auto!important;width:100%!important;height:600px;min-height:600px;max-height:600px;order:2}}
+@media(max-width:950px){main{grid-template-columns:1fr!important}main>.content{grid-column:1!important;grid-row:1!important}main>.discord-area{grid-column:1!important;grid-row:2!important;position:relative!important;top:auto!important;right:auto!important;width:100%!important;height:600px!important;min-height:600px!important;max-height:600px!important;order:2}}
 @media(max-width:650px){main{width:calc(100% - 20px)!important;padding:0 0 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
 </style>
 <script>
@@ -144,7 +146,7 @@ main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!impo
   try{
    const me=await fetch("/api/me",{cache:"no-store"}).then(r=>r.json());
    if(!me.loggedIn)return;
-   document.getElementById("loginButton")?.classList.add("hidden");
+   const loginButton=document.getElementById("loginButton"); if(loginButton)loginButton.style.display="none";
    const account=document.getElementById("account");
    if(account)account.style.display="flex";
    const name=document.getElementById("accountName");
@@ -205,7 +207,7 @@ main>.discord-area{grid-column:2!important;grid-row:1!important;width:360px!impo
  init();
 })();
 </script>`;
- return new Response(html.replace("</body>",injection+"</body>"),response);
+ return new Response(pageHtml.replace("</body>",injection+"</body>"),response);
 }
 async function channelInfo(request,env){
  const s=await readSession(request,env.SESSION_SECRET);
