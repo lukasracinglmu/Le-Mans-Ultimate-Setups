@@ -2,256 +2,946 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111111">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LMU Setups</title>
-<style>\n*{box-sizing:border-box}
-:root{
- --bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;--text:#111111;--muted:#666666;
- --line:#dddddd;--accent:#5865f2;--accent2:#4752c4;--dark:#111111;--shadow:none
+
+<style>
+* {
+  box-sizing: border-box;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-a{color:inherit}
-.site-header{height:64px;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);background:var(--surface);color:var(--text)}
-.header-inner{height:100%;max-width:1100px;margin:auto;padding:0 28px;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:0;font-weight:700;letter-spacing:.5px;text-decoration:none}
-.brand-mark{display:none}
-.brand-text{font-size:18px}
-.header-actions{display:flex;align-items:center;gap:10px}
-.header-btn,.login-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px;text-decoration:none}
-.header-btn:hover{background:var(--surface2)}
-.login-btn{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:400}
-.login-btn:hover{background:var(--accent2)}
-.user{display:none;align-items:center;gap:8px}
-.user-name{font-size:14px;color:var(--muted)}
-.user button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px}
-.user button:hover{background:var(--surface2)}
-.container{max-width:1100px;margin:0 auto;padding:0 24px}
-.hero{padding:0;margin:0 0 40px;border:0}
-.kicker{display:none}
-.hero h1{margin:0 0 10px;font-size:42px;line-height:1.1;letter-spacing:-1px;max-width:none}
-.hero p{margin:0;color:var(--muted);font-size:17px;line-height:1.4;max-width:none}
-.search-wrap{padding:0;margin-bottom:35px}
-.search{width:100%;height:auto;padding:14px 16px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);outline:none;box-shadow:none}
-.search::placeholder{color:var(--muted)}
-.search:focus{border-color:var(--accent)}
-.section{margin-bottom:42px}
-.section-head{display:block;margin-bottom:16px}
-.section h2{font-size:21px;margin:0}
-.count{display:none}
-.vehicle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.vehicle{min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:18px;display:block;text-align:left;box-shadow:none;transition:border-color .15s ease;cursor:pointer}
-.vehicle:hover{border-color:var(--accent);transform:none}
-.vehicle-name{font-weight:600;line-height:1.25}
-.vehicle-bottom{display:block;margin-top:7px;color:var(--muted);font-size:13px}
-.vehicle-arrow{display:none}
-.empty{color:var(--muted);padding:25px 0}
-.page{display:none;padding:60px 0 80px}
-.page.active{display:block}
-#home{padding-top:60px}
-.back{margin-bottom:25px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px;font-weight:400}
-.back:hover{background:var(--surface2)}
-.detail-top{border:0;padding:0;margin:0 0 30px}
-.detail-class{display:none}
-.detail-title{margin:0 0 8px;font-size:42px;letter-spacing:-1px}
-.detail-meta{color:var(--muted);margin:0}
-.setup-list{display:block}
-.setup{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:17px 18px;margin-bottom:10px;box-shadow:none}
-.setup-track{font-weight:600}
-.setup-meta{margin-top:6px;color:var(--muted);font-size:13px}
-.download{white-space:nowrap;text-decoration:none;background:var(--text);color:var(--bg);padding:9px 13px;border-radius:7px;font-size:14px;min-width:auto}
-.download:hover{opacity:1}
-.request{margin-top:55px;padding-top:35px;border-top:1px solid var(--line)}
-.request h2{margin-top:0;font-size:24px}
-.request p{color:var(--muted);font-size:14px;line-height:1.5}
-.login-required{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:25px;color:var(--muted)}
-.channel-box{margin:0 0 20px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:18px;box-shadow:none}
-.channel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.channel-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:5px}
-.channel-name{font-size:17px;font-weight:600}
-.channel-link{display:inline-flex;align-items:center;justify-content:center;padding:9px 13px;border:1px solid var(--line);border-radius:8px;background:var(--surface);text-decoration:none;font-size:14px}
-.channel-link:hover{background:var(--surface2);border-color:var(--line)}
-.channel-status{font-size:13px;color:var(--muted);margin-top:8px}
-.request-form{max-width:650px}
-.field{margin-bottom:0}
-.field label{display:block;margin:18px 0 7px;font-size:14px;font-weight:600}
-.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--surface);color:var(--text);outline:none}
-.field input:focus,.field textarea:focus{border-color:var(--accent)}
-.field textarea{min-height:120px;resize:vertical}
-.submit{margin-top:18px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 13px;font-weight:400}
-.submit:hover{background:var(--accent2)}
-.result{margin-top:12px;font-size:14px}
-footer{border-top:1px solid var(--line);padding:24px 0 35px;color:var(--muted);font-size:12px}
-.hidden{display:none!important}
-.theme-picker{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
-.theme-picker.open{display:flex}
-.theme-panel{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:22px}
-.theme-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px}
-.theme-head h2{margin:0 0 5px;font-size:22px}
-.theme-head p{margin:0;color:var(--muted);font-size:13px}
-.theme-close{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px}
-.theme-close:hover{background:var(--surface2)}
-.theme-section{margin-top:22px}
-.theme-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;color:var(--muted)}
-.theme-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.theme-card{border:2px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--text);padding:0;overflow:hidden;text-align:left;min-width:0}
-.theme-card.active{border-color:var(--accent)}
-.theme-preview{height:72px;padding:10px;display:flex;gap:6px;align-items:flex-end}
-.theme-preview span{display:block;height:34px;flex:1;border-radius:3px}
-.theme-preview .preview-main{height:48px;flex:1.8}
-.theme-card-label{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;font-size:12px;font-weight:700}
-.theme-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
-@media(max-width:900px){.theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){
- .site-header{height:64px}.header-inner{padding:0 15px}.brand-text{font-size:18px}.header-actions{gap:6px}
- .header-btn,.login-btn,.user button{padding:8px 9px;font-size:12px}.user-name{display:none}
- .container{padding:0 15px}.page{padding:40px 0 60px}#home{padding-top:40px}
- .hero h1{font-size:34px}.hero p{font-size:17px}
- .vehicle-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
- .setup{align-items:flex-start;flex-direction:column}.download{width:100%;text-align:center}
- .channel-head{align-items:flex-start;flex-direction:column}.channel-link{width:100%}
- .theme-panel{padding:17px}
-}\n</style>
+
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-2: #f0f0f0;
+  --text: #111111;
+  --muted: #666666;
+  --border: #dddddd;
+  --accent: #5865f2;
+}
+
+[data-theme="dark"] {
+  --bg: #111111;
+  --surface: #191919;
+  --surface-2: #222222;
+  --text: #f5f5f5;
+  --muted: #999999;
+  --border: #303030;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+header {
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--surface-2);
+}
+
+.discord-button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.discord-button:hover {
+  background: #4752c4;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+}
+
+.hero {
+  margin-bottom: 40px;
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+  font-size: 42px;
+  letter-spacing: -1px;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.search {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  margin-bottom: 35px;
+}
+
+.search:focus {
+  border-color: var(--accent);
+}
+
+.category {
+  margin-bottom: 42px;
+}
+
+.category h2 {
+  font-size: 21px;
+  margin-bottom: 16px;
+}
+
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.vehicle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 18px;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+
+.vehicle:hover {
+  border-color: var(--accent);
+}
+
+.vehicle-name {
+  font-weight: 600;
+}
+
+.vehicle-class {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+.back {
+  margin-bottom: 25px;
+}
+
+.car-title {
+  margin-bottom: 8px;
+}
+
+.car-subtitle {
+  color: var(--muted);
+  margin-bottom: 30px;
+}
+
+.setup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 17px 18px;
+  margin-bottom: 10px;
+}
+
+.setup-info {
+  min-width: 0;
+}
+
+.setup-track {
+  font-weight: 600;
+}
+
+.setup-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.download {
+  white-space: nowrap;
+  text-decoration: none;
+  background: var(--text);
+  color: var(--bg);
+  padding: 9px 13px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+.empty {
+  color: var(--muted);
+  padding: 25px 0;
+}
+
+.account {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-name {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.request-section {
+  margin-top: 55px;
+  padding-top: 35px;
+  border-top: 1px solid var(--border);
+}
+
+.request-section h2 {
+  margin-top: 0;
+}
+
+.request-form {
+  max-width: 650px;
+}
+
+.request-form label {
+  display: block;
+  margin: 18px 0 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.request-form input,
+.request-form textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.request-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.request-message {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.login-required {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 25px;
+  color: var(--muted);
+}
+
+.channel-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.channel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.channel-label {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.channel-name {
+  font-weight: 600;
+}
+
+.channel-link {
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 13px;
+}
+
+.channel-link:hover {
+  background: var(--surface-2);
+}
+
+.channel-status {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 650px) {
+  header {
+    padding: 0 15px;
+  }
+
+  main {
+    padding: 40px 15px 60px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+  }
+
+  .account-name {
+    display: none;
+  }
+
+  .setup {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .download {
+    width: 100%;
+    text-align: center;
+  }
+
+  .channel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .channel-link {
+    width: 100%;
+    text-align: center;
+  }
+}
+</style>
 </head>
+
 <body>
-<header class="site-header">
-<div class="header-inner">
-<a class="brand" href="/" onclick="showHome();return false" aria-label="LMU Setups Startseite"><span class="brand-mark">LMU</span><span class="brand-text">SETUPS</span></a>
-<div class="header-actions">
-<div id="user" class="user"><span id="userName" class="user-name"></span><button onclick="logout()">Logout</button></div>
-<a id="login" class="login-btn" href="/auth/discord">Discord Login</a>
-<button class="header-btn" onclick="openThemePicker()">Design</button>
-</div>
-</div>
+
+<header>
+  <div class="logo">LMU SETUPS</div>
+
+  <div class="header-actions">
+    <div id="account" class="account">
+      <span id="accountName" class="account-name"></span>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <a id="loginButton"
+       href="/auth/discord"
+       style="text-decoration:none;">
+      <button class="discord-button">Mit Discord anmelden</button>
+    </a>
+
+    <button onclick="toggleTheme()" id="themeButton">Dark Mode</button>
+  </div>
 </header>
 
-<main class="container">
-<section id="home" class="page active">
-<div class="hero"><div class="kicker">Le Mans Ultimate</div><h1>Setups, die auf die Strecke gehören.</h1><p>Eine zentrale Setup-Datenbank für LMU. Fahrzeug auswählen, Strecke auswählen und Setup herunterladen.</p></div>
-<div id="categories"></div>
-<div class="request"><h2>Setup Request</h2><p>Fehlt dir ein Setup? Eingeloggte Mitglieder können hier direkt einen Request an den Discord-Setup-Kanal senden.</p><div id="loginRequired" class="login-required">Melde dich mit Discord an, um den Setup-Request-Kanal zu sehen und einen Request zu senden.</div><div id="channelBox" class="channel-box hidden"><div class="channel-head"><div><div class="channel-label">Discord Setup-Request-Kanal</div><div id="channelName" class="channel-name">#setup-request-test</div></div><a id="channelLink" class="channel-link" href="#" target="_blank" rel="noopener">In Discord öffnen</a></div><div id="channelStatus" class="channel-status">Der hinterlegte Kanal ist aktiv.</div></div>
-<form id="requestForm" class="request-form hidden"><div class="field"><label for="vehicle">Fahrzeug</label><input id="vehicle" maxlength="100" required placeholder="z. B. Porsche 963"></div><div class="field"><label for="track">Strecke</label><input id="track" maxlength="100" required placeholder="z. B. Le Mans"></div><div class="field"><label for="message">Nachricht</label><textarea id="message" maxlength="1000" placeholder="Optional: Was soll das Setup können?"></textarea></div><button class="submit" type="submit">Request senden</button><div id="result" class="result"></div></form>
-</div>
-</section>
-<section id="car" class="page"><button class="back" onclick="showHome()">← Alle Fahrzeuge</button><div class="detail-top"><div id="carClass" class="detail-class"></div><h1 id="carTitle" class="detail-title"></h1><div id="carMeta" class="detail-meta"></div></div><div id="setupList" class="setup-list"></div></section>
-</main>
-<footer><div class="container">LMU Setups · Le Mans Ultimate Setup Database</div></footer>
+<main>
 
-<div id="themePicker" class="theme-picker" onclick="if(event.target===this)closeThemePicker()">
-<div class="theme-panel">
-<div class="theme-head"><div><h2>Design auswählen</h2><p>Wähle unabhängig voneinander ein Light- und ein Dark-Design.</p></div><button class="theme-close" onclick="closeThemePicker()">Schließen</button></div>
-<div class="theme-section"><h3>Light Mode</h3><div id="lightThemes" class="theme-grid"></div></div>
-<div class="theme-section"><h3>Dark Mode</h3><div id="darkThemes" class="theme-grid"></div></div>
-</div>
-</div>
+  <!-- HOME -->
+  <section id="homePage" class="page active">
+
+    <div class="hero">
+      <h1>LMU Setups</h1>
+      <p>Setups für Le Mans Ultimate.</p>
+    </div>
+
+    <input
+      id="search"
+      class="search"
+      type="text"
+      placeholder="Fahrzeug suchen..."
+      oninput="searchVehicles()"
+    >
+
+    <div id="categories"></div>
+
+    <div class="request-section">
+
+      <h2>Setup Request</h2>
+
+      <div id="requestLoginRequired" class="login-required">
+        Melde dich mit Discord an, um einen Setup Request zu senden.
+      </div>
+
+      <div id="channelBox" class="channel-box hidden">
+        <div class="channel-head">
+          <div>
+            <div class="channel-label">Discord Setup-Request-Kanal</div>
+            <div id="channelName" class="channel-name">#setup-request-test</div>
+          </div>
+
+          <a
+            id="channelLink"
+            class="channel-link"
+            href="#"
+            target="_blank"
+            rel="noopener"
+          >
+            In Discord öffnen
+          </a>
+        </div>
+
+        <div id="channelStatus" class="channel-status">
+          Der hinterlegte Kanal ist aktiv.
+        </div>
+      </div>
+
+      <form id="requestForm" class="request-form hidden">
+
+        <label for="requestVehicle">Fahrzeug</label>
+        <input
+          id="requestVehicle"
+          type="text"
+          placeholder="z. B. Porsche 963"
+          required
+        >
+
+        <label for="requestTrack">Strecke</label>
+        <input
+          id="requestTrack"
+          type="text"
+          placeholder="z. B. Le Mans"
+          required
+        >
+
+        <label for="requestMessage">Nachricht (optional)</label>
+        <textarea
+          id="requestMessage"
+          placeholder="z. B. Bitte ein stabiles Wet-Setup."
+        ></textarea>
+
+        <button type="submit" class="discord-button">
+          Request senden
+        </button>
+
+        <div id="requestMessageResult" class="request-message"></div>
+
+      </form>
+
+    </div>
+
+  </section>
+
+  <!-- CAR PAGE -->
+  <section id="carPage" class="page">
+
+    <button class="back" onclick="showHome()">← Zurück</button>
+
+    <h1 id="carTitle" class="car-title"></h1>
+    <div id="carSubtitle" class="car-subtitle"></div>
+
+    <div id="setupList"></div>
+
+  </section>
+
+</main>
 
 <script>
-let data={};
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-const attr=v=>esc(v);
-function setupCount(v){return Array.isArray(v.setups)?v.setups.length:0}
+let setupData = {};
+let currentUser = null;
 
-const themes={
-light:{
- classic:{name:"Classic",bg:"#f4f4f2",surface:"#ffffff",surface2:"#eeeeeb",text:"#111111",muted:"#60605c",line:"#d8d8d2",accent:"#d71920"},
- pitlane:{name:"Pitlane",bg:"#f2f4f7",surface:"#ffffff",surface2:"#e8edf2",text:"#10151a",muted:"#59636d",line:"#cfd6dd",accent:"#e23b20"},
- paddock:{name:"Paddock",bg:"#f3f1eb",surface:"#fffdf8",surface2:"#ebe7dc",text:"#191814",muted:"#6b675d",line:"#d8d1c2",accent:"#b36b20"},
- apex:{name:"Apex",bg:"#f3f4f1",surface:"#ffffff",surface2:"#e9ece7",text:"#101612",muted:"#59645c",line:"#d1d7d1",accent:"#177245"},
- silver:{name:"Silver",bg:"#eef0f2",surface:"#ffffff",surface2:"#e2e5e8",text:"#171a1d",muted:"#5e646a",line:"#cbd0d5",accent:"#2457a6"}
-},
-dark:{
-night:{name:"Night",bg:"#0b0d10",surface:"#15191e",surface2:"#1d232a",text:"#f7f8fa",muted:"#b8c0c9",line:"#353d46",accent:"#ff3b45"},
-carbon:{name:"Carbon",bg:"#0d0d0e",surface:"#171718",surface2:"#222224",text:"#f5f5f4",muted:"#b5b5b2",line:"#373737",accent:"#f04a23"},
-blue:{name:"Blue Hour",bg:"#08111d",surface:"#101d2c",surface2:"#17283b",text:"#f2f7fc",muted:"#b5c5d5",line:"#30465b",accent:"#49a6ff"},
-racing:{name:"Racing",bg:"#100d0d",surface:"#1c1515",surface2:"#291d1d",text:"#fff7f5",muted:"#d0b8b3",line:"#493433",accent:"#ff4b38"},
-graphite:{name:"Graphite",bg:"#151515",surface:"#202020",surface2:"#2b2b2b",text:"#fafafa",muted:"#c2c2c2",line:"#454545",accent:"#ffb020"}
-}};
+const categoriesContainer =
+  document.getElementById("categories");
 
-function applyTheme(mode,name){
- const t=themes[mode][name]||themes[mode][Object.keys(themes[mode])[0]];
- document.documentElement.dataset.theme=mode;
- const root=document.documentElement.style;
- root.setProperty("--bg",t.bg);root.setProperty("--surface",t.surface);root.setProperty("--surface2",t.surface2);
- root.setProperty("--text",t.text);root.setProperty("--muted",t.muted);root.setProperty("--line",t.line);root.setProperty("--accent",t.accent);
- root.setProperty("--accent2",t.accent);
- root.setProperty("--dark",t.text);
- localStorage.setItem("lmu-"+mode+"-theme",name);localStorage.setItem("lmu-theme-mode",mode);
- document.querySelector('meta[name="theme-color"]').setAttribute("content",t.bg);
- renderThemeCards();
+const searchInput =
+  document.getElementById("search");
+
+const requestForm =
+  document.getElementById("requestForm");
+
+const requestLoginRequired =
+  document.getElementById("requestLoginRequired");
+
+async function loadSetups() {
+  try {
+    const response = await fetch("setups.json");
+
+    if (!response.ok) {
+      throw new Error("setups.json konnte nicht geladen werden.");
+    }
+
+    setupData = await response.json();
+
+    renderCategories();
+
+  } catch (error) {
+    categoriesContainer.innerHTML =
+      '<div class="empty">Setups konnten nicht geladen werden.</div>';
+
+    console.error(error);
+  }
 }
-function currentTheme(mode){return localStorage.getItem("lmu-"+mode+"-theme")||Object.keys(themes[mode])[0]}
-function renderThemeCards(){
- ["light","dark"].forEach(mode=>{
-  const box=$(mode==="light"?"lightThemes":"darkThemes");box.innerHTML="";
-  Object.entries(themes[mode]).forEach(([key,t])=>{
-   const b=document.createElement("button");b.className="theme-card"+(currentTheme(mode)===key?" active":"");
-   b.innerHTML='<div class="theme-preview" style="background:'+t.bg+'"><span style="background:'+t.surface2+'"></span><span class="preview-main" style="background:'+t.surface+'"></span><span style="background:'+t.accent+'"></span></div><div class="theme-card-label"><span>'+esc(t.name)+'</span><span class="theme-dot" style="background:'+t.accent+'"></span></div>';
-   b.onclick=()=>{localStorage.setItem("lmu-"+mode+"-theme",key);applyTheme(mode,key);};
-   box.appendChild(b);
+
+function renderCategories(filter = "") {
+
+  categoriesContainer.innerHTML = "";
+
+  const search =
+    filter.trim().toLowerCase();
+
+  Object.entries(setupData).forEach(
+    ([category, vehicles]) => {
+
+      const filteredVehicles =
+        vehicles.filter(vehicle =>
+          vehicle.name.toLowerCase().includes(search)
+        );
+
+      if (!filteredVehicles.length) {
+        return;
+      }
+
+      const section =
+        document.createElement("section");
+
+      section.className = "category";
+
+      section.innerHTML =
+        `<h2>${escapeHtml(category)}</h2>`;
+
+      const grid =
+        document.createElement("div");
+
+      grid.className = "vehicle-grid";
+
+      filteredVehicles.forEach(vehicle => {
+
+        const card =
+          document.createElement("div");
+
+        card.className = "vehicle";
+
+        card.innerHTML = `
+          <div class="vehicle-name">
+            ${escapeHtml(vehicle.name)}
+          </div>
+          <div class="vehicle-class">
+            ${escapeHtml(category)}
+          </div>
+        `;
+
+        card.onclick = () =>
+          showCar(category, vehicle.name);
+
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      categoriesContainer.appendChild(section);
+    }
+  );
+
+  if (!categoriesContainer.children.length) {
+    categoriesContainer.innerHTML =
+      '<div class="empty">Kein Fahrzeug gefunden.</div>';
+  }
+}
+
+function searchVehicles() {
+  renderCategories(searchInput.value);
+}
+
+function showCar(category, vehicleName) {
+
+  const vehicle =
+    setupData[category].find(
+      item => item.name === vehicleName
+    );
+
+  if (!vehicle) {
+    return;
+  }
+
+  document.getElementById("homePage")
+    .classList.remove("active");
+
+  document.getElementById("carPage")
+    .classList.add("active");
+
+  document.getElementById("carTitle")
+    .textContent = vehicle.name;
+
+  document.getElementById("carSubtitle")
+    .textContent = category;
+
+  const list =
+    document.getElementById("setupList");
+
+  list.innerHTML = "";
+
+  if (!vehicle.setups || vehicle.setups.length === 0) {
+
+    list.innerHTML =
+      '<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>';
+
+    return;
+  }
+
+  vehicle.setups.forEach(setup => {
+
+    const element =
+      document.createElement("div");
+
+    element.className = "setup";
+
+    element.innerHTML = `
+      <div class="setup-info">
+        <div class="setup-track">
+          ${escapeHtml(setup.track)}
+        </div>
+
+        <div class="setup-meta">
+          v${escapeHtml(setup.version)}
+          · ${escapeHtml(setup.date)}
+        </div>
+      </div>
+
+      <a
+        class="download"
+        href="${escapeAttribute(setup.download)}"
+        download
+      >
+        Download
+      </a>
+    `;
+
+    list.appendChild(element);
   });
- }
 }
-function openThemePicker(){renderThemeCards();$("themePicker").classList.add("open")}
-function closeThemePicker(){$("themePicker").classList.remove("open")}
-function toggleTheme(){
- const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
- applyTheme(next,currentTheme(next));
+
+function showHome() {
+
+  document.getElementById("carPage")
+    .classList.remove("active");
+
+  document.getElementById("homePage")
+    .classList.add("active");
 }
-function initializeTheme(){
- const savedMode=localStorage.getItem("lmu-theme-mode")||"light";
- const mode=savedMode==="dark"?"dark":"light";
- applyTheme(mode,currentTheme(mode));
+
+async function loadChannel() {
+
+  try {
+
+    const response =
+      await fetch("/api/channel", {
+        cache: "no-store"
+      });
+
+    const data =
+      await response.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.error ||
+        "Channel konnte nicht geladen werden."
+      );
+    }
+
+    document.getElementById("channelName")
+      .textContent =
+        "#" + data.channel.name;
+
+    document.getElementById("channelLink")
+      .href =
+        "https://discord.com/channels/1367893409234161846/" +
+        encodeURIComponent(data.channel.id);
+
+    document.getElementById("channelStatus")
+      .textContent =
+        "Dieser Kanal ist für Setup Requests hinterlegt.";
+
+  } catch (error) {
+
+    document.getElementById("channelName")
+      .textContent =
+        "#setup-request-test";
+
+    document.getElementById("channelStatus")
+      .textContent =
+        "Der hinterlegte Kanal konnte gerade nicht geladen werden.";
+
+    console.error(error);
+  }
 }
-async function loadData(){
- try{const r=await fetch("/setups.json",{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);data=await r.json();render()}
- catch(e){$("categories").innerHTML='<div class="empty">Die Setup-Daten konnten nicht geladen werden.</div>';console.error(e)}
+
+async function checkLogin() {
+
+  try {
+
+    const response =
+      await fetch("/api/me", {
+        cache: "no-store"
+      });
+
+    const data =
+      await response.json();
+
+    if (data.loggedIn) {
+
+      currentUser = data.user;
+
+      document.getElementById("loginButton")
+        .classList.add("hidden");
+
+      document.getElementById("account")
+        .style.display = "flex";
+
+      document.getElementById("accountName")
+        .textContent =
+          data.user.username;
+
+      requestLoginRequired
+        .classList.add("hidden");
+
+      document.getElementById("channelBox")
+        .classList.remove("hidden");
+
+      requestForm
+        .classList.remove("hidden");
+
+      loadChannel();
+
+    } else {
+
+      currentUser = null;
+
+      document.getElementById("loginButton")
+        .classList.remove("hidden");
+
+      document.getElementById("account")
+        .style.display = "none";
+
+      requestLoginRequired
+        .classList.remove("hidden");
+
+      document.getElementById("channelBox")
+        .classList.add("hidden");
+
+      requestForm
+        .classList.add("hidden");
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Login Status konnte nicht geprüft werden.",
+      error
+    );
+  }
 }
-function render(){
- $("categories").innerHTML="";
- for(const [category,vehicles] of Object.entries(data)){
-  const list=vehicles;
-  const section=document.createElement("section");section.className="section";
-  section.innerHTML='<div class="section-head"><h2>'+esc(category)+'</h2><span class="count">'+list.length+' Fahrzeuge</span></div>';
-  const grid=document.createElement("div");grid.className="vehicle-grid";
-  list.forEach(v=>{const card=document.createElement("button");card.className="vehicle";const n=setupCount(v);card.innerHTML='<span class="vehicle-name">'+esc(v.name)+'</span><span class="vehicle-bottom"><span>'+n+' '+(n===1?"Setup":"Setups")+'</span><span class="vehicle-arrow">→</span></span>';card.onclick=()=>showCar(category,v.name);grid.appendChild(card)});
-  section.appendChild(grid);$("categories").appendChild(section);
- }
- if(!$("categories").children.length)$("categories").innerHTML='<div class="empty">Kein Fahrzeug gefunden.</div>';
+
+async function logout() {
+  window.location.href = "/auth/logout";
 }
-function showCar(category,name){
- const v=(data[category]||[]).find(x=>x.name===name);if(!v)return;
- $("home").classList.remove("active");$("car").classList.add("active");window.scrollTo(0,0);
- $("carClass").textContent=category;$("carTitle").textContent=v.name;const count=setupCount(v);$("carMeta").textContent=count+" "+(count===1?"Setup":"Setups")+" verfügbar";
- const list=$("setupList");list.innerHTML="";
- if(!count){list.innerHTML='<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>';return}
- v.setups.forEach(s=>{const row=document.createElement("div");row.className="setup";row.innerHTML='<div><div class="setup-track">'+esc(s.track)+'</div><div class="setup-meta">v'+esc(s.version)+' · '+esc(s.date)+'</div></div><a class="download" href="'+attr(s.download)+'" download>Download</a>';list.appendChild(row)});
+
+requestForm.addEventListener(
+  "submit",
+  async function(event) {
+
+    event.preventDefault();
+
+    const result =
+      document.getElementById(
+        "requestMessageResult"
+      );
+
+    result.textContent =
+      "Request wird gesendet...";
+
+    const vehicle =
+      document.getElementById(
+        "requestVehicle"
+      ).value.trim();
+
+    const track =
+      document.getElementById(
+        "requestTrack"
+      ).value.trim();
+
+    const message =
+      document.getElementById(
+        "requestMessage"
+      ).value.trim();
+
+    try {
+
+      const response =
+        await fetch("/api/request", {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            vehicle,
+            track,
+            message
+          })
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+
+        result.textContent =
+          data.error ||
+          "Request konnte nicht gesendet werden.";
+
+        return;
+      }
+
+      result.textContent =
+        "Setup Request wurde erfolgreich gesendet.";
+
+      requestForm.reset();
+
+    } catch (error) {
+
+      console.error(error);
+
+      result.textContent =
+        "Fehler beim Senden des Requests.";
+    }
+  }
+);
+
+function toggleTheme() {
+
+  const current =
+    document.documentElement
+      .getAttribute("data-theme");
+
+  const next =
+    current === "dark"
+      ? "light"
+      : "dark";
+
+  document.documentElement
+    .setAttribute(
+      "data-theme",
+      next
+    );
+
+  localStorage.setItem(
+    "lmu-theme",
+    next
+  );
+
+  document.getElementById(
+    "themeButton"
+  ).textContent =
+    next === "dark"
+      ? "Light Mode"
+      : "Dark Mode";
 }
-function showHome(){$("car").classList.remove("active");$("home").classList.add("active");window.scrollTo(0,0)}
-async function loadChannel(){
- try{const r=await fetch("/api/channel",{cache:"no-store"});const d=await r.json();
-  if(!d.success)throw new Error(d.error||"Channel konnte nicht geladen werden.");
-  $("channelName").textContent="#"+d.channel.name;
-  $("channelLink").href="https://discord.com/channels/1367893409234161846/"+encodeURIComponent(d.channel.id);
-  $("channelStatus").textContent="Dieser Kanal ist für Setup Requests hinterlegt.";
- }catch(e){$("channelName").textContent="#setup-request-test";$("channelStatus").textContent="Der hinterlegte Kanal konnte gerade nicht geladen werden.";console.error(e)}
+
+function loadTheme() {
+
+  const saved =
+    localStorage.getItem("lmu-theme");
+
+  const theme =
+    saved || "light";
+
+  document.documentElement
+    .setAttribute(
+      "data-theme",
+      theme
+    );
+
+  document.getElementById(
+    "themeButton"
+  ).textContent =
+    theme === "dark"
+      ? "Light Mode"
+      : "Dark Mode";
 }
-async function checkLogin(){
- try{const r=await fetch("/api/me",{cache:"no-store"});const d=await r.json();
-  if(d.loggedIn){$("login").classList.add("hidden");$("user").style.display="flex";$("userName").textContent=d.user.username;$("loginRequired").classList.add("hidden");$("channelBox").classList.remove("hidden");$("requestForm").classList.remove("hidden");loadChannel()}
-  else{$("login").classList.remove("hidden");$("user").style.display="none";$("loginRequired").classList.remove("hidden");$("channelBox").classList.add("hidden");$("requestForm").classList.add("hidden")}
- }catch(e){console.error(e)}
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
-function logout(){location.href="/auth/logout"}
-$("requestForm").addEventListener("submit",async e=>{
- e.preventDefault();$("result").textContent="Request wird gesendet …";
- try{const r=await fetch("/api/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vehicle:$("vehicle").value.trim(),track:$("track").value.trim(),message:$("message").value.trim()})});const d=await r.json();$("result").textContent=d.success?"Request wurde gesendet.":(d.error||"Request konnte nicht gesendet werden.");if(d.success)e.target.reset()}
- catch(err){$("result").textContent="Fehler beim Senden des Requests.";console.error(err)}
-});
-$("themePicker").addEventListener("keydown",e=>{if(e.key==="Escape")closeThemePicker()});
-initializeTheme();loadData();checkLogin();
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
+}
+
+loadTheme();
+loadSetups();
+checkLogin();
 </script>
+
 </body>
 </html>
