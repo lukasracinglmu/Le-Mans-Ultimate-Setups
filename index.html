@@ -526,6 +526,8 @@ main > .content {
   font-size: 10px;
 }
 
+.upload-area{display:flex;align-items:center;gap:10px;margin:18px 0 20px}.upload-button{border:0;background:#111;color:#fff;border-radius:6px;padding:10px 14px;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}.upload-button:hover{opacity:.85}.upload-status{font-size:12px;color:#666}.upload-status.error{color:#c00}.upload-status.success{color:#16803c}
+
 @media (max-width: 950px) {
   main {
     grid-template-columns: 1fr;
@@ -654,6 +656,12 @@ main > .content {
       <h1 id="carTitle" class="car-title"></h1>
       <div id="carSubtitle" class="car-subtitle"></div>
 
+      <div id="uploadArea" class="upload-area hidden">
+        <input id="setupFileInput" type="file" accept=".zip,application/zip" multiple hidden>
+        <button id="uploadButton" class="upload-button" type="button" onclick="document.getElementById('setupFileInput').click()">Setups hochladen</button>
+        <span id="uploadStatus" class="upload-status"></span>
+      </div>
+
       <div id="setupList"></div>
 
     </section>
@@ -731,6 +739,8 @@ let setupData = {};
 let currentUser = null;
 let discordChannels = [];
 let currentDiscordChannel = null;
+let currentCarCategory = null;
+let currentCarName = null;
 
 const categoriesContainer =
   document.getElementById("categories");
@@ -854,49 +864,72 @@ function showCar(category, vehicleName) {
   document.getElementById("carSubtitle")
     .textContent = category;
 
-  const list =
-    document.getElementById("setupList");
+  currentCarCategory = category;
+  currentCarName = vehicle.name;
+  const uploadArea=document.getElementById("uploadArea");
+  if(currentUser?.canUpload) uploadArea.classList.remove("hidden");
+  else uploadArea.classList.add("hidden");
+  document.getElementById("uploadStatus").textContent = "";
+  document.getElementById("uploadStatus").className = "upload-status";
+  loadVehicleSetups(category,vehicle.name);
+}
 
-  list.innerHTML = "";
 
-  if (!vehicle.setups || vehicle.setups.length === 0) {
-
-    list.innerHTML =
-      '<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>';
-
-    return;
+async function loadVehicleSetups(category,vehicleName){
+  const list=document.getElementById("setupList");
+  list.innerHTML='<div class="empty">Setups werden geladen...</div>';
+  try{
+    const response=await fetch("/api/setups?category="+encodeURIComponent(category)+"&vehicle="+encodeURIComponent(vehicleName),{cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok||!data.success)throw new Error(data.error||"Setups konnten nicht geladen werden.");
+    if(!data.setups.length){
+      list.innerHTML='<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>';
+      return;
+    }
+    list.innerHTML="";
+    data.setups.forEach(setup=>{
+      const element=document.createElement("div");
+      element.className="setup";
+      element.innerHTML=\`
+        <div class="setup-info">
+          <div class="setup-track">\${escapeHtml(setup.name)}</div>
+          <div class="setup-meta">ZIP-Setup</div>
+        </div>
+        <a class="download" href="\${escapeAttribute(setup.download)}" download>Download</a>\`;
+      list.appendChild(element);
+    });
+  }catch(error){
+    list.innerHTML='<div class="empty">'+escapeHtml(error.message)+'</div>';
   }
+}
 
-  vehicle.setups.forEach(setup => {
-
-    const element =
-      document.createElement("div");
-
-    element.className = "setup";
-
-    element.innerHTML = `
-      <div class="setup-info">
-        <div class="setup-track">
-          ${escapeHtml(setup.track)}
-        </div>
-
-        <div class="setup-meta">
-          v${escapeHtml(setup.version)}
-          · ${escapeHtml(setup.date)}
-        </div>
-      </div>
-
-      <a
-        class="download"
-        href="${escapeAttribute(setup.download)}"
-        download
-      >
-        Download
-      </a>
-    `;
-
-    list.appendChild(element);
-  });
+document.getElementById("setupFileInput").addEventListener("change",async function(){
+  const files=[...this.files];
+  const status=document.getElementById("uploadStatus");
+  const button=document.getElementById("uploadButton");
+  if(!files.length)return;
+  if(!currentUser?.canUpload){status.textContent="Keine Upload-Berechtigung.";status.className="upload-status error";this.value="";return;}
+  button.disabled=true;
+  status.className="upload-status";
+  status.textContent=files.length===1?"Upload läuft...":files.length+" Setups werden hochgeladen...";
+  try{
+    const form=new FormData();
+    form.append("category",currentCarCategory);
+    form.append("vehicle",currentCarName);
+    files.forEach(file=>form.append("files",file,file.name));
+    const response=await fetch("/api/setups/upload",{method:"POST",body:form});
+    const data=await response.json();
+    if(!response.ok||!data.success)throw new Error(data.error||"Upload fehlgeschlagen.");
+    status.textContent=data.uploaded.length+" Setup(s) erfolgreich hochgeladen.";
+    status.className="upload-status success";
+    this.value="";
+    await loadVehicleSetups(currentCarCategory,currentCarName);
+  }catch(error){
+    status.textContent=error.message;
+    status.className="upload-status error";
+  }finally{
+    button.disabled=false;
+  }
 }
 
 function showHome() {
