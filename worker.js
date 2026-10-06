@@ -73,34 +73,142 @@ async function serveHome(request,env){
  const type=response.headers.get("content-type")||"";
  if(!type.includes("text/html"))return response;
  const html=await response.text();
- if(html.includes('id="channelBox"'))return new Response(html,response);
- const injected=`
-<div id="channelBox" style="display:none;margin:24px 0 20px;background:#fff;border:1px solid #d8d8d2;border-radius:7px;padding:16px;font-family:Arial,Helvetica,sans-serif">
- <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-  <div><div style="font-size:12px;color:#60605c;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:5px">Discord Setup-Request-Kanal</div><div id="channelName" style="font-size:17px;font-weight:800">#setup-request-test</div></div>
-  <a id="channelLink" href="https://discord.com/channels/1367893409234161846/1557002876906377258" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;padding:8px 11px;border:1px solid #d8d8d2;border-radius:6px;background:#eeeeeb;text-decoration:none;font-size:12px;font-weight:700;color:#111">In Discord öffnen</a>
- </div>
- <div id="channelStatus" style="font-size:12px;color:#60605c;margin-top:8px">Der hinterlegte Kanal ist aktiv.</div>
-</div>
+
+ // The current GitHub frontend already contains the Discord client.
+ // This fallback keeps the live Cloudflare asset compatible until the
+ // static assets are redeployed.
+ if(html.includes('id="discordClient"'))return new Response(html,response);
+
+ const injection=String.raw`
+<style>
+main{max-width:1400px!important;margin:0 auto!important;padding:10px 12px 40px!important;display:grid!important;grid-template-columns:minmax(0,1fr) 380px!important;gap:14px!important;align-items:start!important}
+main>.content{min-width:0;padding:50px 12px 40px}
+main>.discord-area{height:calc(100vh - 84px);min-height:650px;background:#ed1c24;padding:4px;position:sticky;top:74px;border:1px solid #111;z-index:5}
+.discord-area{color:#dbdee1;font-family:Arial,Helvetica,sans-serif}
+.discord-client{height:100%;background:#313338;display:flex;flex-direction:column;overflow:hidden}
+.discord-topbar{height:52px;flex:0 0 52px;background:#2b2d31;border-bottom:1px solid #1f2023;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.discord-server-name{font-size:15px;font-weight:700;color:#f2f3f5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.discord-online{font-size:11px;color:#949ba4}
+.discord-body{flex:1;min-height:0;display:grid;grid-template-columns:125px minmax(0,1fr)}
+.discord-channels{background:#2b2d31;overflow-y:auto;padding:12px 7px}
+.discord-category{color:#949ba4;font-size:10px;font-weight:700;text-transform:uppercase;margin:12px 6px 5px}
+.discord-category:first-child{margin-top:0}
+.discord-channel{width:100%;border:0;background:transparent;color:#949ba4;padding:7px;border-radius:4px;text-align:left;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.discord-channel:hover{background:#35373c;color:#dbdee1}
+.discord-channel.active{background:#404249;color:#fff}
+.discord-channel.voice{cursor:default}
+.discord-messages{min-width:0;min-height:0;display:flex;flex-direction:column;background:#313338}
+.discord-channel-header{height:52px;flex:0 0 52px;display:flex;align-items:center;gap:8px;padding:0 15px;border-bottom:1px solid #26272b;color:#f2f3f5;font-weight:700;font-size:14px}
+.discord-message-list{flex:1;overflow-y:auto;padding:12px 10px 8px}
+.discord-message{display:flex;gap:8px;padding:6px 3px;border-radius:4px}
+.discord-message:hover{background:rgba(0,0,0,.08)}
+.discord-avatar{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:#5865f2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.discord-message-content{min-width:0}
+.discord-author{font-size:12px;font-weight:700;color:#fff}
+.discord-time{margin-left:5px;color:#949ba4;font-size:9px;font-weight:400}
+.discord-text{margin-top:2px;color:#dbdee1;font-size:12px;line-height:1.35;word-break:break-word;white-space:pre-wrap}
+.discord-input{flex:0 0 auto;padding:9px;background:#313338}
+.discord-input form{display:flex;gap:6px}
+.discord-input input{min-width:0;flex:1;border:0;outline:0;border-radius:6px;background:#383a40;color:#dbdee1;padding:10px;font-size:12px}
+.discord-input button{border:0;border-radius:6px;background:#5865f2;color:#fff;padding:0 10px;font-size:12px}
+.discord-login{height:100%;display:flex;align-items:center;justify-content:center;padding:25px;text-align:center;background:#313338}
+.discord-login h2{margin:0 0 8px;color:#fff;font-size:19px}
+.discord-login p{color:#b5bac1;font-size:12px;line-height:1.45;margin:0 0 18px}
+.discord-error,.discord-empty{color:#949ba4;font-size:12px;line-height:1.4;padding:20px 8px;text-align:center}
+.discord-status{padding:6px 10px 0;color:#949ba4;font-size:10px}
+#homePage .request-section{display:none!important}
+@media(max-width:950px){main{grid-template-columns:1fr!important}main>.discord-area{position:relative;top:auto;height:600px;min-height:600px;order:2}}
+@media(max-width:650px){main{padding:0 10px 30px!important}main>.content{padding:40px 5px 10px}.discord-body{grid-template-columns:105px minmax(0,1fr)}.discord-channel{font-size:11px}}
+</style>
 <script>
-(async function(){
- try{
-  const me=await fetch("/api/me",{cache:"no-store"}).then(r=>r.json());
-  const box=document.getElementById("channelBox");
-  if(!box||!me.loggedIn)return;
-  const r=await fetch("/api/channel",{cache:"no-store"});
-  const d=await r.json();
-  box.style.display="block";
-  if(d.success){
-   document.getElementById("channelName").textContent="#"+d.channel.name;
-   document.getElementById("channelLink").href="https://discord.com/channels/1367893409234161846/"+encodeURIComponent(d.channel.id);
-  }
- }catch(e){}
+(function(){
+ const area=document.createElement("aside");
+ area.className="discord-area";
+ area.innerHTML=
+ '<div id="discordLogin" class="discord-login"><div><h2>Discord</h2><p>Melde dich mit Discord an, um den Discord-Server direkt hier zu öffnen.</p><a href="/auth/discord" style="text-decoration:none"><button class="discord-button">Mit Discord anmelden</button></a></div></div>'+
+ '<div id="discordClient" class="discord-client" style="display:none">'+
+ '<div class="discord-topbar"><div><div class="discord-server-name">LMU Discord</div><div class="discord-online">Verbunden</div></div></div>'+
+ '<div class="discord-body"><div id="discordChannels" class="discord-channels"><div class="discord-empty">Kanäle werden geladen...</div></div>'+
+ '<div class="discord-messages"><div class="discord-channel-header"># <span id="discordCurrentChannel">Kanal auswählen</span></div>'+
+ '<div id="discordMessageList" class="discord-message-list"><div class="discord-empty">Wähle links einen Kanal aus.</div></div>'+
+ '<div class="discord-input"><form id="discordMessageForm"><input id="discordMessageInput" maxlength="2000" autocomplete="off" placeholder="Nachricht schreiben..."><button>Senden</button></form><div id="discordStatus" class="discord-status"></div></div></div></div></div>';
+ const main=document.querySelector("main");
+ if(main){
+  const content=document.createElement("div");
+  content.className="content";
+  while(main.firstChild)content.appendChild(main.firstChild);
+  main.appendChild(content);
+  main.appendChild(area);
+ }
+ let channels=[],current=null;
+ const esc=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+ async function init(){
+  try{
+   const me=await fetch("/api/me",{cache:"no-store"}).then(r=>r.json());
+   if(!me.loggedIn)return;
+   document.getElementById("loginButton")?.classList.add("hidden");
+   const account=document.getElementById("account");
+   if(account)account.style.display="flex";
+   const name=document.getElementById("accountName");
+   if(name)name.textContent=me.user.username;
+   document.getElementById("discordLogin").style.display="none";
+   document.getElementById("discordClient").style.display="flex";
+   const r=await fetch("/api/discord/channels",{cache:"no-store"});
+   const d=await r.json();
+   if(!d.success)throw new Error(d.error||"Discord-Kanäle konnten nicht geladen werden.");
+   channels=d.channels||[];
+   renderChannels();
+   const first=channels.find(c=>[0,5,15].includes(c.type));
+   if(first)selectChannel(first.id);
+  }catch(e){document.getElementById("discordChannels").innerHTML='<div class="discord-error">'+esc(e.message)+'</div>';console.error(e)}
+ }
+ function renderChannels(){
+  const box=document.getElementById("discordChannels");box.innerHTML="";
+  const cats=new Map(channels.filter(c=>c.type===4).map(c=>[c.id,c.name]));
+  const groups={};
+  channels.filter(c=>c.type!==4).forEach(c=>(groups[c.parent_id||"__none"]??=[]).push(c));
+  Object.keys(groups).forEach(key=>{
+   const h=document.createElement("div");h.className="discord-category";h.textContent=key==="__none"?"Kanäle":(cats.get(key)||"Kanäle");box.appendChild(h);
+   groups[key].sort((a,b)=>(a.position||0)-(b.position||0)).forEach(c=>{
+    const b=document.createElement("button");b.className="discord-channel"+([2,13].includes(c.type)?" voice":"");b.textContent=([2,13].includes(c.type)?"🔊 ":"# ")+c.name;b.dataset.id=c.id;
+    if([0,5,15].includes(c.type))b.onclick=()=>selectChannel(c.id);else b.title="Dieser Kanal unterstützt hier keine Nachrichten.";
+    box.appendChild(b);
+   });
+  });
+ }
+ async function selectChannel(id){
+  const c=channels.find(x=>x.id===id);if(!c||![0,5,15].includes(c.type))return;current=id;
+  document.getElementById("discordCurrentChannel").textContent=c.name;
+  document.querySelectorAll(".discord-channel").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
+  await loadMessages(id);
+ }
+ async function loadMessages(id){
+  const list=document.getElementById("discordMessageList");list.innerHTML='<div class="discord-empty">Nachrichten werden geladen...</div>';
+  try{
+   const r=await fetch("/api/discord/messages?channel="+encodeURIComponent(id),{cache:"no-store"}),d=await r.json();
+   if(!d.success)throw new Error(d.error||"Nachrichten konnten nicht geladen werden.");
+   list.innerHTML="";
+   if(!d.messages.length){list.innerHTML='<div class="discord-empty">Noch keine Nachrichten in diesem Kanal.</div>';return}
+   d.messages.forEach(m=>{
+    const row=document.createElement("div");row.className="discord-message";
+    row.innerHTML='<div class="discord-avatar">'+esc((m.author.name||"?").trim().charAt(0).toUpperCase())+'</div><div class="discord-message-content"><div class="discord-author">'+esc(m.author.name)+' <span class="discord-time">'+esc(m.timestamp?new Date(m.timestamp).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")+'</span></div><div class="discord-text">'+esc(m.content)+'</div></div>';
+    list.appendChild(row);
+   });
+   list.scrollTop=list.scrollHeight;
+   document.getElementById("discordStatus").textContent="Verbunden mit Discord.";
+  }catch(e){list.innerHTML='<div class="discord-error">'+esc(e.message)+'</div>';console.error(e)}
+ }
+ document.addEventListener("submit",async e=>{
+  if(e.target.id!=="discordMessageForm")return;e.preventDefault();
+  const input=document.getElementById("discordMessageInput"),status=document.getElementById("discordStatus"),message=input.value.trim();
+  if(!current||!message)return;input.disabled=true;status.textContent="Nachricht wird gesendet...";
+  try{const r=await fetch("/api/discord/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:current,message})}),d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||"Nachricht konnte nicht gesendet werden.");input.value="";await loadMessages(current)}catch(e){status.textContent=e.message;console.error(e)}finally{input.disabled=false;input.focus()}
+ });
+ init();
 })();
 </script>`;
- return new Response(html.replace("</body>",injected+"</body>"),response);
+ return new Response(html.replace("</body>",injection+"</body>"),response);
 }
-
 async function channelInfo(request,env){
  const s=await readSession(request,env.SESSION_SECRET);
  if(!s)return json({success:false,error:"Nicht angemeldet."},401);
