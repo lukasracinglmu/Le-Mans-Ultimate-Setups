@@ -10,8 +10,11 @@
   "vars":{
     "DISCORD_CLIENT_ID":"1556978316404068452",
     "DISCORD_GUILD_ID":"1367893409234161846",
-    "DISCORD_ROLE_ID":"1464926567401652420",
+    "DISCORD_ROLE_ID":"1538601074074849330",
     "DISCORD_CHANNEL_ID":"1557002876906377258",
-    "SITE_URL":"https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev"
+    "SITE_URL":"https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev",
+    "GITHUB_OWNER":"lukasracinglmu",
+    "GITHUB_REPO":"Le-Mans-Ultimate-Setups",
+    "GITHUB_BRANCH":"main"
   }
 }
