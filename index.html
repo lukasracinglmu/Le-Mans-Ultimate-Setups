@@ -11,10 +11,6 @@
  --bg:#f4f4f2;--surface:#fff;--surface2:#f0f0ee;--text:#111;--muted:#60605c;
  --line:#d8d8d2;--accent:#d71920;--accent2:#b51218;--dark:#111;--shadow:0 2px 10px rgba(0,0,0,.05)
 }
-[data-theme=dark]{
- --bg:#0b0d10;--surface:#15191e;--surface2:#1d232a;--text:#f7f8fa;--muted:#b8c0c9;
- --line:#353d46;--dark:#f7f8fa;--shadow:0 2px 14px rgba(0,0,0,.28)
-}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
 button,input,textarea,select{font:inherit}
@@ -126,7 +122,6 @@ footer{border-top:1px solid var(--line);padding:24px 0 35px;color:var(--muted);f
 <main class="container">
 <section id="home" class="page active">
 <div class="hero"><div class="kicker">Le Mans Ultimate</div><h1>Setups, die auf die Strecke gehören.</h1><p>Eine zentrale Setup-Datenbank für LMU. Fahrzeug auswählen, Strecke auswählen und Setup herunterladen.</p></div>
-<div class="search-wrap"><input id="search" class="search" type="search" placeholder="Fahrzeug suchen …" autocomplete="off"></div>
 <div id="categories"></div>
 <div class="request"><h2>Setup Request</h2><p>Fehlt dir ein Setup? Eingeloggte Mitglieder können hier direkt einen Request an den Discord-Setup-Kanal senden.</p><div id="loginRequired" class="login-required">Melde dich mit Discord an, um einen Request zu senden.</div>
 <form id="requestForm" class="request-form hidden"><div class="field"><label for="vehicle">Fahrzeug</label><input id="vehicle" maxlength="100" required placeholder="z. B. Porsche 963"></div><div class="field"><label for="track">Strecke</label><input id="track" maxlength="100" required placeholder="z. B. Le Mans"></div><div class="field"><label for="message">Nachricht</label><textarea id="message" maxlength="1000" placeholder="Optional: Was soll das Setup können?"></textarea></div><button class="submit" type="submit">Request senden</button><div id="result" class="result"></div></form>
@@ -202,15 +197,14 @@ function initializeTheme(){
  const mode=savedMode==="dark"?"dark":"light";
  applyTheme(mode,currentTheme(mode));
 }
-document.documentElement.addEventListener("themechange",()=>{});
 async function loadData(){
  try{const r=await fetch("/setups.json",{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);data=await r.json();render()}
  catch(e){$("categories").innerHTML='<div class="empty">Die Setup-Daten konnten nicht geladen werden.</div>';console.error(e)}
 }
 function render(){
- const q=$("search").value.trim().toLowerCase();$("categories").innerHTML="";
+ $("categories").innerHTML="";
  for(const [category,vehicles] of Object.entries(data)){
-  const list=vehicles.filter(v=>v.name.toLowerCase().includes(q));if(!list.length)continue;
+  const list=vehicles;
   const section=document.createElement("section");section.className="section";
   section.innerHTML='<div class="section-head"><h2>'+esc(category)+'</h2><span class="count">'+list.length+' Fahrzeuge</span></div>';
   const grid=document.createElement("div");grid.className="vehicle-grid";
@@ -219,7 +213,6 @@ function render(){
  }
  if(!$("categories").children.length)$("categories").innerHTML='<div class="empty">Kein Fahrzeug gefunden.</div>';
 }
-$("search").addEventListener("input",render);
 function showCar(category,name){
  const v=(data[category]||[]).find(x=>x.name===name);if(!v)return;
  $("home").classList.remove("active");$("car").classList.add("active");window.scrollTo(0,0);
