@@ -92,18 +92,21 @@ button:hover {
 }
 
 main {
+  width: min(1400px, calc(100% - 24px));
   max-width: 1400px;
   margin: 0 auto;
-  padding: 10px 12px 40px;
+  padding: 10px 0 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 14px;
   align-items: start;
 }
 
-.content {
+main > .content {
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
-  padding: 50px 12px 40px;
+  padding: 40px 12px 40px;
 }
 
 .hero {
@@ -254,12 +257,18 @@ main {
 
 /* Discord mini client */
 .discord-area {
-  height: calc(100vh - 84px);
-  min-height: 650px;
+  grid-column: 2;
+  grid-row: 1;
+  width: 360px;
+  height: 600px;
+  min-height: 600px;
+  max-height: 600px;
   background: #ed1c24;
   padding: 4px;
   position: sticky;
   top: 74px;
+  margin: 0;
+  align-self: start;
   border: 1px solid #111111;
 }
 
@@ -520,11 +529,20 @@ main {
     grid-template-columns: 1fr;
   }
 
+  main > .content {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .discord-area {
+    grid-column: 1;
+    grid-row: 2;
     position: relative;
     top: auto;
+    width: 100%;
     height: 600px;
     min-height: 600px;
+    max-height: 600px;
     order: 2;
   }
 
@@ -539,10 +557,11 @@ main {
   }
 
   main {
-    padding: 0 10px 30px;
+    width: calc(100% - 20px);
+    padding: 0 0 30px;
   }
 
-  .content {
+  main > .content {
     padding: 40px 5px 10px;
   }
 
