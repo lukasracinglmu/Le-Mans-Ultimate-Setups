@@ -1,1 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>LMU Setups</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b0d10;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: min(1100px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 50px 0 70px;
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            color: #8d939c;
+            font-size: 15px;
+        }
+
+        .search-box {
+            margin-top: 28px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 16px 18px;
+            border: 1px solid #252a31;
+            border-radius: 12px;
+            background: #14171c;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #555d68;
+        }
+
+        .search-box input::placeholder {
+            color: #686f79;
+        }
+
+        .category {
+            margin-top: 42px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            font-size: 21px;
+            font-weight: 750;
+        }
+
+        .category-count {
+            color: #777f89;
+            font-size: 14px;
+        }
+
+        .cars {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .car {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px;
+            background: #14171c;
+            border: 1px solid #20242a;
+            border-radius: 12px;
+            transition: 0.15s ease;
+        }
+
+        .car:hover {
+            background: #191d23;
+            border-color: #343a43;
+            transform: translateY(-1px);
+        }
+
+        .car-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .car-button {
+            flex-shrink: 0;
+            padding: 9px 13px;
+            border: 0;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #0b0d10;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .car-button:hover {
+            background: #dddddd;
+        }
+
+        .empty {
+            padding: 30px;
+            text-align: center;
+            color: #777f89;
+            background: #14171c;
+            border-radius: 12px;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #20242a;
+            color: #606771;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                width: min(100% - 22px, 1100px);
+                padding-top: 30px;
+            }
+
+            .logo {
+                font-size: 27px;
+            }
+
+            .cars {
+                grid-template-columns: 1fr;
+            }
+
+            .car {
+                padding: 16px;
+            }
+
+            .car-button {
+                padding: 8px 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <div class="logo">LMU SETUPS</div>
+
+            <div class="subtitle">
+                Le Mans Ultimate Setup Database
+            </div>
+
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="search"
+                    placeholder="Fahrzeug suchen..."
+                    autocomplete="off"
+                >
+            </div>
+        </header>
+
+        <main id="content">
+            <div class="empty">
+                Lade Fahrzeuge...
+            </div>
+        </main>
+
+        <footer>
+            LMU Setup Database
+        </footer>
+
+    </div>
+
+    <script>
+        const content = document.getElementById("content");
+        const searchInput = document.getElementById("search");
+
+        let setupData = {};
+
+        async function loadCars() {
+            try {
+                const response = await fetch("setups.json");
+
+                if (!response.ok) {
+                    throw new Error("setups.json konnte nicht geladen werden.");
+                }
+
+                setupData = await response.json();
+
+                renderCars();
+
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="empty">
+                        Die Fahrzeugliste konnte nicht geladen werden.
+                        <br><br>
+                        Bitte überprüfe, ob die Datei
+                        <strong>setups.json</strong>
+                        im Hauptverzeichnis liegt.
+                    </div>
+                `;
+
+                console.error(error);
+            }
+        }
+
+        function renderCars() {
+            const search = searchInput.value
+                .toLowerCase()
+                .trim();
+
+            content.innerHTML = "";
+
+            let foundCars = 0;
+
+            for (const [category, cars] of Object.entries(setupData)) {
+
+                const filteredCars = cars.filter(car =>
+                    car.toLowerCase().includes(search)
+                );
+
+                if (filteredCars.length === 0) {
+                    continue;
+                }
+
+                foundCars += filteredCars.length;
+
+                const categoryElement = document.createElement("section");
+                categoryElement.className = "category";
+
+                categoryElement.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-title">
+                            ${category}
+                        </div>
+
+                        <div class="category-count">
+                            ${filteredCars.length}
+                            ${filteredCars.length === 1 ? "Fahrzeug" : "Fahrzeuge"}
+                        </div>
+                    </div>
+
+                    <div class="cars"></div>
+                `;
+
+                const carsContainer =
+                    categoryElement.querySelector(".cars");
+
+                filteredCars.forEach(car => {
+
+                    const carElement = document.createElement("div");
+                    carElement.className = "car";
+
+                    carElement.innerHTML = `
+                        <div class="car-name">
+                            ${car}
+                        </div>
+
+                        <button
+                            class="car-button"
+                            onclick="openCar('${escapeQuotes(car)}', '${escapeQuotes(category)}')"
+                        >
+                            Setups
+                        </button>
+                    `;
+
+                    carsContainer.appendChild(carElement);
+                });
+
+                content.appendChild(categoryElement);
+            }
+
+            if (foundCars === 0) {
+                content.innerHTML = `
+                    <div class="empty">
+                        Kein Fahrzeug gefunden.
+                    </div>
+                `;
+            }
+        }
+
+        function escapeQuotes(text) {
+            return text
+                .replace(/\\/g, "\\\\")
+                .replace(/'/g, "\\'");
+        }
+
+        function openCar(car, category) {
+            alert(
+                car +
+                "\n\n" +
+                category +
+                "\n\n" +
+                "Die Setup-Seite bauen wir als Nächstes."
+            );
+        }
+
+        searchInput.addEventListener("input", renderCars);
+
+        loadCars();
+    </script>
+
+</body>
+</html>
