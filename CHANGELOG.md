@@ -48,7 +48,7 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 ### Website / UI
 - Setup-Request-Formular um Klasse, Event und Setup-Variante erweitert.
-- Dezente textbasierte Hersteller-Rotation für GO, HYMO und beAlien ergänzt; keine erfundenen Logos verwendet.
+- Dezente textbasierte Hersteller-Rotation für GO, HYMO und beAlien ergänzt; diese bestehende Komponente wird für die neue bildbasierte Hersteller-Diashow ersetzt.
 - Setup-Löschbutton ist bereits im Normalzustand klar erkennbar und wird beim Hover deutlich rot.
 - Löschdialog auf eindeutige Aktionen **Abbrechen** und **Löschen** umgestellt und zeigt den konkreten Dateinamen.
 - Mobile und Desktop Darstellung der neuen Branding- und Setup-Komponenten angepasst.
@@ -64,10 +64,10 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 - Neue D1-Datenbank für individuelle Upload-Rechte erstellt.
 - Worker-Konfiguration für die D1-Bindung vorbereitet.
 - Dynamische bzw. userbezogene API-Daten bleiben von öffentlichem Caching ausgeschlossen.
+- Vorhandene LMU-Portal-Secrets in den Worker-Bindings verifiziert; Secret-Werte wurden weder ausgelesen noch verändert oder in Source Code bzw. GitHub übernommen.
 
 ### Noch offen / technische Einschränkungen
-- **LMU Portal / Upcoming Races:** In den aktuell konfigurierten Cloudflare-Bindings existieren noch keine LMU-Portal-Secrets. Außerdem wurde keine belastbare öffentliche Dokumentation für die beiden bereitgestellten LMU-Portal-Keys gefunden. Deshalb wurde kein API-Endpunkt geraten oder erfunden.
-- **LMU Portal Secrets:** Die Keys müssen als Cloudflare Secrets eingerichtet werden, bevor eine echte serverseitige Integration erfolgen kann. Die Werte werden nicht in GitHub, Frontend, Changelog oder Logs geschrieben.
+- **LMU Portal / Upcoming Races:** Die erforderlichen LMU-Portal-Secrets sind bereits serverseitig in Cloudflare vorhanden. Für die tatsächliche Upcoming-Races-Abfrage fehlt im bestehenden Projekt weiterhin eine eindeutig dokumentierte API-Route bzw. ein vorhandener Implementierungspfad; deshalb wird kein externer Endpoint geraten oder erfunden.
 - **Discord Game/Application ID:** Die bekannte Le-Mans-Ultimate-ID kann als Identifikation des Discord-Spiels dienen, ersetzt aber keine Bot-Gateway-Presence. Discord Rich Presence Assets gehören zur jeweiligen Application und können nicht allein durch eine fremde Game-ID übernommen werden.
 - **Discord Bot Presence / DND / dynamische Activity:** Der bestehende Cloudflare Worker ist stateless und hält keine dauerhafte Discord-Gateway-Verbindung. Presence-Updates werden deshalb nicht mit einer unsicheren oder unzuverlässigen Ersatzlösung emuliert.
 - **Fahrzeugbilder mit 3P-Livery und Herstellerlogos:** Es liegen weiterhin keine verifizierten passenden Assets im Repository vor. Es werden keine falschen Bilder oder erfundenen Logos eingesetzt.
