@@ -88,10 +88,15 @@ function enhanceHome(source) {
   html = html.replace(
     '<div class="layout">\n<main>',
     `<div class="layout">
+<main>`
+  );
+
+  html = html.replace(
+    '</main>\n</div>',
+    `</main>
 <aside id="upcoming" class="upcoming upcoming-dock show" aria-label="Upcoming Races">
   <div class="upcoming-widget-head">
     <div><span class="upcoming-kicker">LMU PORTAL</span><h2>Upcoming Races</h2></div>
-    <span class="resize-note" title="Widget an der Ecke vergrößern oder verkleinern">↘</span>
   </div>
   <div class="race-filters" role="group" aria-label="Race Filter">
     <button type="button" class="race-filter active" data-filter="all">Alle</button>
@@ -103,23 +108,22 @@ function enhanceHome(source) {
   <div id="raceList" class="race-list"></div>
   <div class="upcoming-source">Schedule information from <a href="https://lmuportal.com/" target="_blank" rel="noopener noreferrer">LMU Portal</a></div>
 </aside>
-<main>`
+</div>`
   );
 
   const css = `
-/* Visible production fixes */
 .brand-logo{width:96px!important;height:48px!important;object-fit:contain!important;display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto}
 .layout{position:relative;isolation:isolate}
 .hero:after,.vehicle:after{display:none!important}
-.layout:before{content:"";position:fixed;left:clamp(220px,18vw,340px);top:110px;width:min(58vw,760px);height:72vh;background:url('/assets/three-peaks-racing-logo.webp') center/contain no-repeat;opacity:.075;pointer-events:none;z-index:-1;filter:saturate(.85)}
-.upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 auto;width:260px;height:570px;min-width:220px;max-width:min(440px,42vw);min-height:230px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 10px 0;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);resize:both;overflow:hidden;z-index:5}
+.layout:before{content:"";position:fixed;right:clamp(220px,18vw,340px);top:110px;width:min(58vw,760px);height:72vh;background:url('/assets/three-peaks-racing-logo.webp') center/contain no-repeat;opacity:.075;pointer-events:none;z-index:-1;filter:saturate(.85)}
+.upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 260px;width:260px;height:570px;min-width:260px;max-width:260px;min-height:570px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-left:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 0 10px;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);overflow:hidden;z-index:5;resize:none!important}
 .upcoming-widget-head{position:sticky;top:-15px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:-15px -12px 8px;padding:15px 12px 10px;background:color-mix(in srgb,var(--surface) 97%,transparent);border-bottom:1px solid var(--border)}
-.upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.resize-note{font-size:15px;color:var(--muted);user-select:none}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}
+.upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}
 .race-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.race-filter{border:1px solid var(--border);border-radius:999px;background:var(--surface2);font-size:10px;font-weight:800;padding:6px 9px;cursor:pointer}.race-filter.active{outline:2px solid color-mix(in srgb,var(--text) 30%,transparent);outline-offset:1px}.race-filter.bronze{border-color:#8f5d35}.race-filter.silver{border-color:#aeb5bd}.race-filter.gold{border-color:#b89536}
 .upcoming-dock .race-list{display:grid;gap:8px;overflow:auto;min-height:0;padding-right:2px}.upcoming-dock .race{padding:10px;border:1px solid var(--border);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}.upcoming-dock .race.bronze{background:linear-gradient(145deg,rgba(126,81,43,.44),rgba(74,46,29,.26));border-color:#8f5d35}.upcoming-dock .race.silver{background:linear-gradient(145deg,rgba(170,177,184,.24),rgba(95,102,110,.18));border-color:#aeb5bd}.upcoming-dock .race.gold{background:linear-gradient(145deg,rgba(166,128,40,.34),rgba(98,74,24,.22));border-color:#b89536}.race-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.race-tier{font-size:9px;font-weight:900;letter-spacing:.08em}.sr-badge{font-size:9px;font-weight:900;border-radius:999px;padding:4px 7px;border:1px solid currentColor;background:rgba(0,0,0,.14);white-space:nowrap}.sr-badge.bronze{color:#d69a62}.sr-badge.silver{color:#d5d9de}.sr-badge.gold{color:#e5c96b}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25;margin-top:6px}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:4px}.race-countdown{font-size:12px;font-weight:900;margin-top:7px}.upcoming-source{margin-top:8px;padding:8px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
 .manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block!important;visibility:visible!important;opacity:1;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
-@media(max-width:1100px){.upcoming-dock{width:230px;max-width:34vw}.layout:before{left:210px;opacity:.06}}
-@media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:340px;max-height:70vh;margin:14px;border:1px solid var(--border);border-radius:12px;resize:vertical}.layout:before{left:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
+@media(max-width:1100px){.upcoming-dock{flex-basis:230px;width:230px;min-width:230px;max-width:230px}.layout:before{right:210px;opacity:.06}}
+@media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:340px;min-height:340px;max-height:70vh;margin:14px;border:1px solid var(--border);border-radius:12px}.layout:before{right:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
 `;
   html = html.replace('</style>', css + '\n</style>');
 
@@ -149,7 +153,6 @@ function enhanceHome(source) {
     const selected = manufacturers[manufacturerIndex];
     const id = ++transitionId;
     clearTimeout(transitionTimer);
-
     const apply = () => {
       if (id !== transitionId) return;
       image.src = selected.src;
@@ -164,7 +167,6 @@ function enhanceHome(source) {
         image.onerror = reveal;
       }
     };
-
     if (immediate) {
       image.style.opacity = '1';
       apply();
@@ -194,31 +196,6 @@ function enhanceHome(source) {
     showManufacturer(manufacturerIndex + 1);
     restart();
   });
-
-  const widget = document.getElementById('upcoming');
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  try {
-    if (widget && innerWidth > 800) {
-      const w = Number(localStorage.getItem('upcomingWidgetWidth'));
-      const h = Number(localStorage.getItem('upcomingWidgetHeight'));
-      if (w) widget.style.width = clamp(w, 220, Math.min(440, innerWidth * .42)) + 'px';
-      if (h) widget.style.height = clamp(h, 230, innerHeight - 68) + 'px';
-    }
-  } catch {}
-  if (widget && 'ResizeObserver' in window) {
-    let timer;
-    new ResizeObserver(() => {
-      if (innerWidth <= 800) return;
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        try {
-          const rect = widget.getBoundingClientRect();
-          localStorage.setItem('upcomingWidgetWidth', String(Math.round(rect.width)));
-          localStorage.setItem('upcomingWidgetHeight', String(Math.round(rect.height)));
-        } catch {}
-      }, 180);
-    }).observe(widget);
-  }
 
   const status = document.getElementById('upcomingStatus');
   const list = document.getElementById('raceList');
@@ -251,22 +228,27 @@ function enhanceHome(source) {
     return 'DAILY';
   };
 
-  const updateCountdowns = () => {
-    document.querySelectorAll('[data-starts-at]').forEach(el => {
-      const start = Date.parse(el.dataset.startsAt || '');
-      if (!Number.isFinite(start)) return;
-      let seconds = Math.max(0, Math.floor((start - Date.now()) / 1000));
-      const d = Math.floor(seconds / 86400); seconds %= 86400;
-      const h = Math.floor(seconds / 3600); seconds %= 3600;
-      const m = Math.floor(seconds / 60);
-      el.textContent = start <= Date.now() ? 'Gestartet' : d > 0 ? (d + 'd ' + h + 'h ' + m + 'm') : (h + 'h ' + m + 'm');
-    });
+  const startMsOf = race => {
+    const raw = race?.startsAtUtc || race?.date || '';
+    const ms = Date.parse(raw);
+    return Number.isFinite(ms) ? ms : NaN;
+  };
+
+  const visibleRaces = () => {
+    const now = Date.now();
+    return allRaces
+      .filter(r => {
+        const start = startMsOf(r);
+        return Number.isFinite(start) && start > now;
+      })
+      .filter(r => activeFilter === 'all' || tierKey(r.tier) === activeFilter)
+      .sort((a, b) => startMsOf(a) - startMsOf(b));
   };
 
   const renderRaces = () => {
     if (!list) return;
     list.innerHTML = '';
-    const races = allRaces.filter(r => activeFilter === 'all' || tierKey(r.tier) === activeFilter);
+    const races = visibleRaces();
     if (!races.length) {
       if (status) status.textContent = 'Keine passenden Rennen gefunden.';
       return;
@@ -287,7 +269,37 @@ function enhanceHome(source) {
       card.append(countdown);
       list.append(card);
     }
-    updateCountdowns();
+    updateLifecycle();
+  };
+
+  const updateLifecycle = () => {
+    if (!list) return;
+    let removedAny = false;
+    const now = Date.now();
+    list.querySelectorAll('[data-starts-at]').forEach(el => {
+      const start = Date.parse(el.dataset.startsAt || '');
+      if (!Number.isFinite(start)) return;
+      const remaining = start - now;
+      if (remaining <= 0) {
+        el.closest('.race')?.remove();
+        removedAny = true;
+        return;
+      }
+      let seconds = Math.ceil(remaining / 1000);
+      const d = Math.floor(seconds / 86400); seconds %= 86400;
+      const h = Math.floor(seconds / 3600); seconds %= 3600;
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      el.textContent = d > 0 ? (d + 'd ' + h + 'h ' + m + 'm') : h > 0 ? (h + 'h ' + m + 'm ' + s + 's') : (m + 'm ' + s + 's');
+    });
+    if (removedAny) {
+      allRaces = allRaces.filter(r => {
+        const start = startMsOf(r);
+        return Number.isFinite(start) && start > Date.now();
+      });
+      const currentVisible = visibleRaces();
+      if (status) status.textContent = currentVisible.length ? (currentVisible.length + ' Rennen') : 'Keine passenden Rennen gefunden.';
+    }
   };
 
   for (const button of filterButtons) {
@@ -306,7 +318,13 @@ function enhanceHome(source) {
       const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok || !data?.success) throw new Error(data?.error || 'Rennen konnten nicht geladen werden.');
-      allRaces = Array.isArray(data.races) ? data.races : [];
+      const now = Date.now();
+      allRaces = (Array.isArray(data.races) ? data.races : [])
+        .filter(r => {
+          const start = startMsOf(r);
+          return Number.isFinite(start) && start > now;
+        })
+        .sort((a, b) => startMsOf(a) - startMsOf(b));
       renderRaces();
     } catch (error) {
       status.classList.add('error');
@@ -316,7 +334,7 @@ function enhanceHome(source) {
   };
 
   clearInterval(countdownTimer);
-  countdownTimer = setInterval(updateCountdowns, 30000);
+  countdownTimer = setInterval(updateLifecycle, 1000);
   clearInterval(refreshTimer);
   refreshTimer = setInterval(loadRaces, 5 * 60 * 1000);
   loadRaces();
