@@ -279,10 +279,3 @@ async function readSession(request, secret) {
     return payload;
   } catch { return null; }
 }
-async function hasUploaderRole(userId, env) {
-  if (!userId || !env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return false;
-  const r = await df(`/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } });
-  if (!r.ok) return false;
-  const member = await r.json();
-  return Array.isArray(member.roles) && member.roles.includes(UPLOADER_ROLE_ID);
-}
