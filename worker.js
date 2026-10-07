@@ -189,41 +189,236 @@ async function deleteSetup(request, env) {
 }
 
 /* ── Discord API ── */
+/* ── Discord API ── */
+const DISCORD_TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
+const DISCORD_DISPLAY_CHANNEL_TYPES = new Set([0, 2, 4, 5, 10, 11, 12, 13, 15]);
+const PERM_VIEW_CHANNEL = 1024n;
+const PERM_SEND_MESSAGES = 2048n;
+const PERM_ADMINISTRATOR = 8n;
+
+async function getDiscordGuildChannels(env) {
+  const r = await df(`/guilds/${env.DISCORD_GUILD_ID}/channels`, {
+    headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }
+  });
+  if (!r.ok) {
+    console.error("Discord channels error", r.status, await r.text());
+    return null;
+  }
+  const channels = await r.json();
+  return Array.isArray(channels) ? channels : [];
+}
+
+async function getDiscordMemberAndRoles(userId, env) {
+  const headers = { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` };
+  const [memberResponse, rolesResponse] = await Promise.all([
+    df(`/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers }),
+    df(`/guilds/${env.DISCORD_GUILD_ID}/roles`, { headers })
+  ]);
+  if (!memberResponse.ok || !rolesResponse.ok) {
+    if (!memberResponse.ok) console.error("Discord member permission check error", memberResponse.status, await memberResponse.text());
+    if (!rolesResponse.ok) console.error("Discord roles permission check error", rolesResponse.status, await rolesResponse.text());
+    return null;
+  }
+  const member = await memberResponse.json();
+  const roles = await rolesResponse.json();
+  if (!Array.isArray(member.roles) || !Array.isArray(roles)) return null;
+  return { member, roles };
+}
+
+function applyOverwrite(permissions, overwrite, mode = "replace") {
+  if (!overwrite) return permissions;
+  const allow = BigInt(overwrite.allow || "0");
+  const deny = BigInt(overwrite.deny || "0");
+  if (mode === "replace") return (permissions & ~deny) | allow;
+  return permissions;
+}
+
+function getUserChannelPermissions(channel, permissionData, guildId, userId) {
+  if (!channel || !permissionData) return 0n;
+  const { member, roles } = permissionData;
+  const everyoneRole = roles.find(r => r.id === guildId);
+  let permissions = BigInt(everyoneRole?.permissions || "0");
+
+  const memberRoleIds = new Set(Array.isArray(member.roles) ? member.roles : []);
+  for (const role of roles) {
+    if (memberRoleIds.has(role.id)) permissions |= BigInt(role.permissions || "0");
+  }
+
+  if ((permissions & PERM_ADMINISTRATOR) === PERM_ADMINISTRATOR) {
+    return (1n << 60n) - 1n;
+  }
+
+  const overwrites = Array.isArray(channel.permission_overwrites) ? channel.permission_overwrites : [];
+
+  const everyoneOverwrite = overwrites.find(o => o.id === guildId && o.type === 0);
+  permissions = applyOverwrite(permissions, everyoneOverwrite);
+
+  let roleAllow = 0n;
+  let roleDeny = 0n;
+  for (const overwrite of overwrites) {
+    if (overwrite.type !== 0 || overwrite.id === guildId || !memberRoleIds.has(overwrite.id)) continue;
+    roleAllow |= BigInt(overwrite.allow || "0");
+    roleDeny |= BigInt(overwrite.deny || "0");
+  }
+  permissions = (permissions & ~roleDeny) | roleAllow;
+
+  const memberOverwrite = overwrites.find(o => o.type === 1 && o.id === userId);
+  permissions = applyOverwrite(permissions, memberOverwrite);
+
+  return permissions;
+}
+
+async function getAuthorizedDiscordChannels(userId, env) {
+  if (!userId || !env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return null;
+  const [channels, permissionData] = await Promise.all([
+    getDiscordGuildChannels(env),
+    getDiscordMemberAndRoles(userId, env)
+  ]);
+  if (!channels || !permissionData) return null;
+
+  return channels
+    .filter(channel => DISCORD_DISPLAY_CHANNEL_TYPES.has(channel.type))
+    .map(channel => {
+      const permissions = getUserChannelPermissions(channel, permissionData, env.DISCORD_GUILD_ID, userId);
+      return {
+        channel,
+        canView: (permissions & PERM_VIEW_CHANNEL) === PERM_VIEW_CHANNEL,
+        canSend: (permissions & PERM_SEND_MESSAGES) === PERM_SEND_MESSAGES
+      };
+    });
+}
+
+async function getAuthorizedDiscordChannel(userId, channelId, env) {
+  if (!/^[0-9]+$/.test(channelId)) return null;
+  const channels = await getAuthorizedDiscordChannels(userId, env);
+  if (!channels) return null;
+  return channels.find(x => x.channel.id === channelId) || null;
+}
+
 async function discordChannels(request, env) {
   const s = await readSession(request, env.SESSION_SECRET);
   if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401);
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return json({ success: false, error: "Discord nicht konfiguriert." }, 500);
-  const r = await df(`/guilds/${env.DISCORD_GUILD_ID}/channels`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } });
-  if (!r.ok) { console.error("Discord channels error", r.status, await r.text()); return json({ success: false, error: "Kanäle konnten nicht geladen werden." }, 502); }
-  const ch = await r.json();
-  const visible = ch.filter(c => [0, 2, 4, 5, 10, 11, 12, 13, 15].includes(c.type)).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  return json({ success: true, channels: visible.map(c => ({ id: c.id, name: c.name, type: c.type, parent_id: c.parent_id, position: c.position })) });
+
+  const authorized = await getAuthorizedDiscordChannels(s.id, env);
+  if (!authorized) return json({ success: false, error: "Discord-Berechtigungen konnten nicht geprüft werden." }, 502);
+
+  const visible = authorized
+    .filter(x => x.canView)
+    .map(x => x.channel)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+  return json({
+    success: true,
+    channels: visible.map(c => ({
+      id: c.id,
+      name: c.name,
+      type: c.type,
+      parent_id: c.parent_id,
+      position: c.position,
+      canSend: DISCORD_TEXT_CHANNEL_TYPES.has(c.type)
+        ? authorized.find(x => x.channel.id === c.id)?.canSend === true
+        : false
+    }))
+  });
 }
 
 async function discordMessages(request, env) {
   const s = await readSession(request, env.SESSION_SECRET);
   if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401);
-  if (!env.DISCORD_BOT_TOKEN) return json({ success: false, error: "Discord Bot nicht konfiguriert." }, 500);
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return json({ success: false, error: "Discord nicht konfiguriert." }, 500);
+
   const channelId = new URL(request.url).searchParams.get("channel");
   if (!channelId || !/^[0-9]+$/.test(channelId)) return json({ success: false, error: "Ungültiger Kanal." }, 400);
-  const r = await df(`/channels/${channelId}/messages?limit=50`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } });
-  if (!r.ok) { console.error("Discord messages error", r.status, await r.text()); return json({ success: false, error: "Nachrichten konnten nicht geladen werden." }, 502); }
+
+  const authorized = await getAuthorizedDiscordChannel(s.id, channelId, env);
+  if (!authorized?.canView || !DISCORD_TEXT_CHANNEL_TYPES.has(authorized.channel.type)) {
+    return json({ success: false, error: "Kein Zugriff auf diesen Kanal." }, 403);
+  }
+
+  const r = await df(`/channels/${channelId}/messages?limit=50`, {
+    headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }
+  });
+  if (!r.ok) {
+    console.error("Discord messages error", r.status, await r.text());
+    return json({ success: false, error: "Nachrichten konnten nicht geladen werden." }, 502);
+  }
+
   const msgs = await r.json();
-  return json({ success: true, messages: msgs.reverse().map(m => ({ id: m.id, content: m.content || "", author: { id: m.author?.id || "", name: m.author?.global_name || m.author?.username || "?", avatar: m.author?.avatar || null }, timestamp: m.timestamp })) });
+  if (!Array.isArray(msgs)) return json({ success: false, error: "Ungültige Discord-Antwort." }, 502);
+
+  return json({
+    success: true,
+    messages: msgs.reverse().map(m => ({
+      id: m.id,
+      content: m.content || "",
+      author: {
+        id: m.author?.id || "",
+        name: m.author?.global_name || m.author?.username || "?",
+        avatar: m.author?.avatar || null
+      },
+      timestamp: m.timestamp
+    }))
+  });
 }
 
 async function discordSendMessage(request, env) {
   const s = await readSession(request, env.SESSION_SECRET);
   if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401);
-  if (!env.DISCORD_BOT_TOKEN) return json({ success: false, error: "Discord Bot nicht konfiguriert." }, 500);
-  let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return json({ success: false, error: "Discord nicht konfiguriert." }, 500);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
+
   const channelId = String(body.channelId || "");
-  const message = String(body.message || "").trim().slice(0, 2000);
-  if (!/^[0-9]+$/.test(channelId) || !message) return json({ success: false, error: "Kanal und Nachricht erforderlich." }, 400);
-  const r = await df(`/channels/${channelId}/messages`, { method: "POST", headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ content: message, allowed_mentions: { parse: [] } }) });
-  if (!r.ok) { console.error("Discord send error", r.status, await r.text()); return json({ success: false, error: "Nachricht konnte nicht gesendet werden." }, 502); }
+  const message = String(body.message || "").trim();
+  if (!/^[0-9]+$/.test(channelId) || !message) {
+    return json({ success: false, error: "Kanal und Nachricht erforderlich." }, 400);
+  }
+
+  const authorized = await getAuthorizedDiscordChannel(s.id, channelId, env);
+  if (!authorized?.canView || !DISCORD_TEXT_CHANNEL_TYPES.has(authorized.channel.type)) {
+    return json({ success: false, error: "Kein Zugriff auf diesen Kanal." }, 403);
+  }
+  if (!authorized.canSend) {
+    return json({ success: false, error: "Du darfst in diesem Kanal keine Nachrichten senden." }, 403);
+  }
+
+  const maxUserMessageLength = Math.max(1, 2000 - s.username.length - 4);
+  const userMessage = message.slice(0, maxUserMessageLength);
+  const content = `**${s.username}**: ${userMessage}`;
+
+  const r = await df(`/channels/${channelId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      content,
+      allowed_mentions: { parse: [] }
+    })
+  });
+
+  if (!r.ok) {
+    console.error("Discord send error", r.status, await r.text());
+    return json({ success: false, error: "Nachricht konnte nicht gesendet werden." }, 502);
+  }
+
   const m = await r.json();
-  return json({ success: true, message: { id: m.id, content: m.content || message, author: { id: m.author?.id || "", name: m.author?.global_name || m.author?.username || s.username, avatar: m.author?.avatar || null }, timestamp: m.timestamp } });
+  return json({
+    success: true,
+    message: {
+      id: m.id,
+      content: m.content || content,
+      author: {
+        id: m.author?.id || "",
+        name: m.author?.global_name || m.author?.username || "LMU Website",
+        avatar: m.author?.avatar || null
+      },
+      timestamp: m.timestamp
+    }
+  });
 }
 
 async function createRequest(request, env) {
