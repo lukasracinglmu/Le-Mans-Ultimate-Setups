@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS upload_access (
+  user_id TEXT PRIMARY KEY,
+  granted_by TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
