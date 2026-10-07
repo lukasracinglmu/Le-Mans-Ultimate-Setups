@@ -15,6 +15,30 @@
       "database_id": "32667764-7d7a-46c2-ab51-c8d8985b0b3e"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS_R2",
+      "bucket_name": "lmu-setup-uploads"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "UPLOAD_QUEUE",
+        "queue": "lmu-setup-upload-queue"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "lmu-setup-upload-queue",
+        "max_batch_size": 1,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "max_concurrency": 3,
+        "retry_delay": 10
+      }
+    ]
+  },
   "vars": {
     "DISCORD_CLIENT_ID": "1556978316404068452",
     "DISCORD_GUILD_ID": "1367893409234161846",
