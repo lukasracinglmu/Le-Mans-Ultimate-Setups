@@ -10,3 +10,12 @@ node_modules
 node_modules/**
 .wrangler
 .wrangler/**
+CHANGELOG.md
+README.md
+schema.sql
+setups.json
+worker.js
+production-worker.js
+runtime-worker.js
+wrangler.jsonc
+.assetsignore
