@@ -259,7 +259,7 @@ function enhanceHome(source) {
       const d = Math.floor(seconds / 86400); seconds %= 86400;
       const h = Math.floor(seconds / 3600); seconds %= 3600;
       const m = Math.floor(seconds / 60);
-      el.textContent = start <= Date.now() ? 'Gestartet' : d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
+      el.textContent = start <= Date.now() ? 'Gestartet' : d > 0 ? (d + 'd ' + h + 'h ' + m + 'm') : (h + 'h ' + m + 'm');
     });
   };
 
@@ -271,16 +271,16 @@ function enhanceHome(source) {
       if (status) status.textContent = 'Keine passenden Rennen gefunden.';
       return;
     }
-    if (status) status.textContent = `${races.length} Rennen`;
+    if (status) status.textContent = races.length + ' Rennen';
     for (const race of races) {
       const key = tierKey(race.tier);
-      const card = make('div', `race ${key}`);
+      const card = make('div', 'race ' + key);
       const top = make('div', 'race-top');
       top.append(make('span', 'race-tier', tierLabel(race)));
-      if (race.srRequirement) top.append(make('span', `sr-badge ${key}`, race.srRequirement));
+      if (race.srRequirement) top.append(make('span', 'sr-badge ' + key, race.srRequirement));
       card.append(top);
       card.append(make('div', 'race-name', race.name || 'LMU Race'));
-      const metaParts = [race.track, race.trackLayout, race.durationMinutes ? `${race.durationMinutes} Min.` : null, ...(race.carClasses || [])].filter(Boolean);
+      const metaParts = [race.track, race.trackLayout, race.durationMinutes ? (race.durationMinutes + ' Min.') : null, ...(race.carClasses || [])].filter(Boolean);
       if (metaParts.length) card.append(make('div', 'race-meta', metaParts.join(' · ')));
       const countdown = make('div', 'race-countdown');
       countdown.dataset.startsAt = race.startsAtUtc || race.date || '';
