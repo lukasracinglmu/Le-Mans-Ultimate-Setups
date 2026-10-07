@@ -38,6 +38,17 @@ export default {
     }
 
     return productionWorker.fetch(request, env, ctx);
+  },
+
+  async queue(batch, env, ctx) {
+    for (const message of batch.messages) {
+      try {
+        if (typeof message.ack === "function") message.ack();
+      } catch (error) {
+        console.error("Queue consumer failed", error instanceof Error ? error.name : "unknown");
+        if (typeof message.retry === "function") message.retry({ delaySeconds: 10 });
+      }
+    }
   }
 };
 
@@ -237,115 +248,80 @@ function enhanceHome(source) {
     if (key === 'bronze') return 'BRONZE DAILY';
     if (key === 'silver') return 'SILVER DAILY';
     if (key === 'gold') return 'GOLD DAILY';
-    return String(race?.tier || 'DAILY').toUpperCase();
+    return 'DAILY';
   };
 
-  const srLabel = race => {
-    const raw = String(race?.srRequirement || '').trim();
-    return raw ? 'SR ' + raw : 'SR';
-  };
-
-  const formatMeta = race => {
-    const meta = [];
-    if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
-    if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
-    if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
-    if (race.setup) meta.push('Setup: ' + race.setup);
-    return meta.join(' · ');
-  };
-
-  const formatCountdown = ms => {
-    const total = Math.max(0, Math.floor(ms / 1000));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    return (h ? String(h).padStart(2,'0') + ':' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const updateCountdowns = () => {
+    document.querySelectorAll('[data-starts-at]').forEach(el => {
+      const start = Date.parse(el.dataset.startsAt || '');
+      if (!Number.isFinite(start)) return;
+      let seconds = Math.max(0, Math.floor((start - Date.now()) / 1000));
+      const d = Math.floor(seconds / 86400); seconds %= 86400;
+      const h = Math.floor(seconds / 3600); seconds %= 3600;
+      const m = Math.floor(seconds / 60);
+      el.textContent = start <= Date.now() ? 'Gestartet' : d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
+    });
   };
 
   const renderRaces = () => {
-    if (!list || !status) return;
-    const now = Date.now();
-    allRaces = allRaces.filter(race => {
-      const start = Date.parse(race?.startsAtUtc);
-      return Number.isFinite(start) && start > now;
-    });
-
-    const visible = activeFilter === 'all' ? allRaces : allRaces.filter(race => tierKey(race.tier) === activeFilter);
-    list.replaceChildren();
-
-    if (!visible.length) {
-      status.textContent = allRaces.length ? 'Keine Rennen für diesen Filter.' : 'Keine Rennen in den nächsten 24 Stunden.';
+    if (!list) return;
+    list.innerHTML = '';
+    const races = allRaces.filter(r => activeFilter === 'all' || tierKey(r.tier) === activeFilter);
+    if (!races.length) {
+      if (status) status.textContent = 'Keine passenden Rennen gefunden.';
       return;
     }
-
-    if (!status.classList.contains('error')) status.textContent = '';
-    for (const race of visible) {
+    if (status) status.textContent = `${races.length} Rennen`;
+    for (const race of races) {
       const key = tierKey(race.tier);
-      const startMs = Date.parse(race.startsAtUtc);
-      const card = make('article', 'race ' + key);
-      card.dataset.startsAt = race.startsAtUtc;
-      card.append(
-        (() => {
-          const top = make('div','race-top');
-          top.append(make('span','race-tier',tierLabel(race)), make('span','sr-badge ' + key,srLabel(race)));
-          return top;
-        })(),
-        make('div','race-name',race.name || 'LMU Race'),
-        make('div','race-meta',formatMeta(race)),
-        make('div','race-countdown','Start in ' + formatCountdown(startMs - now))
-      );
+      const card = make('div', `race ${key}`);
+      const top = make('div', 'race-top');
+      top.append(make('span', 'race-tier', tierLabel(race)));
+      if (race.srRequirement) top.append(make('span', `sr-badge ${key}`, race.srRequirement));
+      card.append(top);
+      card.append(make('div', 'race-name', race.name || 'LMU Race'));
+      const metaParts = [race.track, race.trackLayout, race.durationMinutes ? `${race.durationMinutes} Min.` : null, ...(race.carClasses || [])].filter(Boolean);
+      if (metaParts.length) card.append(make('div', 'race-meta', metaParts.join(' · ')));
+      const countdown = make('div', 'race-countdown');
+      countdown.dataset.startsAt = race.startsAtUtc || race.date || '';
+      card.append(countdown);
       list.append(card);
     }
+    updateCountdowns();
   };
 
-  const tickCountdowns = () => {
-    const now = Date.now();
-    let removed = false;
-    for (const card of [...document.querySelectorAll('.race[data-starts-at]')]) {
-      const start = Date.parse(card.dataset.startsAt || '');
-      if (!Number.isFinite(start) || start <= now) {
-        card.remove();
-        removed = true;
-        continue;
-      }
-      const node = card.querySelector('.race-countdown');
-      if (node) node.textContent = 'Start in ' + formatCountdown(start - now);
-    }
-    const before = allRaces.length;
-    allRaces = allRaces.filter(race => Date.parse(race.startsAtUtc) > now);
-    if (removed || before !== allRaces.length) renderRaces();
-  };
-
-  filterButtons.forEach(button => button.addEventListener('click', () => {
-    activeFilter = button.dataset.filter || 'all';
-    filterButtons.forEach(b => b.classList.toggle('active', b === button));
-    renderRaces();
-  }));
-
-  async function loadRaces() {
-    if (!status || !list) return;
-    status.className = 'upcoming-status';
-    status.textContent = 'Rennen werden geladen…';
-    try {
-      const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) throw new Error(data.error || 'Upcoming Races konnten nicht geladen werden.');
-      allRaces = Array.isArray(data.races) ? data.races : [];
-      status.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.' : '';
+  for (const button of filterButtons) {
+    button.addEventListener('click', () => {
+      activeFilter = button.dataset.filter || 'all';
+      filterButtons.forEach(b => b.classList.toggle('active', b === button));
       renderRaces();
-    } catch (error) {
-      status.className = 'upcoming-status error';
-      status.textContent = error?.message || 'Upcoming Races konnten nicht geladen werden.';
-    }
+    });
   }
 
+  const loadRaces = async () => {
+    if (!status || !list) return;
+    try {
+      status.classList.remove('error');
+      status.textContent = 'Rennen werden geladen…';
+      const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data?.success) throw new Error(data?.error || 'Rennen konnten nicht geladen werden.');
+      allRaces = Array.isArray(data.races) ? data.races : [];
+      renderRaces();
+    } catch (error) {
+      status.classList.add('error');
+      status.textContent = error instanceof Error ? error.message : 'Rennen konnten nicht geladen werden.';
+      list.innerHTML = '';
+    }
+  };
+
   clearInterval(countdownTimer);
-  countdownTimer = setInterval(tickCountdowns, 1000);
+  countdownTimer = setInterval(updateCountdowns, 30000);
   clearInterval(refreshTimer);
   refreshTimer = setInterval(loadRaces, 5 * 60 * 1000);
   loadRaces();
 })();
 </script>`;
-
-  return html.replace('</body>', js + '\n</body>');
+  html = html.replace('</body>', js + '\n</body>');
+  return html;
 }
