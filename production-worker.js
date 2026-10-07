@@ -9,6 +9,7 @@ const REQUEST_MODAL_ID = "lmu_setup_request";
 const REPO_ASSETS = new Set([
   "/assets/header-logo.webp",
   "/assets/three-peaks-racing-logo.webp",
+  "/assets/bp-logo.webp",
   "/assets/manufacturers/go-setups.webp",
   "/assets/manufacturers/hymo-setups.webp",
   "/assets/manufacturers/bealien.webp"
@@ -26,23 +27,18 @@ export default {
       if (request.method === "GET" && path === "/api/upcoming-races") {
         return upcomingRaces(request, env, ctx);
       }
-
       if (request.method === "POST" && path === "/api/request") {
         return createWebsiteRequest(request, env);
       }
-
       if (request.method === "POST" && path === "/interactions/discord") {
         return discordInteraction(request, env);
       }
-
       if (request.method === "GET" && REPO_ASSETS.has(path)) {
         return serveRepoAsset(request, env);
       }
-
       if (request.method === "GET" && path === "/") {
         return serveEnhancedHome(request, env);
       }
-
       return baseWorker.fetch(request, env, ctx);
     } catch (error) {
       console.error("Production worker route failed", error instanceof Error ? error.message : "unknown");
@@ -87,7 +83,6 @@ async function upcomingRaces(request, env, ctx) {
     if (cached?.success && age < LMU_CACHE_STALE_MS) {
       return json({ ...cached, cache: "stale", stale: true, warning: "LMU Portal ist vorübergehend nicht erreichbar." });
     }
-
     const status = Number(error?.status) || 502;
     const publicStatus = [401, 403, 429, 503].includes(status) ? status : 502;
     const messages = {
@@ -103,12 +98,10 @@ async function upcomingRaces(request, env, ctx) {
 async function fetchAndNormalizeLmu(env) {
   const tokens = [env.LMUPORTAL_API1, env.LMUPORTAL_API2].filter(Boolean);
   if (!tokens.length) throw Object.assign(new Error("LMU token missing"), { status: 503 });
-
   let lastError = null;
   for (let i = 0; i < tokens.length; i++) {
-    try {
-      return await fetchLmuWithToken(tokens[i]);
-    } catch (error) {
+    try { return await fetchLmuWithToken(tokens[i]); }
+    catch (error) {
       lastError = error;
       const status = Number(error?.status) || 0;
       if (![401, 403, 429].includes(status) || i === tokens.length - 1) throw error;
@@ -156,7 +149,8 @@ async function fetchLmuWithToken(token) {
     for (const occurrence of series.occurrences) {
       const startsAtUtc = occurrence?.starts_at_utc;
       const startMs = Date.parse(startsAtUtc);
-      if (!Number.isFinite(startMs) || startMs < now) continue;
+      // FIX: already-started events filtered here on the server side
+      if (!Number.isFinite(startMs) || startMs <= now) continue;
       races.push({
         name: series.name,
         track: typeof series.track === "string" ? series.track : null,
@@ -196,20 +190,15 @@ function normalizeSwitchover(value) {
   };
 }
 
-/* ── Setup request without Event / Rennserie and Setup Variante ── */
+/* ── Setup Request ── */
 async function createWebsiteRequest(request, env) {
-  const meRequest = new Request(new URL("/api/me", request.url), {
-    method: "GET",
-    headers: request.headers
-  });
+  const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
   const meResponse = await baseWorker.fetch(meRequest, env);
   const me = await safeJson(meResponse);
   if (!me?.loggedIn || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
-
   let body;
   try { body = await request.json(); }
   catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
-
   const data = {
     username: me.user.username,
     vehicle: clean(body.vehicle, 100),
@@ -218,7 +207,6 @@ async function createWebsiteRequest(request, env) {
     message: clean(body.message, 500)
   };
   if (!data.vehicle || !data.track) return json({ success: false, error: "Fahrzeug und Strecke erforderlich." }, 400);
-
   const sent = await sendSetupRequest(data, env);
   return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
 }
@@ -242,32 +230,25 @@ async function sendSetupRequest(data, env) {
   }
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
     method: "POST",
-    headers: {
-      "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`,
-      "Content-Type": "application/json"
-    },
+    headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({ content: buildRequestContent(data), allowed_mentions: { parse: [] } })
   });
   if (!response.ok) return { ok: false, status: 502, error: "Request konnte nicht gesendet werden." };
   return { ok: true };
 }
 
-/* ── Discord /request modal, reduced to required fields ── */
+/* ── Discord Interactions ── */
 async function discordInteraction(request, env) {
   const rawBody = await request.text();
   const verified = await verifyDiscordInteraction(request, rawBody, env);
   if (!verified) return new Response("invalid request signature", { status: 401 });
-
   let interaction;
   try { interaction = JSON.parse(rawBody); }
   catch { return new Response("bad request", { status: 400 }); }
-
   if (interaction.type === 1) return discordJson({ type: 1 });
-
   if (interaction.type === 2 && interaction.data?.name === "request") {
     return discordJson(requestModalResponse());
   }
-
   if (interaction.type === 5 && interaction.data?.custom_id === REQUEST_MODAL_ID) {
     const values = modalValues(interaction.data.components);
     const user = interaction.member?.user || interaction.user || {};
@@ -282,12 +263,8 @@ async function discordInteraction(request, env) {
       return discordJson({ type: 4, data: { content: "Fahrzeug und Strecke sind erforderlich.", flags: 64 } });
     }
     const sent = await sendSetupRequest(data, env);
-    return discordJson({
-      type: 4,
-      data: { content: sent.ok ? "Setup Request wurde gesendet." : "Setup Request konnte nicht gesendet werden.", flags: 64 }
-    });
+    return discordJson({ type: 4, data: { content: sent.ok ? "Setup Request wurde gesendet." : "Setup Request konnte nicht gesendet werden.", flags: 64 } });
   }
-
   const delegated = new Request(request.url, { method: "POST", headers: request.headers, body: rawBody });
   return baseWorker.fetch(delegated, env);
 }
@@ -295,16 +272,7 @@ async function discordInteraction(request, env) {
 function requestModalResponse() {
   const input = (customId, label, options = {}) => ({
     type: 1,
-    components: [{
-      type: 4,
-      custom_id: customId,
-      label,
-      style: options.paragraph ? 2 : 1,
-      required: options.required !== false,
-      min_length: options.required === false ? undefined : 1,
-      max_length: options.maxLength || 100,
-      placeholder: options.placeholder
-    }]
+    components: [{ type: 4, custom_id: customId, label, style: options.paragraph ? 2 : 1, required: options.required !== false, min_length: options.required === false ? undefined : 1, max_length: options.maxLength || 100, placeholder: options.placeholder }]
   });
   return {
     type: 9,
@@ -334,9 +302,7 @@ function modalValues(rows) {
 async function getDiscordVerifyKey(env) {
   if (discordVerifyKeyCache.key && discordVerifyKeyCache.expiresAt > Date.now()) return discordVerifyKeyCache.key;
   if (!env.DISCORD_BOT_TOKEN) return null;
-  const response = await fetch(`${DISCORD_API}/oauth2/applications/@me`, {
-    headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}` }
-  });
+  const response = await fetch(`${DISCORD_API}/oauth2/applications/@me`, { headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}` } });
   if (!response.ok) return null;
   const app = await response.json();
   const key = app.verify_key || null;
@@ -355,9 +321,7 @@ async function verifyDiscordInteraction(request, rawBody, env) {
   try {
     const key = await crypto.subtle.importKey("raw", publicKey, { name: "Ed25519" }, false, ["verify"]);
     return crypto.subtle.verify({ name: "Ed25519" }, key, signatureBytes, new TextEncoder().encode(timestamp + rawBody));
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function hexToBytes(hex) {
@@ -367,7 +331,7 @@ function hexToBytes(hex) {
   return out;
 }
 
-/* ── Production UI overlay ── */
+/* ── Enhanced Home ── */
 async function serveEnhancedHome(request, env) {
   const owner = env.GITHUB_OWNER || "lukasracinglmu";
   const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
@@ -388,21 +352,21 @@ async function serveEnhancedHome(request, env) {
 function enhanceHome(source) {
   let html = source;
 
+  // Header logo
   html = html.replace(
     /<link rel="preload" href="\/assets\/three-peaks-racing-logo\.webp" as="image" type="image\/webp">/,
-    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">'
+    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp" as="image" type="image/webp">'
   );
-
   html = html.replace(
     /<img class="brand-logo"[^>]*>/,
     '<img class="brand-logo" src="/assets/header-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
   );
-
   html = html.replace(
     'Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.',
     'Setup Database für Three Peaks Racing'
   );
 
+  // Manufacturer carousel
   html = html.replace(
     /<div class="manufacturer-strip"><span>Setup Hersteller:<\/span><span id="manufacturerName" class="manufacturer-name">GO<\/span><\/div>/,
     `<div class="manufacturer-strip manufacturer-carousel" aria-label="Setup Hersteller">
@@ -413,6 +377,7 @@ function enhanceHome(source) {
     </div>`
   );
 
+  // Remove old upcoming section and unused form fields
   html = html.replace(/\s*<section id="upcoming" class="upcoming">[\s\S]*?<\/section>\s*/, "\n");
   html = html.replace(/<div><label for="reqEvent">[\s\S]*?<\/div>/, "");
   html = html.replace(/<div><label for="reqVariant">[\s\S]*?<\/div>/, "");
@@ -420,134 +385,263 @@ function enhanceHome(source) {
   html = html.replace(/initManufacturer\(\);/g, "");
   html = html.replace(/loadUpcoming\(\);/g, "");
 
+  // PRIO 5: Move Upcoming Races to RIGHT side — insert after <main> instead of before
+  // PRIO 5: Fixed size, no resize
   html = html.replace(
     '<div class="layout">\n<main>',
     `<div class="layout">
-<aside id="upcoming" class="upcoming upcoming-dock show" aria-label="Upcoming Races">
-  <div class="upcoming-widget-head"><div><span class="upcoming-kicker">LMU PORTAL</span><h2>Upcoming Races</h2></div><span class="resize-note" title="Widget an der Ecke vergrößern oder verkleinern">↘</span></div>
-  <div id="upcomingStatus" class="upcoming-status">Rennen werden geladen…</div>
-  <div id="raceList" class="race-list"></div>
-  <div class="upcoming-source">Schedule information from <a href="https://lmuportal.com/" target="_blank" rel="noopener noreferrer">LMU Portal</a></div>
-</aside>
 <main>`
   );
 
+  // Insert upcoming-dock AFTER </main> closing
+  html = html.replace(
+    '</main>\n</div>',
+    `</main>
+<aside id="upcoming" class="upcoming upcoming-dock show" aria-label="Upcoming Races">
+  <div class="upcoming-widget-head"><div><span class="upcoming-kicker">LMU PORTAL</span><h2>Upcoming Races</h2></div></div>
+  <div id="upcomingStatus" class="upcoming-status">Rennen werden geladen…</div>
+  <div id="raceList" class="race-list"></div>
+  <div class="upcoming-source">Schedule from <a href="https://lmuportal.com/" target="_blank" rel="noopener noreferrer">LMU Portal</a></div>
+</aside>
+</div>`
+  );
+
+  // CSS
   const extraCss = `
-/* Production fixes: header branding, Upcoming Races dock and manufacturer imagery */
+/* ── Production Enhancements ── */
 .brand-logo{width:96px!important;height:48px!important;object-fit:contain!important;display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto}
+
+/* PRIO 1: BP Logo as background watermark — transparent PNG, no bg color issue */
 .layout{position:relative;isolation:isolate}
 .hero:after,.vehicle:after{display:none!important}
-.layout:before{content:"";position:fixed;left:clamp(220px,18vw,340px);top:110px;width:min(58vw,760px);height:72vh;background:url('/assets/three-peaks-racing-logo.webp') center/contain no-repeat;opacity:.075;pointer-events:none;z-index:-1;filter:saturate(.85)}
-.upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 auto;width:240px;height:570px;min-width:205px;max-width:min(420px,40vw);min-height:230px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 10px 0;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);resize:both;overflow:auto;z-index:5}
-.upcoming-widget-head{position:sticky;top:-15px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:-15px -12px 10px;padding:15px 12px 10px;background:color-mix(in srgb,var(--surface) 97%,transparent);border-bottom:1px solid var(--border)}
-.upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.resize-note{font-size:15px;color:var(--muted);user-select:none}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}.upcoming-dock .race-list{display:grid;gap:8px}.upcoming-dock .race{background:var(--surface2);padding:10px;border:1px solid var(--border);border-radius:8px}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:5px}.upcoming-source{margin-top:auto;padding:12px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
-.manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease;filter:none}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
-@media(max-width:1100px){.upcoming-dock{width:220px;max-width:32vw}.layout:before{left:210px;opacity:.06}}
-@media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:300px;max-height:60vh;margin:14px;border:1px solid var(--border);border-radius:12px;resize:vertical}.layout:before{left:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
+body:before{
+  content:"";
+  position:fixed;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:min(55vw,700px);
+  height:min(36vw,460px);
+  background:url('/assets/bp-logo.webp') center/contain no-repeat;
+  opacity:.07;
+  pointer-events:none;
+  z-index:0;
+}
+main,aside.upcoming-dock{position:relative;z-index:1}
+
+/* PRIO 4+5: Upcoming Races — RIGHT side, FIXED size, NO resize */
+.layout{display:flex;align-items:flex-start}
+.upcoming-dock{
+  display:flex!important;
+  flex-direction:column;
+  flex:0 0 260px;
+  width:260px;
+  height:calc(100vh - 68px);
+  position:sticky;
+  top:68px;
+  margin:0;
+  padding:15px 12px 12px;
+  border:0;
+  border-left:1px solid var(--border);
+  background:color-mix(in srgb,var(--surface) 96%,transparent);
+  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  /* PRIO 5: NO resize */
+  resize:none!important;
+  min-width:0;
+  max-width:none;
+  min-height:0;
+  max-height:none;
+}
+.upcoming-widget-head{
+  flex:0 0 auto;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  margin:-15px -12px 10px;padding:15px 12px 10px;
+  background:color-mix(in srgb,var(--surface) 97%,transparent);
+  border-bottom:1px solid var(--border);
+}
+.upcoming-widget-head h2{font-size:17px;margin:2px 0 0}
+.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px;flex:0 0 auto}
+.upcoming-status.error{color:var(--danger)}
+.upcoming-dock .race-list{flex:1;overflow-y:auto;display:grid;gap:8px;padding-right:2px}
+.upcoming-dock .race{background:var(--surface2);padding:10px;border:1px solid var(--border);border-radius:8px}
+.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25}
+.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:5px}
+.race-countdown{font-size:11px;font-weight:700;color:var(--accent);margin-top:4px}
+.upcoming-source{flex:0 0 auto;padding:10px 2px 2px;font-size:9px;color:var(--muted)}
+.upcoming-source a{color:inherit}
+
+/* Manufacturer carousel */
+.manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}
+.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}
+.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}
+.manufacturer-name{display:none!important}
+.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
+
+/* Responsive */
+@media(max-width:1100px){
+  .upcoming-dock{flex:0 0 220px;width:220px}
+}
+@media(max-width:800px){
+  .layout{display:block}
+  .upcoming-dock{
+    position:relative!important;top:auto!important;
+    width:calc(100% - 28px)!important;flex:none!important;
+    height:280px;
+    margin:14px;
+    border:1px solid var(--border);border-radius:12px;
+    border-left:1px solid var(--border);
+  }
+  body:before{width:90vw;height:60vw;opacity:.05}
+  .brand-logo{width:72px!important;height:38px!important}
+  main{padding-top:18px!important}
+  .manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}
+  .manufacturer-label{width:100%}
+}
 `;
   html = html.replace("</style>", extraCss + "\n</style>");
 
+  // JS
   const extraJs = `<script>
 (() => {
+  /* Manufacturer carousel */
   const manufacturers = [
     { name: 'GO Setups', src: '/assets/manufacturers/go-setups.webp' },
     { name: 'HYMO', src: '/assets/manufacturers/hymo-setups.webp' },
     { name: 'beAlien', src: '/assets/manufacturers/bealien.webp' }
   ];
-  let manufacturerIndex = 0;
-  let manufacturerTimer = null;
-  const image = document.getElementById('manufacturerImage');
-  const renderManufacturer = (index) => {
-    if (!image) return;
-    manufacturerIndex = (index + manufacturers.length) % manufacturers.length;
-    image.style.opacity = '0';
-    window.setTimeout(() => {
-      image.src = manufacturers[manufacturerIndex].src;
-      image.alt = manufacturers[manufacturerIndex].name;
-      image.style.opacity = '1';
-    }, 180);
+  let mIdx = 0, mTimer = null;
+  const mImg = document.getElementById('manufacturerImage');
+  const renderMfr = (index) => {
+    if (!mImg) return;
+    mIdx = (index + manufacturers.length) % manufacturers.length;
+    mImg.style.opacity = '0';
+    setTimeout(() => { mImg.src = manufacturers[mIdx].src; mImg.alt = manufacturers[mIdx].name; mImg.style.opacity = '1'; }, 180);
   };
-  const restartManufacturerTimer = () => {
-    if (manufacturerTimer) clearInterval(manufacturerTimer);
-    manufacturerTimer = setInterval(() => renderManufacturer(manufacturerIndex + 1), 5000);
-  };
-  document.getElementById('manufacturerPrev')?.addEventListener('click', () => { renderManufacturer(manufacturerIndex - 1); restartManufacturerTimer(); });
-  document.getElementById('manufacturerNext')?.addEventListener('click', () => { renderManufacturer(manufacturerIndex + 1); restartManufacturerTimer(); });
-  restartManufacturerTimer();
+  const restartMfr = () => { if (mTimer) clearInterval(mTimer); mTimer = setInterval(() => renderMfr(mIdx + 1), 5000); };
+  document.getElementById('manufacturerPrev')?.addEventListener('click', () => { renderMfr(mIdx - 1); restartMfr(); });
+  document.getElementById('manufacturerNext')?.addEventListener('click', () => { renderMfr(mIdx + 1); restartMfr(); });
+  restartMfr();
 
-  const widget = document.getElementById('upcoming');
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  try {
-    if (widget && window.innerWidth > 800) {
-      const savedWidth = Number(localStorage.getItem('upcomingWidgetWidth'));
-      const savedHeight = Number(localStorage.getItem('upcomingWidgetHeight'));
-      if (savedWidth) widget.style.width = clamp(savedWidth, 205, Math.min(420, window.innerWidth * .4)) + 'px';
-      if (savedHeight) widget.style.height = clamp(savedHeight, 230, window.innerHeight - 68) + 'px';
+  /* Upcoming Races with auto-remove on start */
+  const statusEl = document.getElementById('upcomingStatus');
+  const listEl = document.getElementById('raceList');
+  const make = (tag, cls, txt) => { const el = document.createElement(tag); if (cls) el.className = cls; if (txt != null) el.textContent = txt; return el; };
+
+  let raceData = [];
+  let countdownInterval = null;
+
+  const fmt = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+  };
+
+  const pad = n => String(n).padStart(2, '0');
+
+  const formatCountdown = (ms) => {
+    if (ms <= 0) return null;
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return pad(h) + ':' + pad(m) + ':' + pad(sec);
+    return pad(m) + ':' + pad(sec);
+  };
+
+  /* PRIO 4: tick — remove started races without reload */
+  const tickCountdowns = () => {
+    const now = Date.now();
+    let anyRemoved = false;
+    raceData = raceData.filter(race => {
+      const startMs = Date.parse(race.startsAtUtc);
+      if (startMs <= now) { anyRemoved = true; return false; }
+      return true;
+    });
+    if (anyRemoved) {
+      renderRaces();
+      if (!raceData.length) {
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+        return;
+      }
     }
-  } catch {}
-  if (widget && 'ResizeObserver' in window) {
-    let saveTimer;
-    new ResizeObserver(entries => {
-      if (window.innerWidth <= 800) return;
-      const rect = entries[0]?.contentRect;
-      if (!rect) return;
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        try {
-          localStorage.setItem('upcomingWidgetWidth', String(Math.round(widget.getBoundingClientRect().width)));
-          localStorage.setItem('upcomingWidgetHeight', String(Math.round(widget.getBoundingClientRect().height)));
-        } catch {}
-      }, 180);
-    }).observe(widget);
-  }
+    /* Update countdown text in existing cards */
+    document.querySelectorAll('.race-countdown').forEach(el => {
+      const startMs = Number(el.dataset.start);
+      const remaining = startMs - now;
+      if (remaining <= 0) {
+        /* will be removed on next tick */
+        el.textContent = 'Startet jetzt';
+      } else {
+        const cd = formatCountdown(remaining);
+        el.textContent = cd ? 'Start in ' + cd : '';
+      }
+    });
+  };
 
-  const status = document.getElementById('upcomingStatus');
-  const list = document.getElementById('raceList');
-  const make = (tag, className, text) => {
-    const el = document.createElement(tag);
-    if (className) el.className = className;
-    if (text != null) el.textContent = text;
-    return el;
+  const renderRaces = () => {
+    if (!listEl) return;
+    listEl.replaceChildren();
+    if (!raceData.length) {
+      statusEl.textContent = 'Keine Rennen mehr in diesem Zeitfenster.';
+      return;
+    }
+    const now = Date.now();
+    raceData.forEach(race => {
+      const startMs = Date.parse(race.startsAtUtc);
+      const remaining = startMs - now;
+      const card = make('article', 'race');
+      card.appendChild(make('div', 'race-name', race.name || 'LMU Race'));
+      const meta = [];
+      if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
+      const start = fmt(race.startsAtUtc);
+      if (start) meta.push(start);
+      if (race.tier) meta.push(race.tier);
+      if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
+      if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
+      if (race.setup) meta.push('Setup: ' + race.setup);
+      card.appendChild(make('div', 'race-meta', meta.join(' · ')));
+      /* Countdown */
+      if (remaining > 0 && remaining < 24 * 60 * 60 * 1000) {
+        const cdEl = make('div', 'race-countdown');
+        cdEl.dataset.start = String(startMs);
+        const cd = formatCountdown(remaining);
+        cdEl.textContent = cd ? 'Start in ' + cd : '';
+        card.appendChild(cdEl);
+      }
+      listEl.appendChild(card);
+    });
   };
-  const formatStart = (iso) => {
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-  };
+
   const loadUpcomingRich = async () => {
-    if (!status || !list) return;
-    status.className = 'upcoming-status';
-    status.textContent = 'Rennen werden geladen…';
-    list.replaceChildren();
+    if (!statusEl || !listEl) return;
+    statusEl.className = 'upcoming-status';
+    statusEl.textContent = 'Rennen werden geladen…';
+    listEl.replaceChildren();
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
     try {
       const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.success) throw new Error(data.error || 'Upcoming Races konnten nicht geladen werden.');
-      const races = Array.isArray(data.races) ? data.races : [];
-      if (!races.length) {
-        status.textContent = data.switchover?.active ? 'Der LMU-Wochenwechsel läuft gerade. Bitte nach 10:05 UTC erneut prüfen.' : 'Keine Rennen in den nächsten 24 Stunden.';
+      /* PRIO 4: filter already-started on client too (clock drift safety) */
+      const now = Date.now();
+      raceData = (Array.isArray(data.races) ? data.races : []).filter(r => Date.parse(r.startsAtUtc) > now);
+      if (!raceData.length) {
+        statusEl.textContent = data.switchover?.active ? 'Wochenwechsel läuft. Bitte nach 10:05 UTC erneut prüfen.' : 'Keine Rennen im aktuellen Zeitfenster.';
         return;
       }
-      status.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.' : '';
-      races.forEach(race => {
-        const card = make('article', 'race');
-        card.appendChild(make('div', 'race-name', race.name || 'LMU Race'));
-        const meta = [];
-        if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
-        const start = formatStart(race.startsAtUtc);
-        if (start) meta.push(start);
-        if (race.tier) meta.push(race.tier);
-        if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
-        if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
-        if (race.setup) meta.push('Setup: ' + race.setup);
-        card.appendChild(make('div', 'race-meta', meta.join(' · ')));
-        list.appendChild(card);
-      });
+      statusEl.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal nicht erreichbar.' : '';
+      renderRaces();
+      /* PRIO 4: start 1-second tick for auto-remove */
+      countdownInterval = setInterval(tickCountdowns, 1000);
     } catch (error) {
-      status.className = 'upcoming-status error';
-      status.textContent = error?.message || 'Upcoming Races konnten nicht geladen werden.';
+      statusEl.className = 'upcoming-status error';
+      statusEl.textContent = error?.message || 'Upcoming Races konnten nicht geladen werden.';
     }
   };
+
   loadUpcomingRich();
 })();
 </script>`;
@@ -573,31 +667,12 @@ async function serveRepoAsset(request, env) {
 
 /* ── Helpers ── */
 function clean(value, max = 120) {
-  return String(value || "")
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .trim()
-    .slice(0, max);
+  return String(value || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
 }
-
-async function safeJson(response) {
-  try { return await response.json(); }
-  catch { return null; }
-}
-
+async function safeJson(response) { try { return await response.json(); } catch { return null; } }
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=UTF-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff"
-    }
-  });
+  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 }
-
 function discordJson(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" }
-  });
+  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
