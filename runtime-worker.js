@@ -16,7 +16,8 @@ export default {
       const asset = await env.ASSETS.fetch(request);
       if (!asset.ok) return new Response("Asset not found", { status: 404 });
       const headers = new Headers(asset.headers);
-      headers.set("Cache-Control", "public, max-age=86400");
+      if (url.pathname.startsWith('/assets/manufacturers/')) headers.set("Cache-Control", "no-store, max-age=0");
+      else headers.set("Cache-Control", "public, max-age=86400");
       headers.set("X-Content-Type-Options", "nosniff");
       return new Response(asset.body, { status: asset.status, headers });
     }
@@ -59,7 +60,7 @@ function enhanceHome(source) {
       <span class="manufacturer-label">Setup Hersteller</span>
       <button type="button" id="manufacturerPrev" class="manufacturer-nav" aria-label="Vorheriger Hersteller">‹</button>
       <div class="manufacturer-visual">
-        <img id="manufacturerImage" src="/assets/manufacturers/go-setups.webp" alt="GO Setups">
+        <img id="manufacturerImage" src="/assets/manufacturers/go-setups.webp?v=e35ec9bc" alt="GO Setups">
         <span id="manufacturerName" class="manufacturer-name" aria-hidden="true">GO</span>
       </div>
       <button type="button" id="manufacturerNext" class="manufacturer-nav" aria-label="Nächster Hersteller">›</button>
@@ -114,9 +115,9 @@ function enhanceHome(source) {
   const js = `<script>
 (() => {
   const manufacturers = [
-    { name: 'GO Setups', src: '/assets/manufacturers/go-setups.webp' },
-    { name: 'HYMO', src: '/assets/manufacturers/hymo-setups.webp' },
-    { name: 'beAlien', src: '/assets/manufacturers/bealien.webp' }
+    { name: 'GO Setups', src: '/assets/manufacturers/go-setups.webp?v=e35ec9bc' },
+    { name: 'HYMO', src: '/assets/manufacturers/hymo-setups.webp?v=c7456521' },
+    { name: 'beAlien', src: '/assets/manufacturers/bealien.webp?v=628e3510' }
   ];
   const image = document.getElementById('manufacturerImage');
   let manufacturerIndex = 0;
@@ -241,95 +242,96 @@ function enhanceHome(source) {
 
   const srLabel = race => {
     const raw = String(race?.srRequirement || '').trim();
-    if (!raw) return null;
-    const lower = raw.toLowerCase();
-    if (lower.includes('bronze')) return { text: 'BRONZE SR', key: 'bronze' };
-    if (lower.includes('silver')) return { text: 'SILVER SR', key: 'silver' };
-    if (lower.includes('gold')) return { text: 'GOLD SR', key: 'gold' };
-    return { text: raw + ' SR', key: tierKey(race?.tier) };
+    return raw ? 'SR ' + raw : 'SR';
   };
 
-  const formatStart = iso => {
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+  const formatMeta = race => {
+    const meta = [];
+    if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
+    if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
+    if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
+    if (race.setup) meta.push('Setup: ' + race.setup);
+    return meta.join(' · ');
   };
 
-  const countdownText = startMs => {
-    const delta = Math.max(0, startMs - Date.now());
-    const total = Math.floor(delta / 1000);
-    const days = Math.floor(total / 86400);
-    const hours = Math.floor((total % 86400) / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-    if (days > 0) return 'Start in ' + days + 'd ' + String(hours).padStart(2,'0') + 'h ' + String(minutes).padStart(2,'0') + 'm';
-    return 'Start in ' + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+  const formatCountdown = ms => {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return (h ? String(h).padStart(2,'0') + ':' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   };
 
-  function renderRaces() {
-    if (!status || !list) return;
+  const renderRaces = () => {
+    if (!list || !status) return;
     const now = Date.now();
-    allRaces = allRaces.filter(race => Number.isFinite(race.startMs) && race.startMs > now);
-    const visible = allRaces.filter(race => activeFilter === 'all' || race.category === activeFilter);
+    allRaces = allRaces.filter(race => {
+      const start = Date.parse(race?.startsAtUtc);
+      return Number.isFinite(start) && start > now;
+    });
+
+    const visible = activeFilter === 'all' ? allRaces : allRaces.filter(race => tierKey(race.tier) === activeFilter);
     list.replaceChildren();
 
     if (!visible.length) {
-      status.textContent = allRaces.length ? 'Keine Rennen für diesen Filter.' : 'Keine kommenden Rennen.';
+      status.textContent = allRaces.length ? 'Keine Rennen für diesen Filter.' : 'Keine Rennen in den nächsten 24 Stunden.';
       return;
     }
 
     if (!status.classList.contains('error')) status.textContent = '';
     for (const race of visible) {
-      const card = make('article', 'race ' + race.category);
-      card.dataset.startMs = String(race.startMs);
-      const top = make('div', 'race-top');
-      top.append(make('div', 'race-tier', tierLabel(race)));
-      const sr = srLabel(race);
-      if (sr) top.append(make('span', 'sr-badge ' + sr.key, sr.text));
-      card.append(top);
-      card.append(make('div', 'race-name', race.name || 'LMU Race'));
-      const meta = [];
-      if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
-      const start = formatStart(race.startsAtUtc);
-      if (start) meta.push(start);
-      if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
-      if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
-      card.append(make('div', 'race-meta', meta.join(' · ')));
-      card.append(make('div', 'race-countdown', countdownText(race.startMs)));
+      const key = tierKey(race.tier);
+      const startMs = Date.parse(race.startsAtUtc);
+      const card = make('article', 'race ' + key);
+      card.dataset.startsAt = race.startsAtUtc;
+      card.append(
+        (() => {
+          const top = make('div','race-top');
+          top.append(make('span','race-tier',tierLabel(race)), make('span','sr-badge ' + key,srLabel(race)));
+          return top;
+        })(),
+        make('div','race-name',race.name || 'LMU Race'),
+        make('div','race-meta',formatMeta(race)),
+        make('div','race-countdown','Start in ' + formatCountdown(startMs - now))
+      );
       list.append(card);
     }
-  }
+  };
 
-  function tickCountdowns() {
-    let removed = false;
+  const tickCountdowns = () => {
     const now = Date.now();
-    for (const card of list?.querySelectorAll('.race') || []) {
-      const startMs = Number(card.dataset.startMs);
-      if (!Number.isFinite(startMs) || startMs <= now) { removed = true; continue; }
+    let removed = false;
+    for (const card of [...document.querySelectorAll('.race[data-starts-at]')]) {
+      const start = Date.parse(card.dataset.startsAt || '');
+      if (!Number.isFinite(start) || start <= now) {
+        card.remove();
+        removed = true;
+        continue;
+      }
       const node = card.querySelector('.race-countdown');
-      if (node) node.textContent = countdownText(startMs);
+      if (node) node.textContent = 'Start in ' + formatCountdown(start - now);
     }
-    if (removed) renderRaces();
-  }
+    const before = allRaces.length;
+    allRaces = allRaces.filter(race => Date.parse(race.startsAtUtc) > now);
+    if (removed || before !== allRaces.length) renderRaces();
+  };
 
-  async function loadRaces(silent = false) {
+  filterButtons.forEach(button => button.addEventListener('click', () => {
+    activeFilter = button.dataset.filter || 'all';
+    filterButtons.forEach(b => b.classList.toggle('active', b === button));
+    renderRaces();
+  }));
+
+  async function loadRaces() {
     if (!status || !list) return;
-    if (!silent) {
-      status.className = 'upcoming-status';
-      status.textContent = 'Rennen werden geladen…';
-    }
+    status.className = 'upcoming-status';
+    status.textContent = 'Rennen werden geladen…';
     try {
       const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.success) throw new Error(data.error || 'Upcoming Races konnten nicht geladen werden.');
-      const now = Date.now();
-      allRaces = (Array.isArray(data.races) ? data.races : [])
-        .map(race => ({ ...race, startMs: Date.parse(race.startsAtUtc), category: tierKey(race.tier) }))
-        .filter(race => Number.isFinite(race.startMs) && race.startMs > now)
-        .sort((a,b) => a.startMs - b.startMs);
-      status.className = 'upcoming-status';
-      if (!allRaces.length) status.textContent = data.switchover?.active ? 'Der LMU-Wochenwechsel läuft gerade. Bitte später erneut prüfen.' : 'Keine kommenden Rennen.';
-      else if (data.stale) status.textContent = 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.';
-      else status.textContent = '';
+      allRaces = Array.isArray(data.races) ? data.races : [];
+      status.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.' : '';
       renderRaces();
     } catch (error) {
       status.className = 'upcoming-status error';
@@ -337,18 +339,10 @@ function enhanceHome(source) {
     }
   }
 
-  filterButtons.forEach(button => button.addEventListener('click', () => {
-    activeFilter = button.dataset.filter || 'all';
-    filterButtons.forEach(x => x.classList.toggle('active', x === button));
-    renderRaces();
-  }));
-
+  clearInterval(countdownTimer);
   countdownTimer = setInterval(tickCountdowns, 1000);
-  refreshTimer = setInterval(() => loadRaces(true), 5 * 60 * 1000);
-  addEventListener('beforeunload', () => {
-    clearInterval(countdownTimer);
-    clearInterval(refreshTimer);
-  }, { once: true });
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadRaces, 5 * 60 * 1000);
   loadRaces();
 })();
 </script>`;
