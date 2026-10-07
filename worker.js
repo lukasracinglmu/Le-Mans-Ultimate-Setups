@@ -189,7 +189,6 @@ async function deleteSetup(request, env) {
 }
 
 /* ── Discord API ── */
-/* ── Discord API ── */
 const DISCORD_TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
 const DISCORD_DISPLAY_CHANNEL_TYPES = new Set([0, 2, 4, 5, 10, 11, 12, 13, 15]);
 const PERM_VIEW_CHANNEL = 1024n;
