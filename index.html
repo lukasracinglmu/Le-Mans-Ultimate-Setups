@@ -4,323 +4,194 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LMU Setups</title>
-
 <style>
 * { box-sizing: border-box; }
 
 :root {
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --surface-2: #f0f0f0;
-  --text: #111111;
-  --muted: #666666;
-  --border: #dddddd;
-  --accent: #5865f2;
+  --bg: #f5f5f5; --surface: #ffffff; --surface-2: #f0f0f0;
+  --text: #111111; --muted: #666666; --border: #dddddd; --accent: #5865f2;
 }
-
 [data-theme="dark"] {
-  --bg: #111111;
-  --surface: #191919;
-  --surface-2: #222222;
-  --text: #f5f5f5;
-  --muted: #999999;
-  --border: #303030;
+  --bg: #111111; --surface: #191919; --surface-2: #222222;
+  --text: #f5f5f5; --muted: #999999; --border: #303030;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
+body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; }
 button, input, select, textarea { font: inherit; }
 
+/* Header */
 header {
-  height: 64px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  height: 64px; border-bottom: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; position: sticky; top: 0; z-index: 20;
 }
-
 .logo { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
-
 .header-actions { display: flex; align-items: center; gap: 10px; }
-
 button {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 9px 13px;
-  cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 8px; padding: 9px 13px; cursor: pointer;
 }
-
 button:hover { background: var(--surface-2); }
-
-.discord-button {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
+.discord-button { background: var(--accent); border-color: var(--accent); color: white; }
 .discord-button:hover { background: #4752c4; }
+.account { display: none; align-items: center; gap: 8px; }
+.account-name { font-size: 14px; color: var(--muted); }
+.account-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; display: none; }
 
-/* Layout mit Sidebar */
-.layout {
-  display: flex;
-  flex: 1;
-  align-items: flex-start;
-}
+/* Layout */
+.layout { display: flex; flex: 1; align-items: flex-start; min-height: calc(100vh - 64px); }
 
-main {
-  flex: 1;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 60px 24px 80px;
-  min-width: 0;
-}
+main { flex: 1; max-width: 1100px; margin: 0 auto; padding: 60px 24px 80px; min-width: 0; }
 
 /* Discord Sidebar */
 .discord-sidebar {
-  width: 320px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
-  border-left: 1px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  width: 340px; flex-shrink: 0; position: sticky; top: 64px;
+  height: calc(100vh - 64px); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #313338;
 }
 
-.discord-sidebar iframe {
-  width: 100%;
-  flex: 1;
-  border: none;
-  display: block;
-}
-
+/* Discord Client styles */
 .discord-login-prompt {
-  padding: 24px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  height: 100%;
-  justify-content: center;
+  height: 100%; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 24px; text-align: center; gap: 12px;
+  background: #313338; color: #b5bac1;
 }
+.discord-login-prompt strong { color: #fff; font-size: 17px; }
 
-.discord-login-prompt strong {
-  color: var(--text);
-  font-size: 16px;
+.discord-client { height: 100%; display: flex; flex-direction: column; background: #313338; overflow: hidden; }
+.discord-topbar {
+  height: 48px; flex: 0 0 48px; background: #2b2d31; border-bottom: 1px solid #1f2023;
+  display: flex; align-items: center; padding: 0 14px; gap: 8px;
 }
+.discord-server-name { font-size: 14px; font-weight: 700; color: #f2f3f5; }
+.discord-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 120px minmax(0,1fr); }
+.discord-channels { background: #2b2d31; overflow-y: auto; padding: 8px 6px; }
+.discord-category {
+  color: #949ba4; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  padding: 12px 6px 4px; letter-spacing: .5px;
+}
+.discord-channel {
+  width: 100%; border: 0; background: transparent; color: #949ba4;
+  padding: 6px 8px; border-radius: 4px; text-align: left; font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+}
+.discord-channel:hover { background: #35373c; color: #dbdee1; }
+.discord-channel.active { background: #404249; color: #fff; }
+.discord-messages { min-width: 0; display: flex; flex-direction: column; background: #313338; }
+.discord-channel-header {
+  height: 48px; flex: 0 0 48px; display: flex; align-items: center;
+  gap: 6px; padding: 0 12px; border-bottom: 1px solid #26272b;
+  color: #f2f3f5; font-weight: 600; font-size: 13px;
+}
+.discord-message-list { flex: 1; overflow-y: auto; padding: 10px 8px 6px; }
+.discord-message { display: flex; gap: 8px; padding: 4px 2px; border-radius: 4px; }
+.discord-message:hover { background: rgba(0,0,0,.1); }
+.discord-avatar {
+  width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%;
+  background: #5865f2; color: #fff; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; overflow: hidden;
+}
+.discord-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.discord-msg-body { min-width: 0; }
+.discord-author { font-size: 11px; font-weight: 700; color: #fff; }
+.discord-time { margin-left: 4px; color: #949ba4; font-size: 9px; font-weight: 400; }
+.discord-text { margin-top: 2px; color: #dbdee1; font-size: 12px; line-height: 1.35; word-break: break-word; white-space: pre-wrap; }
+.discord-input { flex: 0 0 auto; padding: 8px; background: #313338; }
+.discord-input-row { display: flex; gap: 6px; }
+.discord-input-row input {
+  flex: 1; border: 0; outline: 0; border-radius: 6px;
+  background: #383a40; color: #dbdee1; padding: 9px 10px; font-size: 12px;
+}
+.discord-input-row button {
+  border: 0; border-radius: 6px; background: #5865f2; color: #fff;
+  padding: 0 10px; font-size: 12px; cursor: pointer;
+}
+.discord-empty, .discord-error { color: #949ba4; font-size: 12px; padding: 16px 8px; text-align: center; }
+.discord-error { color: #f04747; }
 
+/* Main content */
 .hero { margin-bottom: 40px; }
-
 .hero h1 { margin: 0 0 10px; font-size: 42px; letter-spacing: -1px; }
-
 .hero p { margin: 0; color: var(--muted); font-size: 17px; }
 
 .search {
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-  margin-bottom: 35px;
+  width: 100%; padding: 14px 16px; border: 1px solid var(--border);
+  border-radius: 9px; background: var(--surface); color: var(--text);
+  outline: none; margin-bottom: 35px;
 }
-
 .search:focus { border-color: var(--accent); }
 
 .category { margin-bottom: 42px; }
-
 .category h2 { font-size: 21px; margin-bottom: 16px; }
-
-.vehicle-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
+.vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; }
 .vehicle {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 18px;
-  cursor: pointer;
-  transition: border-color .15s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+  padding: 18px; cursor: pointer; transition: border-color .15s;
 }
-
 .vehicle:hover { border-color: var(--accent); }
-
 .vehicle-name { font-weight: 600; }
+.vehicle-class { margin-top: 6px; color: var(--muted); font-size: 13px; }
 
-.vehicle-class { color: var(--muted); font-size: 13px; }
-
-.vehicle-actions {
-  margin-top: 4px;
-  display: flex;
-  gap: 8px;
-}
-
-.vehicle-upload-btn {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.vehicle-upload-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--surface);
-}
-
+/* Pages */
 .page { display: none; }
 .page.active { display: block; }
-
 .back { margin-bottom: 25px; }
-
 .car-title { margin-bottom: 8px; }
+.car-subtitle { color: var(--muted); margin-bottom: 20px; }
 
-.car-subtitle { color: var(--muted); margin-bottom: 30px; }
-
-.car-upload-section {
-  margin-bottom: 24px;
+/* Upload */
+.upload-area { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+.upload-btn {
+  background: var(--text); color: var(--bg); border: 0; border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
 }
+.upload-btn:disabled { opacity: .5; cursor: wait; }
+.upload-status { font-size: 13px; color: var(--muted); }
+.upload-status.ok { color: #16803c; }
+.upload-status.err { color: #c00; }
 
-.car-upload-section input[type="file"] {
+/* Setup list */
+.setup {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; padding: 16px 18px; margin-bottom: 10px;
+}
+.setup-info { min-width: 0; }
+.setup-track { font-weight: 600; }
+.setup-meta { margin-top: 5px; color: var(--muted); font-size: 13px; }
+.setup-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.download {
+  white-space: nowrap; text-decoration: none; background: var(--text);
+  color: var(--bg); padding: 9px 13px; border-radius: 7px; font-size: 14px;
+}
+.delete-btn {
+  background: transparent; border: 0; cursor: pointer; padding: 6px;
+  color: var(--muted); font-size: 18px; border-radius: 6px; line-height: 1;
   display: none;
 }
-
-.car-upload-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 1px dashed var(--border);
-  border-radius: 9px;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--muted);
-  background: var(--surface);
-  transition: border-color .15s, color .15s;
-}
-
-.car-upload-label:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.upload-status {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.setup {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 17px 18px;
-  margin-bottom: 10px;
-}
-
-.setup-info { min-width: 0; }
-
-.setup-track { font-weight: 600; }
-
-.setup-meta { margin-top: 6px; color: var(--muted); font-size: 13px; }
-
-.download {
-  white-space: nowrap;
-  text-decoration: none;
-  background: var(--text);
-  color: var(--bg);
-  padding: 9px 13px;
-  border-radius: 7px;
-  font-size: 14px;
-}
+.delete-btn:hover { color: #dc2626; background: transparent; }
 
 .empty { color: var(--muted); padding: 25px 0; }
-
-.account { display: none; align-items: center; gap: 8px; }
-
-.account-name { font-size: 14px; color: var(--muted); }
-
-.request-section {
-  margin-top: 55px;
-  padding-top: 35px;
-  border-top: 1px solid var(--border);
-}
-
-.request-section h2 { margin-top: 0; }
-
-.request-form { max-width: 650px; }
-
-.request-form label {
-  display: block;
-  margin: 18px 0 7px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.request-form input,
-.request-form textarea {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-}
-
-.request-form textarea { min-height: 120px; resize: vertical; }
-
-.request-message { margin-top: 12px; font-size: 14px; }
-
 .hidden { display: none !important; }
 
+/* Request section */
+.request-section { margin-top: 55px; padding-top: 35px; border-top: 1px solid var(--border); }
+.request-section h2 { margin-top: 0; }
+.request-form { max-width: 650px; }
+.request-form label { display: block; margin: 18px 0 7px; font-size: 14px; font-weight: 600; }
+.request-form input, .request-form textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; background: var(--surface); color: var(--text); outline: none;
+}
+.request-form textarea { min-height: 120px; resize: vertical; }
+.request-message { margin-top: 12px; font-size: 14px; }
 .login-required {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 25px;
-  color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; padding: 25px; color: var(--muted);
 }
 
-@media (max-width: 900px) {
-  .discord-sidebar { display: none; }
-}
-
+@media (max-width: 900px) { .discord-sidebar { display: none; } }
 @media (max-width: 650px) {
   header { padding: 0 15px; }
   main { padding: 40px 15px 60px; }
@@ -329,23 +200,16 @@ main {
   .setup { align-items: flex-start; flex-direction: column; }
   .download { width: 100%; text-align: center; }
 }
-
-.account-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
 </style>
 </head>
-
 <body>
 
 <header>
   <div class="logo">LMU SETUPS</div>
   <div class="header-actions">
     <div id="account" class="account">
-      <img id="accountAvatar" class="account-avatar" src="" alt="" style="display:none;"><span id="accountName" class="account-name"></span>
+      <img id="accountAvatar" class="account-avatar" src="" alt="">
+      <span id="accountName" class="account-name"></span>
       <button onclick="logout()">Logout</button>
     </div>
     <a id="loginButton" href="/auth/discord" style="text-decoration:none;">
@@ -356,359 +220,432 @@ main {
 </header>
 
 <div class="layout">
-
   <main>
 
     <!-- HOME -->
     <section id="homePage" class="page active">
-
       <div class="hero">
         <h1>LMU Setups</h1>
         <p>Setups für Le Mans Ultimate.</p>
       </div>
-
-      <input
-        id="search"
-        class="search"
-        type="text"
-        placeholder="Fahrzeug suchen..."
-        oninput="searchVehicles()"
-      >
-
+      <input id="search" class="search" type="text" placeholder="Fahrzeug suchen..." oninput="searchVehicles()">
       <div id="categories"></div>
-
       <div class="request-section">
         <h2>Setup Request</h2>
         <div id="requestLoginRequired" class="login-required">
           Melde dich mit Discord an, um einen Setup Request zu senden.
         </div>
         <form id="requestForm" class="request-form hidden">
-          <label for="requestVehicle">Fahrzeug</label>
-          <input id="requestVehicle" type="text" placeholder="z. B. Porsche 963" required>
-          <label for="requestTrack">Strecke</label>
-          <input id="requestTrack" type="text" placeholder="z. B. Le Mans" required>
-          <label for="requestMessage">Nachricht (optional)</label>
-          <textarea id="requestMessage" placeholder="z. B. Bitte ein stabiles Wet-Setup."></textarea>
+          <label for="reqVehicle">Fahrzeug</label>
+          <input id="reqVehicle" type="text" placeholder="z. B. Porsche 963" required>
+          <label for="reqTrack">Strecke</label>
+          <input id="reqTrack" type="text" placeholder="z. B. Le Mans" required>
+          <label for="reqMsg">Nachricht (optional)</label>
+          <textarea id="reqMsg" placeholder="z. B. Bitte ein stabiles Wet-Setup."></textarea>
           <button type="submit" class="discord-button">Request senden</button>
-          <div id="requestMessageResult" class="request-message"></div>
+          <div id="requestResult" class="request-message"></div>
         </form>
       </div>
-
     </section>
 
     <!-- CAR PAGE -->
     <section id="carPage" class="page">
-
       <button class="back" onclick="showHome()">← Zurück</button>
-
       <h1 id="carTitle" class="car-title"></h1>
       <div id="carSubtitle" class="car-subtitle"></div>
 
-      <!-- Upload Bereich auf der Auto Seite -->
-      <div class="car-upload-section">
-        <label class="car-upload-label" for="carFileUpload">
-          ⬆ Setup hochladen (.zip)
-        </label>
-        <input
-          type="file"
-          id="carFileUpload"
-          accept=".zip"
-          onchange="handleFileUpload(event)"
-        >
-        <div id="uploadStatus" class="upload-status"></div>
+      <div id="uploadArea" class="upload-area" style="display:none;">
+        <input id="fileInput" type="file" accept=".zip" multiple hidden>
+        <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+          ⬆ Setups hochladen
+        </button>
+        <span id="uploadStatus" class="upload-status"></span>
       </div>
 
       <div id="setupList"></div>
-
     </section>
 
   </main>
 
   <!-- DISCORD SIDEBAR -->
-  <aside class="discord-sidebar" id="discordSidebar">
+  <aside class="discord-sidebar">
+    <!-- Login prompt (shown when not logged in) -->
     <div id="discordLoginPrompt" class="discord-login-prompt">
       <strong>Discord</strong>
-      <span>Melde dich mit Discord an, um den Discord-Server direkt hier zu öffnen.</span>
+      <span>Melde dich mit Discord an, um den Server direkt hier zu öffnen.</span>
       <a href="/auth/discord" style="text-decoration:none;">
         <button class="discord-button">Mit Discord anmelden</button>
       </a>
     </div>
-    <div id="discordWidgetContainer" style="display:none; height:100%;">
-      <iframe
-        id="discordWidgetIframe"
-        src="https://discord.com/widget?id=1367893409234161846&theme=dark"
-        width="100%"
-        height="100%"
-        allowtransparency="true"
-        frameborder="0"
-        sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-        style="display:block; border:none;"
-      ></iframe>
+
+    <!-- Full Discord client (shown when logged in) -->
+    <div id="discordClient" class="discord-client" style="display:none;">
+      <div class="discord-topbar">
+        <div class="discord-server-name" id="discordServerName">LMU Discord</div>
+      </div>
+      <div class="discord-body">
+        <div id="discordChannels" class="discord-channels">
+          <div class="discord-empty">Laden...</div>
+        </div>
+        <div class="discord-messages">
+          <div class="discord-channel-header"># <span id="discordCurrentChannel">Kanal wählen</span></div>
+          <div id="discordMsgList" class="discord-message-list">
+            <div class="discord-empty">Wähle einen Kanal aus.</div>
+          </div>
+          <div class="discord-input">
+            <div class="discord-input-row">
+              <input id="discordMsgInput" maxlength="2000" autocomplete="off" placeholder="Nachricht schreiben...">
+              <button onclick="sendDiscordMessage()">Senden</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </aside>
-
 </div>
 
 <script>
-/* ---- DISCORD SERVER ID hier eintragen ---- */
-const DISCORD_SERVER_ID = "1367893409234161846";
-
+// ── State ──
 let setupData = {};
 let currentUser = null;
+let currentCar = { category: "", vehicle: "" };
+let discordChannels = [];
+let discordCurrentChannel = null;
 
-const categoriesContainer = document.getElementById("categories");
-const searchInput = document.getElementById("search");
-const requestForm = document.getElementById("requestForm");
-const requestLoginRequired = document.getElementById("requestLoginRequired");
+const $ = id => document.getElementById(id);
 
+// ── Theme ──
+function loadTheme() {
+  const t = localStorage.getItem("lmu-theme") || "light";
+  document.documentElement.setAttribute("data-theme", t);
+  $("themeButton").textContent = t === "dark" ? "Light Mode" : "Dark Mode";
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("lmu-theme", next);
+  $("themeButton").textContent = next === "dark" ? "Light Mode" : "Dark Mode";
+}
+
+// ── Escape ──
+function esc(v) {
+  return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+// ── Login ──
+async function checkLogin() {
+  try {
+    const r = await fetch("/api/me", { cache: "no-store" });
+    const d = await r.json();
+    if (d.loggedIn) {
+      currentUser = d.user;
+      $("loginButton").classList.add("hidden");
+      $("account").style.display = "flex";
+      $("accountName").textContent = d.user.username;
+      if (d.user.avatar) {
+        const av = $("accountAvatar");
+        av.src = d.user.avatar;
+        av.style.display = "block";
+      }
+      $("requestLoginRequired").classList.add("hidden");
+      $("requestForm").classList.remove("hidden");
+      // Show Discord client
+      $("discordLoginPrompt").style.display = "none";
+      $("discordClient").style.display = "flex";
+      loadDiscordChannels();
+    } else {
+      currentUser = null;
+      $("loginButton").classList.remove("hidden");
+      $("account").style.display = "none";
+      $("accountAvatar").style.display = "none";
+      $("requestLoginRequired").classList.remove("hidden");
+      $("requestForm").classList.add("hidden");
+      $("discordLoginPrompt").style.display = "flex";
+      $("discordClient").style.display = "none";
+    }
+  } catch(e) { console.error("Login check failed", e); }
+}
+
+async function logout() { window.location.href = "/auth/logout"; }
+
+// ── Setups ──
 async function loadSetups() {
   try {
-    const response = await fetch("setups.json");
-    if (!response.ok) throw new Error("setups.json konnte nicht geladen werden.");
-    setupData = await response.json();
+    const r = await fetch("setups.json");
+    if (!r.ok) throw new Error();
+    setupData = await r.json();
     renderCategories();
-  } catch (error) {
-    categoriesContainer.innerHTML = `<div class="empty">Setups konnten nicht geladen werden.</div>`;
-    console.error(error);
+  } catch {
+    $("categories").innerHTML = `<div class="empty">Setups konnten nicht geladen werden.</div>`;
   }
 }
 
 function renderCategories(filter = "") {
-  categoriesContainer.innerHTML = "";
-  const search = filter.trim().toLowerCase();
-
-  Object.entries(setupData).forEach(([category, vehicles]) => {
-    const filteredVehicles = vehicles.filter(v =>
-      v.name.toLowerCase().includes(search)
-    );
-    if (!filteredVehicles.length) return;
-
-    const section = document.createElement("section");
-    section.className = "category";
-    section.innerHTML = `<h2>${escapeHtml(category)}</h2>`;
-
+  $("categories").innerHTML = "";
+  const q = filter.trim().toLowerCase();
+  Object.entries(setupData).forEach(([cat, vehicles]) => {
+    const fv = vehicles.filter(v => v.name.toLowerCase().includes(q));
+    if (!fv.length) return;
+    const sec = document.createElement("section");
+    sec.className = "category";
+    sec.innerHTML = `<h2>${esc(cat)}</h2>`;
     const grid = document.createElement("div");
     grid.className = "vehicle-grid";
-
-    filteredVehicles.forEach(vehicle => {
+    fv.forEach(v => {
       const card = document.createElement("div");
       card.className = "vehicle";
-      card.innerHTML = `
-        <div class="vehicle-name">${escapeHtml(vehicle.name)}</div>
-        <div class="vehicle-class">${escapeHtml(category)}</div>
-        <div class="vehicle-actions">
-          <button
-            class="vehicle-upload-btn"
-            onclick="event.stopPropagation(); triggerUploadForVehicle('${escapeAttribute(vehicle.name)}', '${escapeAttribute(category)}')"
-          >⬆ Setup hochladen</button>
-        </div>
-      `;
-      card.onclick = () => showCar(category, vehicle.name);
+      card.innerHTML = `<div class="vehicle-name">${esc(v.name)}</div><div class="vehicle-class">${esc(cat)}</div>`;
+      card.onclick = () => showCar(cat, v.name);
       grid.appendChild(card);
     });
-
-    section.appendChild(grid);
-    categoriesContainer.appendChild(section);
+    sec.appendChild(grid);
+    $("categories").appendChild(sec);
   });
-
-  if (!categoriesContainer.children.length) {
-    categoriesContainer.innerHTML = `<div class="empty">Kein Fahrzeug gefunden.</div>`;
-  }
+  if (!$("categories").children.length)
+    $("categories").innerHTML = `<div class="empty">Kein Fahrzeug gefunden.</div>`;
 }
 
-/* Upload vom Grid aus */
-function triggerUploadForVehicle(vehicleName, category) {
-  showCar(category, vehicleName);
-  setTimeout(() => {
-    document.getElementById("carFileUpload").click();
-  }, 100);
-}
-
-function searchVehicles() {
-  renderCategories(searchInput.value);
-}
-
-function showCar(category, vehicleName) {
-  const vehicle = setupData[category].find(item => item.name === vehicleName);
-  if (!vehicle) return;
-
-  document.getElementById("homePage").classList.remove("active");
-  document.getElementById("carPage").classList.add("active");
-  document.getElementById("carTitle").textContent = vehicle.name;
-  document.getElementById("carSubtitle").textContent = category;
-  document.getElementById("uploadStatus").textContent = "";
-  document.getElementById("carFileUpload").value = "";
-
-  const list = document.getElementById("setupList");
-  list.innerHTML = "";
-
-  if (!vehicle.setups || vehicle.setups.length === 0) {
-    list.innerHTML = `<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>`;
-    return;
-  }
-
-  vehicle.setups.forEach(setup => {
-    const element = document.createElement("div");
-    element.className = "setup";
-    element.innerHTML = `
-      <div class="setup-info">
-        <div class="setup-track">${escapeHtml(setup.track)}</div>
-        <div class="setup-meta">v${escapeHtml(setup.version)} · ${escapeHtml(setup.date)}</div>
-      </div>
-      <a class="download" href="${escapeAttribute(setup.download)}" download>Download</a>
-    `;
-    list.appendChild(element);
-  });
-}
-
-function handleFileUpload(event) {
-  const file = event.target.files[0];
-  const status = document.getElementById("uploadStatus");
-  if (!file) return;
-
-  if (!file.name.endsWith(".zip")) {
-    status.textContent = "Nur .zip Dateien erlaubt.";
-    return;
-  }
-
-  const vehicleName = document.getElementById("carTitle").textContent;
-  status.textContent = `"${file.name}" ausgewählt für ${vehicleName}. Upload wird gesendet...`;
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("vehicle", vehicleName);
-
-  fetch("/api/upload", {
-    method: "POST",
-    body: formData
-  })
-    .then(r => r.json())
-    .then(data => {
-      status.textContent = data.success
-        ? "Setup erfolgreich hochgeladen!"
-        : (data.error || "Fehler beim Hochladen.");
-    })
-    .catch(() => {
-      status.textContent = "Fehler beim Hochladen.";
-    });
-}
+function searchVehicles() { renderCategories($("search").value); }
 
 function showHome() {
-  document.getElementById("carPage").classList.remove("active");
-  document.getElementById("homePage").classList.add("active");
+  $("carPage").classList.remove("active");
+  $("homePage").classList.add("active");
 }
 
-async function checkLogin() {
-  try {
-    const response = await fetch("/api/me", { cache: "no-store" });
-    const data = await response.json();
+async function showCar(category, vehicleName) {
+  currentCar = { category, vehicle: vehicleName };
+  $("homePage").classList.remove("active");
+  $("carPage").classList.add("active");
+  $("carTitle").textContent = vehicleName;
+  $("carSubtitle").textContent = category;
+  $("uploadStatus").textContent = "";
+  $("fileInput").value = "";
 
-    if (data.loggedIn) {
-      currentUser = data.user;
-
-      document.getElementById("loginButton").classList.add("hidden");
-      document.getElementById("account").style.display = "flex";
-      document.getElementById("accountName").textContent = data.user.username;
-
-      requestLoginRequired.classList.add("hidden");
-      requestForm.classList.remove("hidden");
-
-      /* Discord Widget einblenden, Login Prompt ausblenden */
-      document.getElementById("discordLoginPrompt").style.display = "none";
-      const widgetContainer = document.getElementById("discordWidgetContainer");
-      widgetContainer.style.display = "block";
-      widgetContainer.innerHTML = `
-        <iframe
-          src="https://discord.com/widget?id=${DISCORD_SERVER_ID}&theme=dark"
-          width="100%"
-          height="100%"
-          allowtransparency="true"
-          frameborder="0"
-          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-        ></iframe>
-      `;
-    } else {
-      currentUser = null;
-      document.getElementById("loginButton").classList.remove("hidden");
-      document.getElementById("account").style.display = "none";
-      requestLoginRequired.classList.remove("hidden");
-      requestForm.classList.add("hidden");
-
-      document.getElementById("discordLoginPrompt").style.display = "flex";
-      document.getElementById("discordWidgetContainer").style.display = "none";
-    }
-  } catch (error) {
-    console.error("Login Status konnte nicht geprüft werden.", error);
+  // Show upload area if allowed
+  if (currentUser?.canUpload) {
+    $("uploadArea").style.display = "flex";
+    // Show delete buttons
+    document.querySelectorAll(".delete-btn").forEach(b => b.style.display = "block");
+  } else {
+    $("uploadArea").style.display = "none";
   }
+
+  await loadCarSetups(category, vehicleName);
 }
 
-async function logout() {
-  window.location.href = "/auth/logout";
-}
-
-requestForm.addEventListener("submit", async function(event) {
-  event.preventDefault();
-  const result = document.getElementById("requestMessageResult");
-  result.textContent = "Request wird gesendet...";
-
-  const vehicle = document.getElementById("requestVehicle").value.trim();
-  const track = document.getElementById("requestTrack").value.trim();
-  const message = document.getElementById("requestMessage").value.trim();
-
+async function loadCarSetups(category, vehicle) {
+  const list = $("setupList");
+  list.innerHTML = `<div class="empty">Setups werden geladen...</div>`;
   try {
-    const response = await fetch("/api/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vehicle, track, message })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      result.textContent = data.error || "Request konnte nicht gesendet werden.";
+    const r = await fetch(`/api/setups?category=${encodeURIComponent(category)}&vehicle=${encodeURIComponent(vehicle)}`, { cache: "no-store" });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || "Fehler beim Laden.");
+    list.innerHTML = "";
+    if (!d.setups.length) {
+      list.innerHTML = `<div class="empty">Noch keine Setups für dieses Fahrzeug verfügbar.</div>`;
       return;
     }
-    result.textContent = "Setup Request wurde erfolgreich gesendet.";
-    requestForm.reset();
-  } catch (error) {
-    console.error(error);
-    result.textContent = "Fehler beim Senden des Requests.";
+    d.setups.forEach(s => {
+      const el = document.createElement("div");
+      el.className = "setup";
+      el.innerHTML = `
+        <div class="setup-info">
+          <div class="setup-track">${esc(s.name)}</div>
+          <div class="setup-meta">ZIP · Setup</div>
+        </div>
+        <div class="setup-actions">
+          <a class="download" href="${esc(s.download)}" download>Download</a>
+          <button class="delete-btn" title="Setup löschen" data-name="${esc(s.name)}" data-sha="${esc(s.sha)}"
+            onclick="deleteSetup('${esc(s.name)}','${esc(s.sha)}')" style="${currentUser?.canUpload ? 'display:block' : 'display:none'}">🗑</button>
+        </div>
+      `;
+      list.appendChild(el);
+    });
+  } catch(e) {
+    list.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
   }
+}
+
+// ── Upload ──
+$("fileInput").addEventListener("change", async function() {
+  const files = [...this.files];
+  if (!files.length) return;
+  const status = $("uploadStatus");
+  const btn = $("uploadBtn");
+  if (files.length > 50) { status.textContent = "Maximal 50 Dateien gleichzeitig."; status.className = "upload-status err"; return; }
+  btn.disabled = true;
+  status.className = "upload-status";
+  status.textContent = `${files.length} Datei(en) werden hochgeladen...`;
+  const form = new FormData();
+  form.append("category", currentCar.category);
+  form.append("vehicle", currentCar.vehicle);
+  files.forEach(f => form.append("files", f, f.name));
+  try {
+    const r = await fetch("/api/setups/upload", { method: "POST", body: form });
+    const d = await r.json();
+    const ok = d.uploaded?.length || 0;
+    const err = d.errors?.length || 0;
+    let msg = ok ? `${ok} Setup(s) hochgeladen.` : "";
+    if (err) {
+      const errList = d.errors.map(e => `${e.name}: ${e.error}`).join(", ");
+      msg += (msg ? " " : "") + `${err} Fehler: ${errList}`;
+      status.className = "upload-status err";
+    } else {
+      status.className = "upload-status ok";
+    }
+    status.textContent = msg || d.error || "Unbekannter Fehler.";
+    this.value = "";
+    await loadCarSetups(currentCar.category, currentCar.vehicle);
+  } catch(e) {
+    status.textContent = "Fehler beim Upload.";
+    status.className = "upload-status err";
+  } finally { btn.disabled = false; }
 });
 
-function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme");
-  const next = current === "dark" ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  localStorage.setItem("lmu-theme", next);
-  document.getElementById("themeButton").textContent =
-    next === "dark" ? "Light Mode" : "Dark Mode";
+// ── Delete ──
+async function deleteSetup(name, sha) {
+  if (!confirm(`Setup "${name}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.`)) return;
+  try {
+    const r = await fetch("/api/setups/delete", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: currentCar.category, vehicle: currentCar.vehicle, name, sha })
+    });
+    const d = await r.json();
+    if (!d.success) { alert(d.error || "Löschen fehlgeschlagen."); return; }
+    await loadCarSetups(currentCar.category, currentCar.vehicle);
+  } catch(e) { alert("Fehler beim Löschen."); }
 }
 
-function loadTheme() {
-  const saved = localStorage.getItem("lmu-theme");
-  const theme = saved || "light";
-  document.documentElement.setAttribute("data-theme", theme);
-  document.getElementById("themeButton").textContent =
-    theme === "dark" ? "Light Mode" : "Dark Mode";
+// ── Request Form ──
+$("requestForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const result = $("requestResult");
+  result.textContent = "Wird gesendet...";
+  try {
+    const r = await fetch("/api/request", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vehicle: $("reqVehicle").value.trim(), track: $("reqTrack").value.trim(), message: $("reqMsg").value.trim() })
+    });
+    const d = await r.json();
+    result.textContent = d.success ? "Request erfolgreich gesendet." : (d.error || "Fehler.");
+    if (d.success) this.reset();
+  } catch { result.textContent = "Fehler beim Senden."; }
+});
+
+// ── Discord Client ──
+async function loadDiscordChannels() {
+  const box = $("discordChannels");
+  box.innerHTML = `<div class="discord-empty">Laden...</div>`;
+  try {
+    const r = await fetch("/api/discord/channels", { cache: "no-store" });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    discordChannels = d.channels || [];
+    renderDiscordChannels();
+    const first = discordChannels.find(c => [0, 5, 15].includes(c.type));
+    if (first) selectDiscordChannel(first.id);
+  } catch(e) {
+    box.innerHTML = `<div class="discord-error">${esc(e.message)}</div>`;
+  }
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function renderDiscordChannels() {
+  const box = $("discordChannels");
+  box.innerHTML = "";
+  const cats = new Map(discordChannels.filter(c => c.type === 4).map(c => [c.id, c.name]));
+  const groups = {};
+  discordChannels.filter(c => c.type !== 4).forEach(c => {
+    const key = c.parent_id || "__none";
+    (groups[key] = groups[key] || []).push(c);
+  });
+  for (const [key, chs] of Object.entries(groups)) {
+    const label = key === "__none" ? "Kanäle" : (cats.get(key) || "Kanäle");
+    const cat = document.createElement("div");
+    cat.className = "discord-category";
+    cat.textContent = label;
+    box.appendChild(cat);
+    chs.sort((a, b) => (a.position || 0) - (b.position || 0)).forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "discord-channel";
+      btn.textContent = ([2, 13].includes(c.type) ? "🔊 " : "# ") + c.name;
+      btn.dataset.id = c.id;
+      if ([0, 5, 15].includes(c.type)) btn.onclick = () => selectDiscordChannel(c.id);
+      else btn.disabled = true;
+      box.appendChild(btn);
+    });
+  }
 }
 
-function escapeAttribute(value) {
-  return escapeHtml(value);
+async function selectDiscordChannel(id) {
+  const ch = discordChannels.find(c => c.id === id);
+  if (!ch || ![0, 5, 15].includes(ch.type)) return;
+  discordCurrentChannel = id;
+  $("discordCurrentChannel").textContent = ch.name;
+  document.querySelectorAll(".discord-channel").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+  await loadDiscordMessages(id);
 }
 
+async function loadDiscordMessages(id) {
+  const list = $("discordMsgList");
+  list.innerHTML = `<div class="discord-empty">Nachrichten werden geladen...</div>`;
+  try {
+    const r = await fetch(`/api/discord/messages?channel=${encodeURIComponent(id)}`, { cache: "no-store" });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    list.innerHTML = "";
+    if (!d.messages.length) {
+      list.innerHTML = `<div class="discord-empty">Noch keine Nachrichten.</div>`;
+      return;
+    }
+    d.messages.forEach(m => {
+      const row = document.createElement("div");
+      row.className = "discord-message";
+      const avatarContent = m.author.avatar
+        ? `<img src="https://cdn.discordapp.com/avatars/${esc(m.author.id)}/${esc(m.author.avatar)}.png?size=32" alt="">`
+        : esc((m.author.name || "?").charAt(0).toUpperCase());
+      const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
+      row.innerHTML = `
+        <div class="discord-avatar">${avatarContent}</div>
+        <div class="discord-msg-body">
+          <div class="discord-author">${esc(m.author.name)} <span class="discord-time">${esc(time)}</span></div>
+          <div class="discord-text">${esc(m.content)}</div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    list.scrollTop = list.scrollHeight;
+  } catch(e) {
+    list.innerHTML = `<div class="discord-error">${esc(e.message)}</div>`;
+  }
+}
+
+async function sendDiscordMessage() {
+  const input = $("discordMsgInput");
+  const message = input.value.trim();
+  if (!discordCurrentChannel || !message) return;
+  input.disabled = true;
+  try {
+    const r = await fetch("/api/discord/messages", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channelId: discordCurrentChannel, message })
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    input.value = "";
+    await loadDiscordMessages(discordCurrentChannel);
+  } catch(e) {
+    alert(e.message);
+  } finally { input.disabled = false; input.focus(); }
+}
+
+$("discordMsgInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDiscordMessage(); }
+});
+
+// ── Init ──
 loadTheme();
 loadSetups();
 checkLogin();
 </script>
-
 </body>
 </html>
-
