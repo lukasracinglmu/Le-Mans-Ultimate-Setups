@@ -97,7 +97,7 @@ function enhanceHome(source) {
 .upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 auto;width:240px;height:570px;min-width:205px;max-width:min(420px,40vw);min-height:230px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 10px 0;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);resize:both;overflow:auto;z-index:5}
 .upcoming-widget-head{position:sticky;top:-15px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:-15px -12px 10px;padding:15px 12px 10px;background:color-mix(in srgb,var(--surface) 97%,transparent);border-bottom:1px solid var(--border)}
 .upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.resize-note{font-size:15px;color:var(--muted);user-select:none}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}.upcoming-dock .race-list{display:grid;gap:8px}.upcoming-dock .race{background:var(--surface2);padding:10px;border:1px solid var(--border);border-radius:8px}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:5px}.upcoming-source{margin-top:auto;padding:12px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
-.manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
+.manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block!important;visibility:visible!important;opacity:1;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
 @media(max-width:1100px){.upcoming-dock{width:220px;max-width:32vw}.layout:before{left:210px;opacity:.06}}
 @media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:300px;max-height:60vh;margin:14px;border:1px solid var(--border);border-radius:12px;resize:vertical}.layout:before{left:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
 `;
@@ -110,26 +110,70 @@ function enhanceHome(source) {
     { name: 'HYMO', src: '/assets/manufacturers/hymo-setups.webp' },
     { name: 'beAlien', src: '/assets/manufacturers/bealien.webp' }
   ];
-  let manufacturerIndex = 0;
-  let manufacturerTimer;
   const image = document.getElementById('manufacturerImage');
-  const showManufacturer = (next) => {
+  let manufacturerIndex = 0;
+  let manufacturerTimer = null;
+  let transitionTimer = null;
+  let transitionId = 0;
+
+  const preloadManufacturers = () => Promise.all(manufacturers.map(item => new Promise(resolve => {
+    const preload = new Image();
+    preload.onload = () => resolve({ ok: true, item });
+    preload.onerror = () => resolve({ ok: false, item });
+    preload.src = item.src;
+  })));
+
+  const showManufacturer = (next, immediate = false) => {
     if (!image) return;
     manufacturerIndex = (next + manufacturers.length) % manufacturers.length;
-    image.style.opacity = '0';
-    setTimeout(() => {
-      image.src = manufacturers[manufacturerIndex].src;
-      image.alt = manufacturers[manufacturerIndex].name;
+    const selected = manufacturers[manufacturerIndex];
+    const id = ++transitionId;
+    clearTimeout(transitionTimer);
+
+    const apply = () => {
+      if (id !== transitionId) return;
+      image.src = selected.src;
+      image.alt = selected.name;
+      const reveal = () => {
+        if (id !== transitionId) return;
+        image.style.opacity = '1';
+      };
+      if (image.complete && image.naturalWidth > 0) reveal();
+      else {
+        image.onload = reveal;
+        image.onerror = reveal;
+      }
+    };
+
+    if (immediate) {
       image.style.opacity = '1';
-    }, 180);
+      apply();
+      return;
+    }
+    image.style.opacity = '0';
+    transitionTimer = setTimeout(apply, 220);
   };
+
   const restart = () => {
     clearInterval(manufacturerTimer);
     manufacturerTimer = setInterval(() => showManufacturer(manufacturerIndex + 1), 5000);
   };
-  document.getElementById('manufacturerPrev')?.addEventListener('click', () => { showManufacturer(manufacturerIndex - 1); restart(); });
-  document.getElementById('manufacturerNext')?.addEventListener('click', () => { showManufacturer(manufacturerIndex + 1); restart(); });
-  restart();
+
+  if (image) {
+    preloadManufacturers().finally(() => {
+      showManufacturer(0, true);
+      restart();
+    });
+  }
+
+  document.getElementById('manufacturerPrev')?.addEventListener('click', () => {
+    showManufacturer(manufacturerIndex - 1);
+    restart();
+  });
+  document.getElementById('manufacturerNext')?.addEventListener('click', () => {
+    showManufacturer(manufacturerIndex + 1);
+    restart();
+  });
 
   const widget = document.getElementById('upcoming');
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
