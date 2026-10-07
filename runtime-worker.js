@@ -489,6 +489,14 @@ let lmuInFlight = null;
 let discordVerifyKeyCache = { key: null, expiresAt: 0 };
 
 export default {
+
+  async queue(batch, env) {
+    // Queue consumer stub — upload processing handled directly via GitHub API
+    for (const message of batch.messages) {
+      message.ack();
+    }
+  }
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
