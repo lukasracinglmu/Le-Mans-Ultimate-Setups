@@ -81,6 +81,12 @@ function enhanceHome(source) {
     <div><span class="upcoming-kicker">LMU PORTAL</span><h2>Upcoming Races</h2></div>
     <span class="resize-note" title="Widget an der Ecke vergrößern oder verkleinern">↘</span>
   </div>
+  <div class="race-filters" role="group" aria-label="Race Filter">
+    <button type="button" class="race-filter active" data-filter="all">Alle</button>
+    <button type="button" class="race-filter bronze" data-filter="bronze">Bronze</button>
+    <button type="button" class="race-filter silver" data-filter="silver">Silver</button>
+    <button type="button" class="race-filter gold" data-filter="gold">Gold</button>
+  </div>
   <div id="upcomingStatus" class="upcoming-status">Rennen werden geladen…</div>
   <div id="raceList" class="race-list"></div>
   <div class="upcoming-source">Schedule information from <a href="https://lmuportal.com/" target="_blank" rel="noopener noreferrer">LMU Portal</a></div>
@@ -94,12 +100,14 @@ function enhanceHome(source) {
 .layout{position:relative;isolation:isolate}
 .hero:after,.vehicle:after{display:none!important}
 .layout:before{content:"";position:fixed;left:clamp(220px,18vw,340px);top:110px;width:min(58vw,760px);height:72vh;background:url('/assets/three-peaks-racing-logo.webp') center/contain no-repeat;opacity:.075;pointer-events:none;z-index:-1;filter:saturate(.85)}
-.upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 auto;width:240px;height:570px;min-width:205px;max-width:min(420px,40vw);min-height:230px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 10px 0;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);resize:both;overflow:auto;z-index:5}
-.upcoming-widget-head{position:sticky;top:-15px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:-15px -12px 10px;padding:15px 12px 10px;background:color-mix(in srgb,var(--surface) 97%,transparent);border-bottom:1px solid var(--border)}
-.upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.resize-note{font-size:15px;color:var(--muted);user-select:none}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}.upcoming-dock .race-list{display:grid;gap:8px}.upcoming-dock .race{background:var(--surface2);padding:10px;border:1px solid var(--border);border-radius:8px}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:5px}.upcoming-source{margin-top:auto;padding:12px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
+.upcoming-dock{display:flex!important;flex-direction:column;flex:0 0 auto;width:260px;height:570px;min-width:220px;max-width:min(440px,42vw);min-height:230px;max-height:calc(100vh - 68px);position:sticky;top:68px;margin:0;padding:15px 12px 12px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0 0 10px 0;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px);box-shadow:var(--shadow);resize:both;overflow:hidden;z-index:5}
+.upcoming-widget-head{position:sticky;top:-15px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:-15px -12px 8px;padding:15px 12px 10px;background:color-mix(in srgb,var(--surface) 97%,transparent);border-bottom:1px solid var(--border)}
+.upcoming-widget-head h2{font-size:18px;margin:2px 0 0}.upcoming-kicker{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}.resize-note{font-size:15px;color:var(--muted);user-select:none}.upcoming-status{font-size:12px;color:var(--muted);padding:8px 2px}.upcoming-status.error{color:var(--danger)}
+.race-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.race-filter{border:1px solid var(--border);border-radius:999px;background:var(--surface2);font-size:10px;font-weight:800;padding:6px 9px;cursor:pointer}.race-filter.active{outline:2px solid color-mix(in srgb,var(--text) 30%,transparent);outline-offset:1px}.race-filter.bronze{border-color:#8f5d35}.race-filter.silver{border-color:#aeb5bd}.race-filter.gold{border-color:#b89536}
+.upcoming-dock .race-list{display:grid;gap:8px;overflow:auto;min-height:0;padding-right:2px}.upcoming-dock .race{padding:10px;border:1px solid var(--border);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}.upcoming-dock .race.bronze{background:linear-gradient(145deg,rgba(126,81,43,.44),rgba(74,46,29,.26));border-color:#8f5d35}.upcoming-dock .race.silver{background:linear-gradient(145deg,rgba(170,177,184,.24),rgba(95,102,110,.18));border-color:#aeb5bd}.upcoming-dock .race.gold{background:linear-gradient(145deg,rgba(166,128,40,.34),rgba(98,74,24,.22));border-color:#b89536}.race-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.race-tier{font-size:9px;font-weight:900;letter-spacing:.08em}.sr-badge{font-size:9px;font-weight:900;border-radius:999px;padding:4px 7px;border:1px solid currentColor;background:rgba(0,0,0,.14);white-space:nowrap}.sr-badge.bronze{color:#d69a62}.sr-badge.silver{color:#d5d9de}.sr-badge.gold{color:#e5c96b}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25;margin-top:6px}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:4px}.race-countdown{font-size:12px;font-weight:900;margin-top:7px}.upcoming-source{margin-top:8px;padding:8px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
 .manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block!important;visibility:visible!important;opacity:1;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
-@media(max-width:1100px){.upcoming-dock{width:220px;max-width:32vw}.layout:before{left:210px;opacity:.06}}
-@media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:300px;max-height:60vh;margin:14px;border:1px solid var(--border);border-radius:12px;resize:vertical}.layout:before{left:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
+@media(max-width:1100px){.upcoming-dock{width:230px;max-width:34vw}.layout:before{left:210px;opacity:.06}}
+@media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative;top:auto;width:calc(100% - 28px)!important;max-width:none;min-width:0;height:340px;max-height:70vh;margin:14px;border:1px solid var(--border);border-radius:12px;resize:vertical}.layout:before{left:5%;top:150px;width:90vw;height:60vh;opacity:.045}.brand-logo{width:76px!important;height:40px!important}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
 `;
   html = html.replace('</style>', css + '\n</style>');
 
@@ -181,7 +189,7 @@ function enhanceHome(source) {
     if (widget && innerWidth > 800) {
       const w = Number(localStorage.getItem('upcomingWidgetWidth'));
       const h = Number(localStorage.getItem('upcomingWidgetHeight'));
-      if (w) widget.style.width = clamp(w, 205, Math.min(420, innerWidth * .4)) + 'px';
+      if (w) widget.style.width = clamp(w, 220, Math.min(440, innerWidth * .42)) + 'px';
       if (h) widget.style.height = clamp(h, 230, innerHeight - 68) + 'px';
     }
   } catch {}
@@ -202,50 +210,145 @@ function enhanceHome(source) {
 
   const status = document.getElementById('upcomingStatus');
   const list = document.getElementById('raceList');
+  const filterButtons = [...document.querySelectorAll('.race-filter')];
+  let allRaces = [];
+  let activeFilter = 'all';
+  let countdownTimer = null;
+  let refreshTimer = null;
+
   const make = (tag, className, text) => {
     const el = document.createElement(tag);
     if (className) el.className = className;
     if (text != null) el.textContent = text;
     return el;
   };
-  const formatStart = (iso) => {
+
+  const tierKey = value => {
+    const t = String(value || '').trim().toLowerCase();
+    if (['bronze','beginner'].includes(t)) return 'bronze';
+    if (['silver','intermediate'].includes(t)) return 'silver';
+    if (['gold','advanced'].includes(t)) return 'gold';
+    return 'other';
+  };
+
+  const tierLabel = race => {
+    const key = tierKey(race?.tier);
+    if (key === 'bronze') return 'BRONZE DAILY';
+    if (key === 'silver') return 'SILVER DAILY';
+    if (key === 'gold') return 'GOLD DAILY';
+    return String(race?.tier || 'DAILY').toUpperCase();
+  };
+
+  const srLabel = race => {
+    const raw = String(race?.srRequirement || '').trim();
+    if (!raw) return null;
+    const lower = raw.toLowerCase();
+    if (lower.includes('bronze')) return { text: 'BRONZE SR', key: 'bronze' };
+    if (lower.includes('silver')) return { text: 'SILVER SR', key: 'silver' };
+    if (lower.includes('gold')) return { text: 'GOLD SR', key: 'gold' };
+    return { text: raw + ' SR', key: tierKey(race?.tier) };
+  };
+
+  const formatStart = iso => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
   };
-  async function loadRaces() {
+
+  const countdownText = startMs => {
+    const delta = Math.max(0, startMs - Date.now());
+    const total = Math.floor(delta / 1000);
+    const days = Math.floor(total / 86400);
+    const hours = Math.floor((total % 86400) / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    if (days > 0) return 'Start in ' + days + 'd ' + String(hours).padStart(2,'0') + 'h ' + String(minutes).padStart(2,'0') + 'm';
+    return 'Start in ' + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+  };
+
+  function renderRaces() {
     if (!status || !list) return;
-    status.className = 'upcoming-status';
-    status.textContent = 'Rennen werden geladen…';
+    const now = Date.now();
+    allRaces = allRaces.filter(race => Number.isFinite(race.startMs) && race.startMs > now);
+    const visible = allRaces.filter(race => activeFilter === 'all' || race.category === activeFilter);
     list.replaceChildren();
+
+    if (!visible.length) {
+      status.textContent = allRaces.length ? 'Keine Rennen für diesen Filter.' : 'Keine kommenden Rennen.';
+      return;
+    }
+
+    if (!status.classList.contains('error')) status.textContent = '';
+    for (const race of visible) {
+      const card = make('article', 'race ' + race.category);
+      card.dataset.startMs = String(race.startMs);
+      const top = make('div', 'race-top');
+      top.append(make('div', 'race-tier', tierLabel(race)));
+      const sr = srLabel(race);
+      if (sr) top.append(make('span', 'sr-badge ' + sr.key, sr.text));
+      card.append(top);
+      card.append(make('div', 'race-name', race.name || 'LMU Race'));
+      const meta = [];
+      if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
+      const start = formatStart(race.startsAtUtc);
+      if (start) meta.push(start);
+      if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
+      if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
+      card.append(make('div', 'race-meta', meta.join(' · ')));
+      card.append(make('div', 'race-countdown', countdownText(race.startMs)));
+      list.append(card);
+    }
+  }
+
+  function tickCountdowns() {
+    let removed = false;
+    const now = Date.now();
+    for (const card of list?.querySelectorAll('.race') || []) {
+      const startMs = Number(card.dataset.startMs);
+      if (!Number.isFinite(startMs) || startMs <= now) { removed = true; continue; }
+      const node = card.querySelector('.race-countdown');
+      if (node) node.textContent = countdownText(startMs);
+    }
+    if (removed) renderRaces();
+  }
+
+  async function loadRaces(silent = false) {
+    if (!status || !list) return;
+    if (!silent) {
+      status.className = 'upcoming-status';
+      status.textContent = 'Rennen werden geladen…';
+    }
     try {
       const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.success) throw new Error(data.error || 'Upcoming Races konnten nicht geladen werden.');
-      const races = Array.isArray(data.races) ? data.races : [];
-      if (!races.length) {
-        status.textContent = data.switchover?.active ? 'Der LMU-Wochenwechsel läuft gerade. Bitte nach 10:05 UTC erneut prüfen.' : 'Keine Rennen in den nächsten 24 Stunden.';
-        return;
-      }
-      status.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.' : '';
-      for (const race of races) {
-        const card = make('article', 'race');
-        card.append(make('div', 'race-name', race.name || 'LMU Race'));
-        const meta = [];
-        if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
-        const start = formatStart(race.startsAtUtc);
-        if (start) meta.push(start);
-        if (race.tier) meta.push(race.tier);
-        if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
-        if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
-        if (race.setup) meta.push('Setup: ' + race.setup);
-        card.append(make('div', 'race-meta', meta.join(' · ')));
-        list.append(card);
-      }
+      const now = Date.now();
+      allRaces = (Array.isArray(data.races) ? data.races : [])
+        .map(race => ({ ...race, startMs: Date.parse(race.startsAtUtc), category: tierKey(race.tier) }))
+        .filter(race => Number.isFinite(race.startMs) && race.startMs > now)
+        .sort((a,b) => a.startMs - b.startMs);
+      status.className = 'upcoming-status';
+      if (!allRaces.length) status.textContent = data.switchover?.active ? 'Der LMU-Wochenwechsel läuft gerade. Bitte später erneut prüfen.' : 'Keine kommenden Rennen.';
+      else if (data.stale) status.textContent = 'Zwischengespeicherte Daten – LMU Portal ist gerade nicht erreichbar.';
+      else status.textContent = '';
+      renderRaces();
     } catch (error) {
       status.className = 'upcoming-status error';
       status.textContent = error?.message || 'Upcoming Races konnten nicht geladen werden.';
     }
   }
+
+  filterButtons.forEach(button => button.addEventListener('click', () => {
+    activeFilter = button.dataset.filter || 'all';
+    filterButtons.forEach(x => x.classList.toggle('active', x === button));
+    renderRaces();
+  }));
+
+  countdownTimer = setInterval(tickCountdowns, 1000);
+  refreshTimer = setInterval(() => loadRaces(true), 5 * 60 * 1000);
+  addEventListener('beforeunload', () => {
+    clearInterval(countdownTimer);
+    clearInterval(refreshTimer);
+  }, { once: true });
   loadRaces();
 })();
 </script>`;
