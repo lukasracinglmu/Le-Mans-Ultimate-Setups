@@ -1,0 +1,12 @@
+.git
+.git/**
+.github
+.github/**
+setups
+setups/**
+*.zip
+**/*.zip
+node_modules
+node_modules/**
+.wrangler
+.wrangler/**
