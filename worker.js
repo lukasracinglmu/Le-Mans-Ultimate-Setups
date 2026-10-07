@@ -6,6 +6,7 @@ const SESSION_TTL = 604800;
 const OWNER_ID = "1033453785416208564";
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
+const MAX_REQUEST_BODY_BYTES = 26 * 1024 * 1024;
 const DEFAULT_UPLOADER_ROLE_ID = "1538601074074849330";
 const GITHUB_API = "https://api.github.com";
 const REQUEST_MODAL_ID = "lmu_setup_request";
@@ -20,9 +21,20 @@ let discordVerifyKeyCache = { key: null, expiresAt: 0 };
 export default {
   async fetch(request, env) {
     try {
+      if (!isHttpsRequest(request)) {
+        return json({ success: false, error: "HTTPS erforderlich." }, 400);
+      }
+
+      const originError = enforceSameOriginForStateChange(request, env);
+      if (originError) return originError;
+
       const url = new URL(request.url);
       const p = url.pathname;
       const m = request.method;
+
+      if (m !== "GET" && m !== "HEAD" && m !== "POST" && m !== "DELETE") {
+        return json({ success: false, error: "Methode nicht erlaubt." }, 405);
+      }
 
       if (p === "/auth/discord") return discordLogin(env);
       if (p === "/auth/discord/callback") return discordCallback(request, env);
@@ -46,13 +58,82 @@ export default {
       if (p === "/api/discord/messages" && m === "POST") return discordSendMessage(request, env);
 
       if (m === "GET" && p === "/") return serveHome(request, env);
-      return env.ASSETS.fetch(request);
+      return withSecurityHeaders(await env.ASSETS.fetch(request));
     } catch (e) {
-      console.error("Worker error", e);
+      console.error("Worker error", safeError(e));
       return json({ success: false, error: "Interner Serverfehler." }, 500);
     }
   }
 };
+
+/* ── Security helpers ── */
+function isHttpsRequest(request) {
+  const url = new URL(request.url);
+  if (url.protocol === "https:") return true;
+  const forwarded = request.headers.get("X-Forwarded-Proto");
+  return forwarded === "https";
+}
+
+function enforceSameOriginForStateChange(request, env) {
+  const method = request.method.toUpperCase();
+  if (!new Set(["POST", "PUT", "PATCH", "DELETE"]).has(method)) return null;
+
+  const url = new URL(request.url);
+  if (url.pathname === "/interactions/discord") return null;
+
+  const expected = (() => {
+    try { return new URL(env.SITE_URL || url.origin).origin; }
+    catch { return url.origin; }
+  })();
+
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== expected) {
+    return json({ success: false, error: "Origin nicht erlaubt." }, 403);
+  }
+
+  const referer = request.headers.get("Referer");
+  if (!origin && referer) {
+    try {
+      if (new URL(referer).origin !== expected) {
+        return json({ success: false, error: "Origin nicht erlaubt." }, 403);
+      }
+    } catch {
+      return json({ success: false, error: "Origin nicht erlaubt." }, 403);
+    }
+  }
+
+  return null;
+}
+
+function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {
+  const len = Number(request.headers.get("Content-Length") || 0);
+  return Number.isFinite(len) && len > max
+    ? json({ success: false, error: "Request zu groß." }, 413)
+    : null;
+}
+
+function safeError(error) {
+  if (!error) return "unknown";
+  if (error instanceof Error) return error.name || "Error";
+  return "unknown";
+}
+
+function securityHeaders(headers = new Headers()) {
+  const h = new Headers(headers);
+  h.set("X-Content-Type-Options", "nosniff");
+  h.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  h.set("X-Frame-Options", "DENY");
+  h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  h.set("Cross-Origin-Opener-Policy", "same-origin");
+  h.set("Cross-Origin-Resource-Policy", "same-origin");
+  h.set("Content-Security-Policy", "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' https://cdn.discordapp.com data:; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; upgrade-insecure-requests");
+  return h;
+}
+
+function withSecurityHeaders(response) {
+  const headers = securityHeaders(response.headers);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 /* ── Auth ── */
 function redirectUri(env) {
@@ -73,7 +154,7 @@ function discordLogin(env) {
     state
   });
 
-  const h = new Headers({ Location: `${DISCORD_OAUTH}/authorize?${p}` });
+  const h = securityHeaders(new Headers({ Location: `${DISCORD_OAUTH}/authorize?${p}` }));
   h.append("Set-Cookie", cookie(STATE_COOKIE, state, 600));
   return new Response(null, { status: 302, headers: h });
 }
@@ -84,16 +165,16 @@ async function discordCallback(request, env) {
   const retState = url.searchParams.get("state");
 
   if (url.searchParams.get("error")) {
-    return new Response("Discord-Anmeldung abgebrochen.", { status: 400 });
+    return new Response("Discord-Anmeldung abgebrochen.", { status: 400, headers: securityHeaders() });
   }
 
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   if (!code || !retState || cookies[STATE_COOKIE] !== retState) {
-    return new Response("Ungültige Anmeldung.", { status: 400 });
+    return new Response("Ungültige Anmeldung.", { status: 400, headers: securityHeaders() });
   }
 
   if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.SESSION_SECRET) {
-    return new Response("Nicht konfiguriert.", { status: 500 });
+    return new Response("Nicht konfiguriert.", { status: 500, headers: securityHeaders() });
   }
 
   const tr = await df("/oauth2/token", {
@@ -109,8 +190,8 @@ async function discordCallback(request, env) {
   });
 
   if (!tr.ok) {
-    console.error("Discord OAuth token error", tr.status, await tr.text());
-    return new Response("Discord-Anmeldung fehlgeschlagen.", { status: 502 });
+    console.error("Discord OAuth token error", tr.status);
+    return new Response("Discord-Anmeldung fehlgeschlagen.", { status: 502, headers: securityHeaders() });
   }
 
   const td = await tr.json();
@@ -119,8 +200,8 @@ async function discordCallback(request, env) {
   });
 
   if (!ur.ok) {
-    console.error("Discord OAuth user error", ur.status, await ur.text());
-    return new Response("Discord-Anmeldung fehlgeschlagen.", { status: 502 });
+    console.error("Discord OAuth user error", ur.status);
+    return new Response("Discord-Anmeldung fehlgeschlagen.", { status: 502, headers: securityHeaders() });
   }
 
   const user = await ur.json();
@@ -131,7 +212,7 @@ async function discordCallback(request, env) {
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL
   }, env.SESSION_SECRET);
 
-  const h = new Headers({ Location: "/" });
+  const h = securityHeaders(new Headers({ Location: "/" }));
   h.append("Set-Cookie", cookie(SESSION_COOKIE, sess, SESSION_TTL));
   h.append("Set-Cookie", cookie(STATE_COOKIE, "", 0));
   return new Response(null, { status: 302, headers: h });
@@ -185,7 +266,7 @@ async function hasIndividualUploadGrant(userId, env) {
       .first();
     return Boolean(row?.user_id);
   } catch (e) {
-    console.error("D1 upload access lookup failed", e);
+    console.error("D1 upload access lookup failed", safeError(e));
     return false;
   }
 }
@@ -239,7 +320,7 @@ async function grantUploadAccess(request, env) {
       return json({ success: false, error: "Der User ist nicht auf dem konfigurierten Discord-Server." }, 400);
     }
     if (!member.ok) {
-      console.error("Discord member validation failed", member.status, await member.text());
+      console.error("Discord member validation failed", member.status);
       return json({ success: false, error: "Discord User konnte nicht geprüft werden." }, 502);
     }
   }
@@ -290,7 +371,7 @@ function ghBranch(env) {
 }
 
 function safe(v) {
-  return String(v || "").trim().replace(/[/\\]+/g, "").replace(/\.\./g, "");
+  return String(v || "").trim().replace(/[/\\]+/g, "").replace(/\.\./g, "").replace(/[\u0000-\u001F\u007F]/g, "");
 }
 
 async function ghReq(path, opts, env) {
@@ -354,6 +435,9 @@ function isZipSignature(bytes) {
 }
 
 async function uploadSetups(request, env) {
+  const sizeError = validateRequestSize(request);
+  if (sizeError) return sizeError;
+
   const s = await readSession(request, env.SESSION_SECRET);
   if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401);
   if (!await canUserUpload(s, env)) return json({ success: false, error: "Keine Upload-Berechtigung." }, 403);
@@ -377,13 +461,13 @@ async function uploadSetups(request, env) {
     const originalName = String(file.name || "");
     const name = safe(originalName);
 
-    if (!name || !/\.zip$/i.test(name)) {
-      errors.push({ name: originalName || "Unbekannte Datei", error: "Nur ZIP-Dateien erlaubt." });
+    if (!name || name !== originalName.trim() || name.length > 180 || !/^[\p{L}\p{N} _().+\-]+\.zip$/u.test(name)) {
+      errors.push({ name: originalName || "Unbekannte Datei", error: "Ungültiger Dateiname." });
       continue;
     }
 
-    if (file.size > MAX_SETUP_BYTES) {
-      errors.push({ name, error: "Größer als 25 MB." });
+    if (file.size <= 0 || file.size > MAX_SETUP_BYTES) {
+      errors.push({ name, error: "Ungültige Dateigröße." });
       continue;
     }
 
@@ -425,7 +509,7 @@ async function uploadSetups(request, env) {
     }, env);
 
     if (!put.ok) {
-      console.error("GH upload error", put.status, await put.text());
+      console.error("GH upload error", put.status);
       errors.push({ name, error: "Upload fehlgeschlagen." });
       continue;
     }
@@ -456,7 +540,7 @@ async function deleteSetup(request, env) {
   const name = safe(body.name);
 
   if (!cat || !veh || !name) return json({ success: false, error: "Fehlende Parameter." }, 400);
-  if (!/\.zip$/i.test(name)) return json({ success: false, error: "Nur ZIP-Dateien können gelöscht werden." }, 400);
+  if (!/^[\p{L}\p{N} _().+\-]+\.zip$/u.test(name)) return json({ success: false, error: "Ungültiger Dateiname." }, 400);
 
   const fpath = `setups/${cat}/${veh}/${name}`;
   const epath = fpath.split("/").map(enc).join("/");
@@ -481,7 +565,7 @@ async function deleteSetup(request, env) {
   }, env);
 
   if (!del.ok) {
-    console.error("GH delete error", del.status, await del.text());
+    console.error("GH delete error", del.status);
     return json({ success: false, error: "Löschen fehlgeschlagen." }, 502);
   }
 
@@ -528,7 +612,7 @@ async function sendSetupRequestToDiscord(data, env) {
   });
 
   if (!r.ok) {
-    console.error("Discord request error", r.status, await r.text());
+    console.error("Discord request error", r.status);
     return { ok: false, status: 502, error: "Request konnte nicht gesendet werden." };
   }
 
@@ -574,7 +658,7 @@ async function getDiscordVerifyKey(env) {
   });
 
   if (!r.ok) {
-    console.error("Discord application lookup failed", r.status, await r.text());
+    console.error("Discord application lookup failed", r.status);
     return null;
   }
 
@@ -610,7 +694,7 @@ async function verifyDiscordInteraction(request, rawBody, env) {
       new TextEncoder().encode(timestamp + rawBody)
     );
   } catch (e) {
-    console.error("Discord interaction signature verification failed", e);
+    console.error("Discord interaction signature verification failed", safeError(e));
     return false;
   }
 }
@@ -656,12 +740,12 @@ function modalValues(interaction) {
 async function discordInteraction(request, env) {
   const rawBody = await request.text();
   if (!await verifyDiscordInteraction(request, rawBody, env)) {
-    return new Response("Invalid request signature", { status: 401 });
+    return new Response("Invalid request signature", { status: 401, headers: securityHeaders() });
   }
 
   let interaction;
   try { interaction = JSON.parse(rawBody); }
-  catch { return new Response("Invalid JSON", { status: 400 }); }
+  catch { return new Response("Invalid JSON", { status: 400, headers: securityHeaders() }); }
 
   if (interaction.type === 1) return json({ type: 1 });
 
@@ -735,7 +819,7 @@ async function registerRequestCommand(request, env) {
   });
 
   if (!r.ok) {
-    console.error("Discord command registration failed", r.status, await r.text());
+    console.error("Discord command registration failed", r.status);
     return json({ success: false, error: "Discord /request konnte nicht registriert werden." }, 502);
   }
 
@@ -750,7 +834,7 @@ async function getDiscordGuildChannels(env) {
   });
 
   if (!r.ok) {
-    console.error("Discord channels error", r.status, await r.text());
+    console.error("Discord channels error", r.status);
     return null;
   }
 
@@ -766,8 +850,8 @@ async function getDiscordMemberAndRoles(userId, env) {
   ]);
 
   if (!memberResponse.ok || !rolesResponse.ok) {
-    if (!memberResponse.ok) console.error("Discord member permission check error", memberResponse.status, await memberResponse.text());
-    if (!rolesResponse.ok) console.error("Discord roles permission check error", rolesResponse.status, await rolesResponse.text());
+    if (!memberResponse.ok) console.error("Discord member permission check error", memberResponse.status);
+    if (!rolesResponse.ok) console.error("Discord roles permission check error", rolesResponse.status);
     return null;
   }
 
@@ -898,7 +982,7 @@ async function discordMessages(request, env) {
   });
 
   if (!r.ok) {
-    console.error("Discord messages error", r.status, await r.text());
+    console.error("Discord messages error", r.status);
     return json({ success: false, error: "Nachrichten konnten nicht geladen werden." }, 502);
   }
 
@@ -959,7 +1043,7 @@ async function discordSendMessage(request, env) {
   });
 
   if (!r.ok) {
-    console.error("Discord send error", r.status, await r.text());
+    console.error("Discord send error", r.status);
     return json({ success: false, error: "Nachricht konnte nicht gesendet werden." }, 502);
   }
 
@@ -985,16 +1069,14 @@ async function serveHome(request, env) {
   const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
   const branch = ghBranch(env);
   const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/index.html`, { cache: "no-store" });
-  if (!r.ok) return env.ASSETS.fetch(request);
+  if (!r.ok) return withSecurityHeaders(await env.ASSETS.fetch(request));
 
   const html = await r.text();
   return new Response(html, {
-    headers: {
+    headers: securityHeaders(new Headers({
       "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "strict-origin-when-cross-origin"
-    }
+      "Cache-Control": "no-store"
+    }))
   });
 }
 
@@ -1021,7 +1103,7 @@ function parseCookies(header) {
 }
 
 function logout() {
-  const h = new Headers({ Location: "/" });
+  const h = securityHeaders(new Headers({ Location: "/" }));
   h.append("Set-Cookie", cookie(SESSION_COOKIE, "", 0));
   h.append("Set-Cookie", cookie(STATE_COOKIE, "", 0));
   return new Response(null, { status: 302, headers: h });
@@ -1030,11 +1112,10 @@ function logout() {
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
+    headers: securityHeaders(new Headers({
       "Content-Type": "application/json; charset=UTF-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff"
-    }
+      "Cache-Control": "no-store"
+    }))
   });
 }
 
@@ -1087,7 +1168,8 @@ async function readSession(request, secret) {
 
     if (!valid) return null;
     const payload = JSON.parse(data);
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (!payload?.id || !/^\d{16,22}$/.test(String(payload.id))) return null;
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch {
     return null;
