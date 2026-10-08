@@ -13,7 +13,6 @@ node_modules/**
 CHANGELOG.md
 README.md
 schema.sql
-setups.json
 worker.js
 production-worker.js
 runtime-worker.js
