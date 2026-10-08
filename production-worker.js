@@ -179,11 +179,12 @@ async function createWebsiteRequest(request, env) {
   const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
   const meResponse = await baseWorker.fetch(meRequest, env);
   const me = await safeJson(meResponse);
-  if (!me?.loggedIn || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
+  if (!me?.loggedIn || !me?.user?.id || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
   let body;
   try { body = await request.json(); }
   catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
   const data = {
+    userId: String(me.user.id),
     username: me.user.username,
     vehicle: clean(body.vehicle, 100),
     carClass: clean(body.carClass, 80),
@@ -195,13 +196,15 @@ async function createWebsiteRequest(request, env) {
   return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
 }
 
-function buildRequestContent({ username, vehicle, carClass, track, message }, roleId) {
+function buildRequestContent({ userId, username, vehicle, carClass, track, message }, roleId) {
+  const validUserId = /^\d{16,22}$/.test(String(userId || "")) ? String(userId) : null;
   const roleMention = roleId && /^\d{16,22}$/.test(roleId) ? `<@&${roleId}>` : null;
+  const userMention = validUserId ? `<@${validUserId}>` : clean(username, 80);
   const lines = [];
   if (roleMention) lines.push(roleMention);
   lines.push(
     "**Setup Request**",
-    `**User:** ${clean(username, 80)}`,
+    `**User:** ${userMention}`,
     `**Fahrzeug:** ${clean(vehicle, 100)}`,
     `**Klasse:** ${clean(carClass || "Nicht angegeben", 80)}`,
     `**Strecke:** ${clean(track, 100)}`
@@ -216,8 +219,12 @@ async function sendSetupRequest(data, env) {
     return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
   }
   const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || null;
-  const content = buildRequestContent(data, roleId);
-  const allowedMentions = roleId && /^\d{16,22}$/.test(roleId) ? { roles: [roleId] } : { parse: [] };
+  const validRoleId = roleId && /^\d{16,22}$/.test(roleId) ? roleId : null;
+  const validUserId = /^\d{16,22}$/.test(String(data.userId || "")) ? String(data.userId) : null;
+  const content = buildRequestContent(data, validRoleId);
+  const allowedMentions = { parse: [] };
+  if (validRoleId) allowedMentions.roles = [validRoleId];
+  if (validUserId) allowedMentions.users = [validUserId];
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
     method: "POST",
     headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
@@ -240,6 +247,7 @@ async function discordInteraction(request, env) {
     const values = modalValues(interaction.data.components);
     const user = interaction.member?.user || interaction.user || {};
     const data = {
+      userId: user.id ? String(user.id) : null,
       username: user.global_name || user.username || "Discord User",
       vehicle: clean(values.vehicle, 100),
       carClass: clean(values.class, 80),
@@ -418,62 +426,35 @@ main,aside.upcoming-dock{position:relative;z-index:1}
 
   const normalizeRaceCategory=race=>{
     if(race?.specialEvent===true)return'special';
-    const t=String(race?.tier||'').trim().toLowerCase();
-    if(t==='bronze')return'bronze';
-    if(t==='silver'||t==='silber')return'silver';
-    if(t==='gold')return'gold';
-    const sr=String(race?.srRequirement||'').trim().toLowerCase();
-    if(sr==='bronze')return'bronze';
-    if(sr==='silver'||sr==='silber')return'silver';
-    if(sr==='gold')return'gold';
+    const tier=String(race?.tier||'').toLowerCase();
+    if(tier.includes('bronze'))return'bronze';
+    if(tier.includes('silver'))return'silver';
+    if(tier.includes('gold'))return'gold';
+    if(tier.includes('special'))return'special';
     return'';
   };
-
-  const widgetHead=document.querySelector('.upcoming-widget-head');
-  if(widgetHead&&!document.querySelector('.race-filter-row')){
-    const filterRow=document.createElement('div');
-    filterRow.className='race-filter-row';
-    [['','Alle'],['bronze','Bronze'],['silver','Silber'],['gold','Gold'],['special','Special Events']].forEach(([t,label])=>{
-      const btn=document.createElement('button');btn.className='race-filter-btn'+(t===''?' active':'');btn.dataset.tier=t;btn.textContent=label;
-      btn.addEventListener('click',()=>{activeTierFilter=t;filterRow.querySelectorAll('.race-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));renderRaces();});
-      filterRow.appendChild(btn);
-    });
-    widgetHead.insertAdjacentElement('afterend',filterRow);
-  }
-
-  const make=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!=null)el.textContent=txt;return el;};
-  const fmt=iso=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return'';return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short'}).format(d);};
-  const pad=n=>String(n).padStart(2,'0');
-  const fmtCd=ms=>{if(ms<=0)return null;const s=Math.ceil(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?pad(h)+':'+pad(m)+':'+pad(sec):pad(m)+':'+pad(sec);};
-
-  const visibleRaces=()=>{const now=Date.now();return allRaceData.filter(r=>Date.parse(r.startsAtUtc)>now&&(!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter));};
-
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const countdown=iso=>{const ms=Date.parse(iso)-Date.now();if(ms<=0)return'Startet jetzt';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d>0?`In ${d}T ${h}Std`:(h>0?`In ${h}Std ${m}Min`:`In ${m} Min`);};
   const renderRaces=()=>{
-    if(!listEl)return;listEl.replaceChildren();const races=visibleRaces();
-    if(!races.length){if(statusEl)statusEl.textContent=allRaceData.length?'Keine Rennen für diesen Filter.':'Keine Rennen im aktuellen Zeitfenster.';return;}
-    if(statusEl&&!statusEl.classList.contains('error'))statusEl.textContent='';
-    const now=Date.now();
-    races.forEach(race=>{
-      const category=normalizeRaceCategory(race);const startMs=Date.parse(race.startsAtUtc);const rem=startMs-now;const card=make('article','race'+(category?' tier-'+category:''));
-      const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px';hdr.appendChild(make('div','race-name',race.name||'LMU Race'));
-      if(category){const labels={bronze:'BRONZE',silver:'SILBER',gold:'GOLD',special:'SPECIAL'};hdr.appendChild(make('span','race-tier-badge race-tier-'+category,labels[category]));}
-      card.appendChild(hdr);
-      const meta=[];if(race.track)meta.push(race.track+(race.trackLayout?' · '+race.trackLayout:''));const start=fmt(race.startsAtUtc);if(start)meta.push(start);if(race.srRequirement)meta.push('SR: '+race.srRequirement);if(Array.isArray(race.carClasses)&&race.carClasses.length)meta.push(race.carClasses.join(', '));if(race.durationMinutes)meta.push(race.durationMinutes+' Min');if(meta.length)card.appendChild(make('div','race-meta',meta.join(' · ')));
-      if(rem>0&&rem<24*60*60*1000){const cd=make('div','race-countdown');cd.dataset.start=String(startMs);cd.textContent='Start in '+fmtCd(rem);card.appendChild(cd);}listEl.appendChild(card);
+    if(!listEl)return;
+    const races=allRaceData.filter(r=>!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter);
+    listEl.innerHTML='';
+    races.forEach(r=>{
+      const cat=normalizeRaceCategory(r);const row=document.createElement('div');row.className='race'+(cat?' tier-'+cat:'');
+      const dt=new Date(r.startsAtUtc);const meta=[r.track,r.trackLayout,dt.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})].filter(Boolean).join(' · ');
+      row.innerHTML=`<div class="race-name">${esc(r.name)}</div><div class="race-meta">${esc(meta)}</div><div class="race-countdown" data-start="${esc(r.startsAtUtc)}">${esc(countdown(r.startsAtUtc))}</div>`;
+      listEl.appendChild(row);
     });
+    if(!races.length)listEl.innerHTML='<div class="upcoming-status">Keine Rennen für diesen Filter.</div>';
   };
-
-  const tick=()=>{
-    const now=Date.now();const before=allRaceData.length;allRaceData=allRaceData.filter(r=>Date.parse(r.startsAtUtc)>now);
-    if(before!==allRaceData.length){renderRaces();return;}
-    document.querySelectorAll('.race-countdown').forEach(el=>{const rem=Number(el.dataset.start)-now;if(rem<=0){renderRaces();return;}const text=fmtCd(rem);el.textContent=text?'Start in '+text:'';});
+  const ensureFilters=()=>{
+    if(!listEl||document.getElementById('raceFilters'))return;
+    const row=document.createElement('div');row.id='raceFilters';row.className='race-filter-row';
+    [['','Alle'],['bronze','Bronze'],['silver','Silver'],['gold','Gold'],['special','Special']].forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='race-filter-btn'+(key===activeTierFilter?' active':'');b.textContent=label;b.addEventListener('click',()=>{activeTierFilter=key;row.querySelectorAll('.race-filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderRaces();});row.appendChild(b);});
+    listEl.parentNode.insertBefore(row,listEl);
   };
-
-  const loadUpcoming=async()=>{
-    if(!statusEl||!listEl)return;statusEl.className='upcoming-status';statusEl.textContent='Rennen werden geladen…';listEl.replaceChildren();if(cdInterval){clearInterval(cdInterval);cdInterval=null;}
-    try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const data=await r.json().catch(()=>({}));if(!r.ok||!data.success)throw new Error(data.error||'Upcoming Races konnten nicht geladen werden.');const now=Date.now();allRaceData=(Array.isArray(data.races)?data.races:[]).filter(r=>Date.parse(r.startsAtUtc)>now).sort((a,b)=>Date.parse(a.startsAtUtc)-Date.parse(b.startsAtUtc));statusEl.textContent=data.stale?'Zwischengespeicherte Daten.':'';renderRaces();cdInterval=setInterval(tick,1000);}catch(e){statusEl.className='upcoming-status error';statusEl.textContent=e?.message||'Upcoming Races konnten nicht geladen werden.';}
-  };
-  loadUpcoming();
+  const loadRaces=async()=>{if(!statusEl||!listEl)return;statusEl.textContent='Rennen werden geladen…';statusEl.className='upcoming-status';try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||'Upcoming Races konnten nicht geladen werden.');allRaceData=Array.isArray(d.races)?d.races:[];ensureFilters();renderRaces();statusEl.textContent=allRaceData.length?`${allRaceData.length} kommende Rennen`:'Keine kommenden Rennen';if(cdInterval)clearInterval(cdInterval);cdInterval=setInterval(()=>document.querySelectorAll('.race-countdown[data-start]').forEach(el=>el.textContent=countdown(el.dataset.start)),30000);}catch(e){statusEl.textContent=e.message||'Upcoming Races konnten nicht geladen werden.';statusEl.className='upcoming-status error';listEl.innerHTML='';}};
+  loadRaces();
 })();
 </script>`;
   html = html.replace("</body>", extraJs + "\n</body>");
@@ -481,26 +462,22 @@ main,aside.upcoming-dock{position:relative;z-index:1}
 }
 
 async function serveRepoAsset(request, env) {
-  const url = new URL(request.url);
   const owner = env.GITHUB_OWNER || "lukasracinglmu";
   const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
   const branch = env.GITHUB_BRANCH || "main";
-  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${url.pathname}`, { cf: { cacheTtl: 86400, cacheEverything: true } });
-  if (!response.ok) return new Response("Asset not found", { status: 404 });
+  const path = new URL(request.url).pathname;
+  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${path}`, { cache: "no-store" });
+  if (!response.ok) return baseWorker.fetch(request, env);
   const headers = new Headers(response.headers);
-  headers.set("Content-Type", url.pathname.endsWith(".webp") ? "image/webp" : "application/octet-stream");
-  headers.set("Cache-Control", "public, max-age=86400");
+  headers.set("Cache-Control", "public, max-age=300");
   headers.set("X-Content-Type-Options", "nosniff");
-  return new Response(response.body, { status: 200, headers });
+  return new Response(response.body, { status: response.status, headers });
 }
 
-function clean(value, max = 120) {
-  return String(value || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+async function safeJson(response) {
+  try { return await response.json(); }
+  catch { return null; }
 }
-async function safeJson(response) { try { return await response.json(); } catch { return null; } }
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
-}
-function discordJson(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
-}
+function clean(value, max) { return String(value || "").replace(/@everyone|@here/gi, "[mention removed]").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, max); }
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
+function discordJson(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } }); }
