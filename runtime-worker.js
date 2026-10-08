@@ -1,4 +1,4 @@
-import productionWorker from "./production-worker.js";
+import productionWorker from "./ui-hotfix.js";
 
 export default {
   async fetch(request, env, ctx) {
