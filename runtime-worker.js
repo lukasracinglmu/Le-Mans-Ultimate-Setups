@@ -1,5 +1,6 @@
 import productionWorker from "./ui-hotfix.js";
 
+// Keep the final HTML pass intentionally narrow; all UI behavior lives in ui-hotfix.js.
 export default {
   async fetch(request, env, ctx) {
     const response = await productionWorker.fetch(request, env, ctx);
