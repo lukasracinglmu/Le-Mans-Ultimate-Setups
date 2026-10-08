@@ -203,7 +203,6 @@ function buildRequestContent({ userId, username, vehicle, carClass, track, messa
   const lines = [];
   if (roleMention) lines.push(roleMention);
   lines.push(
-    "**Setup Request**",
     `**User:** ${userMention}`,
     `**Fahrzeug:** ${clean(vehicle, 100)}`,
     `**Klasse:** ${clean(carClass || "Nicht angegeben", 80)}`,
@@ -426,34 +425,35 @@ main,aside.upcoming-dock{position:relative;z-index:1}
 
   const normalizeRaceCategory=race=>{
     if(race?.specialEvent===true)return'special';
-    const tier=String(race?.tier||'').toLowerCase();
-    if(tier.includes('bronze'))return'bronze';
-    if(tier.includes('silver'))return'silver';
-    if(tier.includes('gold'))return'gold';
-    if(tier.includes('special'))return'special';
+    const t=String(race?.tier||'').toLowerCase();
+    if(t.includes('bronze'))return'bronze';
+    if(t.includes('silver'))return'silver';
+    if(t.includes('gold'))return'gold';
     return'';
   };
-  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-  const countdown=iso=>{const ms=Date.parse(iso)-Date.now();if(ms<=0)return'Startet jetzt';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d>0?`In ${d}T ${h}Std`:(h>0?`In ${h}Std ${m}Min`:`In ${m} Min`);};
+
+  const formatDate=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';};
+  const countdown=value=>{const ms=new Date(value).getTime()-Date.now();if(!Number.isFinite(ms)||ms<=0)return'läuft / gestartet';const m=Math.floor(ms/60000);const d=Math.floor(m/1440),h=Math.floor((m%1440)/60),min=m%60;if(d>0)return`in ${d}d ${h}h`;if(h>0)return`in ${h}h ${min}m`;return`in ${min}m`;};
+  const escText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const renderFilters=()=>{
+    const old=document.getElementById('raceFilters');if(old)old.remove();
+    if(!listEl)return;
+    const row=document.createElement('div');row.id='raceFilters';row.className='race-filter-row';
+    [{k:'',l:'Alle'},{k:'bronze',l:'Bronze'},{k:'silver',l:'Silver'},{k:'gold',l:'Gold'},{k:'special',l:'Special'}].forEach(f=>{const b=document.createElement('button');b.type='button';b.className='race-filter-btn'+(activeTierFilter===f.k?' active':'');b.textContent=f.l;b.onclick=()=>{activeTierFilter=f.k;renderFilters();renderRaces();};row.appendChild(b);});
+    listEl.parentElement?.insertBefore(row,listEl);
+  };
+
   const renderRaces=()=>{
     if(!listEl)return;
     const races=allRaceData.filter(r=>!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter);
     listEl.innerHTML='';
-    races.forEach(r=>{
-      const cat=normalizeRaceCategory(r);const row=document.createElement('div');row.className='race'+(cat?' tier-'+cat:'');
-      const dt=new Date(r.startsAtUtc);const meta=[r.track,r.trackLayout,dt.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})].filter(Boolean).join(' · ');
-      row.innerHTML=`<div class="race-name">${esc(r.name)}</div><div class="race-meta">${esc(meta)}</div><div class="race-countdown" data-start="${esc(r.startsAtUtc)}">${esc(countdown(r.startsAtUtc))}</div>`;
-      listEl.appendChild(row);
-    });
-    if(!races.length)listEl.innerHTML='<div class="upcoming-status">Keine Rennen für diesen Filter.</div>';
+    if(!races.length){listEl.innerHTML='<div class="race-meta">Keine passenden Rennen.</div>';return;}
+    races.forEach(r=>{const cat=normalizeRaceCategory(r);const card=document.createElement('div');card.className='race'+(cat?' tier-'+cat:'');const classes=Array.isArray(r.carClasses)&&r.carClasses.length?r.carClasses.join(', '):'';const tierLabel=cat==='special'?'SPECIAL':(r.tier||'');card.innerHTML=`<div class="race-name">${escText(r.name||'Unbekannt')}</div><div class="race-meta">${escText([r.track,r.trackLayout].filter(Boolean).join(' · '))}</div><div class="race-meta">${escText(formatDate(r.startsAtUtc))}</div><div class="race-countdown" data-start="${escText(r.startsAtUtc)}">${escText(countdown(r.startsAtUtc))}</div>${tierLabel?`<div class="race-meta"><span class="race-tier-badge race-tier-${cat||''}">${escText(tierLabel)}</span></div>`:''}${classes?`<div class="race-meta">${escText(classes)}</div>`:''}`;listEl.appendChild(card);});
   };
-  const ensureFilters=()=>{
-    if(!listEl||document.getElementById('raceFilters'))return;
-    const row=document.createElement('div');row.id='raceFilters';row.className='race-filter-row';
-    [['','Alle'],['bronze','Bronze'],['silver','Silver'],['gold','Gold'],['special','Special']].forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='race-filter-btn'+(key===activeTierFilter?' active':'');b.textContent=label;b.addEventListener('click',()=>{activeTierFilter=key;row.querySelectorAll('.race-filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderRaces();});row.appendChild(b);});
-    listEl.parentNode.insertBefore(row,listEl);
-  };
-  const loadRaces=async()=>{if(!statusEl||!listEl)return;statusEl.textContent='Rennen werden geladen…';statusEl.className='upcoming-status';try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||'Upcoming Races konnten nicht geladen werden.');allRaceData=Array.isArray(d.races)?d.races:[];ensureFilters();renderRaces();statusEl.textContent=allRaceData.length?`${allRaceData.length} kommende Rennen`:'Keine kommenden Rennen';if(cdInterval)clearInterval(cdInterval);cdInterval=setInterval(()=>document.querySelectorAll('.race-countdown[data-start]').forEach(el=>el.textContent=countdown(el.dataset.start)),30000);}catch(e){statusEl.textContent=e.message||'Upcoming Races konnten nicht geladen werden.';statusEl.className='upcoming-status error';listEl.innerHTML='';}};
+
+  const refreshCountdowns=()=>{document.querySelectorAll('.race-countdown[data-start]').forEach(el=>{el.textContent=countdown(el.dataset.start);});};
+  const loadRaces=async()=>{if(!statusEl||!listEl)return;statusEl.classList.remove('error');statusEl.textContent='Rennen werden geladen…';try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||'Fehler');allRaceData=Array.isArray(d.races)?d.races:[];statusEl.textContent=d.stale?'Letzter verfügbarer Stand':'Aktuelle LMU-Rennen';renderFilters();renderRaces();refreshCountdowns();if(cdInterval)clearInterval(cdInterval);cdInterval=setInterval(refreshCountdowns,30000);}catch(e){statusEl.classList.add('error');statusEl.textContent=e?.message||'Upcoming Races konnten nicht geladen werden.';listEl.innerHTML='';}};
   loadRaces();
 })();
 </script>`;
@@ -465,19 +465,16 @@ async function serveRepoAsset(request, env) {
   const owner = env.GITHUB_OWNER || "lukasracinglmu";
   const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
   const branch = env.GITHUB_BRANCH || "main";
-  const path = new URL(request.url).pathname;
-  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${path}`, { cache: "no-store" });
+  const url = new URL(request.url);
+  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${url.pathname}`, { cache: "force-cache" });
   if (!response.ok) return baseWorker.fetch(request, env);
   const headers = new Headers(response.headers);
-  headers.set("Cache-Control", "public, max-age=300");
+  headers.set("Cache-Control", "public, max-age=3600");
   headers.set("X-Content-Type-Options", "nosniff");
   return new Response(response.body, { status: response.status, headers });
 }
 
-async function safeJson(response) {
-  try { return await response.json(); }
-  catch { return null; }
-}
-function clean(value, max) { return String(value || "").replace(/@everyone|@here/gi, "[mention removed]").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, max); }
-function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
-function discordJson(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } }); }
+function clean(value, max) { return String(value || "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, max); }
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
+async function safeJson(response) { try { return await response.json(); } catch { return null; } }
+function discordJson(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8" } }); }
