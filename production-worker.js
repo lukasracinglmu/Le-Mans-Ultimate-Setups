@@ -179,11 +179,12 @@ async function createWebsiteRequest(request, env) {
   const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
   const meResponse = await baseWorker.fetch(meRequest, env);
   const me = await safeJson(meResponse);
-  if (!me?.loggedIn || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
+  if (!me?.loggedIn || !me?.user?.id || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
   let body;
   try { body = await request.json(); }
   catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
   const data = {
+    userId: String(me.user.id),
     username: me.user.username,
     vehicle: clean(body.vehicle, 100),
     carClass: clean(body.carClass, 80),
@@ -195,13 +196,14 @@ async function createWebsiteRequest(request, env) {
   return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
 }
 
-function buildRequestContent({ username, vehicle, carClass, track, message }, roleId) {
+function buildRequestContent({ userId, username, vehicle, carClass, track, message }, roleId) {
   const roleMention = roleId && /^\d{16,22}$/.test(roleId) ? `<@&${roleId}>` : null;
+  const userMention = /^\d{16,22}$/.test(String(userId || "")) ? `<@${userId}>` : clean(username, 80);
   const lines = [];
   if (roleMention) lines.push(roleMention);
   lines.push(
     "**Setup Request**",
-    `**User:** ${clean(username, 80)}`,
+    `**User:** ${userMention}`,
     `**Fahrzeug:** ${clean(vehicle, 100)}`,
     `**Klasse:** ${clean(carClass || "Nicht angegeben", 80)}`,
     `**Strecke:** ${clean(track, 100)}`
@@ -216,8 +218,11 @@ async function sendSetupRequest(data, env) {
     return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
   }
   const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || null;
-  const content = buildRequestContent(data, roleId);
-  const allowedMentions = roleId && /^\d{16,22}$/.test(roleId) ? { roles: [roleId] } : { parse: [] };
+  const validUserId = /^\d{16,22}$/.test(String(data.userId || "")) ? String(data.userId) : null;
+  if (!validUserId) return { ok: false, status: 400, error: "Ungültiger Requester." };
+  const validRoleId = roleId && /^\d{16,22}$/.test(roleId) ? roleId : null;
+  const content = buildRequestContent(data, validRoleId);
+  const allowedMentions = { parse: [], users: [validUserId], roles: validRoleId ? [validRoleId] : [] };
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
     method: "POST",
     headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
@@ -240,6 +245,7 @@ async function discordInteraction(request, env) {
     const values = modalValues(interaction.data.components);
     const user = interaction.member?.user || interaction.user || {};
     const data = {
+      userId: String(user.id || ""),
       username: user.global_name || user.username || "Discord User",
       vehicle: clean(values.vehicle, 100),
       carClass: clean(values.class, 80),
