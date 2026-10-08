@@ -433,7 +433,7 @@ main,aside.upcoming-dock{position:relative;z-index:1}
   };
 
   const formatDate=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';};
-  const countdown=value=>{const ms=new Date(value).getTime()-Date.now();if(!Number.isFinite(ms)||ms<=0)return'läuft / gestartet';const m=Math.floor(ms/60000);const d=Math.floor(m/1440),h=Math.floor((m%1440)/60),min=m%60;if(d>0)return`in ${d}d ${h}h`;if(h>0)return`in ${h}h ${min}m`;return`in ${min}m`;};
+  const countdown=value=>{const ms=new Date(value).getTime()-Date.now();if(!Number.isFinite(ms)||ms<=0)return'läuft / gestartet';const m=Math.floor(ms/60000);const d=Math.floor(m/1440),h=Math.floor((m%1440)/60),min=m%60;if(d>0)return'in '+d+'d '+h+'h';if(h>0)return'in '+h+'h '+min+'m';return'in '+min+'m';};
   const escText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const renderFilters=()=>{
@@ -449,7 +449,7 @@ main,aside.upcoming-dock{position:relative;z-index:1}
     const races=allRaceData.filter(r=>!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter);
     listEl.innerHTML='';
     if(!races.length){listEl.innerHTML='<div class="race-meta">Keine passenden Rennen.</div>';return;}
-    races.forEach(r=>{const cat=normalizeRaceCategory(r);const card=document.createElement('div');card.className='race'+(cat?' tier-'+cat:'');const classes=Array.isArray(r.carClasses)&&r.carClasses.length?r.carClasses.join(', '):'';const tierLabel=cat==='special'?'SPECIAL':(r.tier||'');card.innerHTML=`<div class="race-name">${escText(r.name||'Unbekannt')}</div><div class="race-meta">${escText([r.track,r.trackLayout].filter(Boolean).join(' · '))}</div><div class="race-meta">${escText(formatDate(r.startsAtUtc))}</div><div class="race-countdown" data-start="${escText(r.startsAtUtc)}">${escText(countdown(r.startsAtUtc))}</div>${tierLabel?`<div class="race-meta"><span class="race-tier-badge race-tier-${cat||''}">${escText(tierLabel)}</span></div>`:''}${classes?`<div class="race-meta">${escText(classes)}</div>`:''}`;listEl.appendChild(card);});
+    races.forEach(r=>{const cat=normalizeRaceCategory(r);const card=document.createElement('div');card.className='race'+(cat?' tier-'+cat:'');const classes=Array.isArray(r.carClasses)&&r.carClasses.length?r.carClasses.join(', '):'';const tierLabel=cat==='special'?'SPECIAL':(r.tier||'');card.innerHTML='<div class="race-name">'+escText(r.name||'Unbekannt')+'</div><div class="race-meta">'+escText([r.track,r.trackLayout].filter(Boolean).join(' · '))+'</div><div class="race-meta">'+escText(formatDate(r.startsAtUtc))+'</div><div class="race-countdown" data-start="'+escText(r.startsAtUtc)+'">'+escText(countdown(r.startsAtUtc))+'</div>'+(tierLabel?'<div class="race-meta"><span class="race-tier-badge race-tier-'+(cat||'')+'">'+escText(tierLabel)+'</span></div>':'')+(classes?'<div class="race-meta">'+escText(classes)+'</div>':'');listEl.appendChild(card);});
   };
 
   const refreshCountdowns=()=>{document.querySelectorAll('.race-countdown[data-start]').forEach(el=>{el.textContent=countdown(el.dataset.start);});};
