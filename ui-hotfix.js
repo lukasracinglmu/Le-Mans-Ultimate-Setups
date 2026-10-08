@@ -17,7 +17,6 @@ const HOTFIX_JS = `<script>
     {src:'/assets/manufacturers/hymo-setups.webp',alt:'HYMO Setups'},
     {src:'/assets/manufacturers/bealien.webp',alt:'beAlien Setups'}
   ];
-
   const init=()=>{
     const logo=document.querySelector('.brand-logo');
     if(logo){
@@ -31,39 +30,20 @@ const HOTFIX_JS = `<script>
     const prev=document.getElementById('manufacturerPrev');
     const next=document.getElementById('manufacturerNext');
     if(img){
-      if(window.__tprManufacturerCarouselTimer) clearInterval(window.__tprManufacturerCarouselTimer);
-      if(window.__tprManufacturerCarouselTimeout) clearTimeout(window.__tprManufacturerCarouselTimeout);
-
       let index=0;
-      let generation=0;
-
-      const preload=src=>{const i=new Image();i.src=src;};
-      manufacturers.forEach(item=>preload(item.src));
-
-      const show=value=>{
-        generation+=1;
-        const currentGeneration=generation;
+      let timer=null;
+      const show=(value)=>{
         index=(value+manufacturers.length)%manufacturers.length;
         const item=manufacturers[index];
-        img.style.opacity='0';
-        if(window.__tprManufacturerCarouselTimeout) clearTimeout(window.__tprManufacturerCarouselTimeout);
-        window.__tprManufacturerCarouselTimeout=setTimeout(()=>{
-          if(currentGeneration!==generation)return;
-          img.src=item.src;
-          img.alt=item.alt;
-          img.style.opacity='1';
-        },160);
+        img.src=item.src;
+        img.alt=item.alt;
+        img.style.opacity='1';
       };
-
-      const restart=()=>{
-        if(window.__tprManufacturerCarouselTimer) clearInterval(window.__tprManufacturerCarouselTimer);
-        window.__tprManufacturerCarouselTimer=setInterval(()=>show(index+1),4000);
-      };
-
+      const restart=()=>{if(timer)clearInterval(timer);timer=setInterval(()=>show(index+1),5000);};
       show(0);
       restart();
-      if(prev) prev.onclick=()=>{show(index-1);restart();};
-      if(next) next.onclick=()=>{show(index+1);restart();};
+      if(prev)prev.onclick=()=>{show(index-1);restart();};
+      if(next)next.onclick=()=>{show(index+1);restart();};
     }
 
     const layout=document.querySelector('.layout');
@@ -71,17 +51,12 @@ const HOTFIX_JS = `<script>
     const main=layout?.querySelector('main');
     if(layout&&upcoming&&main&&upcoming.previousElementSibling!==main){layout.appendChild(upcoming);}
   };
-
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>`;
 
-function stripLegacyManufacturerCarousel(html){
-  return html.replace(/<script>\s*\(\(\) => \{[\s\S]*?const mfrs=\[[\s\S]*?restartMfr\(\);[\s\S]*?<\/script>/, "");
-}
-
 function applyHotfix(html){
-  let out=stripLegacyManufacturerCarousel(html);
+  let out=html;
   if(out.includes('</style>')) out=out.replace('</style>',HOTFIX_CSS+'\n</style>');
   else out=out.replace('</head>','<style>'+HOTFIX_CSS+'</style></head>');
   out=out.replace('</body>',HOTFIX_JS+'\n</body>');
