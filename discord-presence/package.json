@@ -1,6 +1,6 @@
 {
   "name": "lmu-setup-discord-presence",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "Persistent Discord presence for the LMU Setup Database bot",
@@ -12,6 +12,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "discord.js": "^14.22.1"
+    "discord.js": "^14.22.1",
+    "dotenv": "^16.4.7"
   }
 }
