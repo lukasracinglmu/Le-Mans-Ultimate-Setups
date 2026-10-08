@@ -47,9 +47,10 @@ export default {
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
       const me = await getBaseMe(request, env, ctx);
       if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
+      const individualDb = await hasDatabaseGrant(me.user?.id, env);
+      const uploadDeleteAccess = await hasUploadDeleteAccess(me.user?.id, env);
+      if (!me.databaseAccess && !individualDb && !uploadDeleteAccess) return json({ success: false, error: "Kein Zugriff auf die Setup Database." }, 403);
       if (me.databaseAccess) return uiWorker.fetch(request, env, ctx);
-      const extraAccess = await hasDatabaseGrant(me.user?.id, env) || await hasUploadDeleteAccess(me.user?.id, env);
-      if (!extraAccess) return json({ success: false, error: "Kein Zugriff auf die Setup Database." }, 403);
       return path === "/api/setups" ? listSetupsForGrantedUser(request, env) : downloadSetupForGrantedUser(request, env);
     }
 
