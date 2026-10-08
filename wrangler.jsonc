@@ -44,6 +44,7 @@
     "DISCORD_GUILD_ID": "1367893409234161846",
     "DISCORD_ROLE_ID": "1538601074074849330",
     "DISCORD_CHANNEL_ID": "1557002876906377258",
+    "DISCORD_SETUP_REQUEST_ROLE_ID": "",
     "SITE_URL": "https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev",
     "GITHUB_OWNER": "lukasracinglmu",
     "GITHUB_REPO": "Le-Mans-Ultimate-Setups",
