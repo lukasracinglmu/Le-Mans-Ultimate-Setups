@@ -1,15 +1,15 @@
+import 'dotenv/config';
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
 
-const token = process.env.DISCORD_BOT_TOKEN;
+const token = process.env.DISCORD_BOT_TOKEN?.trim();
 
 if (!token) {
-  console.error('DISCORD_BOT_TOKEN is missing. Add it as a secret environment variable on the bot host.');
+  console.error('ERROR: DISCORD_BOT_TOKEN is missing.');
   process.exit(1);
 }
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const startedAt = Date.now();
 
 function applyPresence() {
   if (!client.user) return;
@@ -19,15 +19,20 @@ function applyPresence() {
     activities: [
       {
         name: 'Le Mans Ultimate',
-        type: ActivityType.Playing
+        type: ActivityType.Playing,
+        timestamps: { start: startedAt }
       }
-    ]
+    ],
+    afk: false
   });
 }
 
 client.once('ready', () => {
-  console.log(`Discord presence connected as ${client.user.tag}`);
   applyPresence();
+  console.log(`Logged in as ${client.user.tag}`);
+  console.log('Status: DND');
+  console.log('Activity: Playing Le Mans Ultimate');
+  console.log('Elapsed timer: enabled');
 });
 
 client.on('error', error => {
@@ -38,4 +43,7 @@ process.on('unhandledRejection', error => {
   console.error('Unhandled rejection:', error);
 });
 
-client.login(token);
+client.login(token).catch(error => {
+  console.error('Discord login failed:', error?.message || error);
+  process.exit(1);
+});
