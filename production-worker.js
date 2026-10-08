@@ -211,14 +211,17 @@ async function createWebsiteRequest(request, env) {
   return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
 }
 
-function buildRequestContent({ username, vehicle, carClass, track, message }) {
-  const lines = [
+function buildRequestContent({ username, vehicle, carClass, track, message }, roleId) {
+  const roleMention = roleId && /^\d{16,22}$/.test(roleId) ? `<@&${roleId}>` : null;
+  const lines = [];
+  if (roleMention) lines.push(roleMention);
+  lines.push(
     "**Setup Request**",
     `**User:** ${clean(username, 80)}`,
     `**Fahrzeug:** ${clean(vehicle, 100)}`,
     `**Klasse:** ${clean(carClass || "Nicht angegeben", 80)}`,
     `**Strecke:** ${clean(track, 100)}`
-  ];
+  );
   const extra = clean(message, 500);
   if (extra) lines.push(`**Weitere Informationen:** ${extra}`);
   return lines.join("\n").slice(0, 2000);
@@ -228,10 +231,15 @@ async function sendSetupRequest(data, env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_CHANNEL_ID) {
     return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
   }
+  const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || null;
+  const content = buildRequestContent(data, roleId);
+  const allowedMentions = roleId && /^\d{16,22}$/.test(roleId)
+    ? { roles: [roleId] }
+    : { parse: [] };
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
     method: "POST",
     headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ content: buildRequestContent(data), allowed_mentions: { parse: [] } })
+    body: JSON.stringify({ content, allowed_mentions: allowedMentions })
   });
   if (!response.ok) return { ok: false, status: 502, error: "Request konnte nicht gesendet werden." };
   return { ok: true };
@@ -471,6 +479,10 @@ main,aside.upcoming-dock{position:relative;z-index:1}
 .race-countdown{font-size:11px;font-weight:700;color:var(--accent);margin-top:4px}
 .upcoming-source{flex:0 0 auto;padding:10px 2px 2px;font-size:9px;color:var(--muted)}
 .upcoming-source a{color:inherit}
+.race-filter-row{display:flex;gap:4px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px}
+.race-filter-btn{padding:4px 9px;border-radius:12px;font-size:10px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.race-filter-btn.active,.race-filter-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.race-countdown{font-size:11px;font-weight:700;color:var(--accent);margin-top:3px}
 
 /* Manufacturer carousel */
 .manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}
@@ -507,142 +519,156 @@ main,aside.upcoming-dock{position:relative;z-index:1}
   const extraJs = `<script>
 (() => {
   /* Manufacturer carousel */
-  const manufacturers = [
-    { name: 'GO Setups', src: '/assets/manufacturers/go-setups.webp' },
-    { name: 'HYMO', src: '/assets/manufacturers/hymo-setups.webp' },
-    { name: 'beAlien', src: '/assets/manufacturers/bealien.webp' }
-  ];
-  let mIdx = 0, mTimer = null;
-  const mImg = document.getElementById('manufacturerImage');
-  const renderMfr = (index) => {
-    if (!mImg) return;
-    mIdx = (index + manufacturers.length) % manufacturers.length;
-    mImg.style.opacity = '0';
-    setTimeout(() => { mImg.src = manufacturers[mIdx].src; mImg.alt = manufacturers[mIdx].name; mImg.style.opacity = '1'; }, 180);
-  };
-  const restartMfr = () => { if (mTimer) clearInterval(mTimer); mTimer = setInterval(() => renderMfr(mIdx + 1), 5000); };
-  document.getElementById('manufacturerPrev')?.addEventListener('click', () => { renderMfr(mIdx - 1); restartMfr(); });
-  document.getElementById('manufacturerNext')?.addEventListener('click', () => { renderMfr(mIdx + 1); restartMfr(); });
+  const mfrs=[{name:'GO Setups',src:'/assets/manufacturers/go-setups.webp'},{name:'HYMO',src:'/assets/manufacturers/hymo-setups.webp'},{name:'beAlien',src:'/assets/manufacturers/bealien.webp'}];
+  let mIdx=0,mTimer=null;
+  const mImg=document.getElementById('manufacturerImage');
+  const renderMfr=i=>{if(!mImg)return;mIdx=(i+mfrs.length)%mfrs.length;mImg.style.opacity='0';setTimeout(()=>{mImg.src=mfrs[mIdx].src;mImg.alt=mfrs[mIdx].name;mImg.style.opacity='1';},180);};
+  const restartMfr=()=>{if(mTimer)clearInterval(mTimer);mTimer=setInterval(()=>renderMfr(mIdx+1),5000);};
+  document.getElementById('manufacturerPrev')?.addEventListener('click',()=>{renderMfr(mIdx-1);restartMfr();});
+  document.getElementById('manufacturerNext')?.addEventListener('click',()=>{renderMfr(mIdx+1);restartMfr();});
   restartMfr();
 
-  /* Upcoming Races with auto-remove on start */
-  const statusEl = document.getElementById('upcomingStatus');
-  const listEl = document.getElementById('raceList');
-  const make = (tag, cls, txt) => { const el = document.createElement(tag); if (cls) el.className = cls; if (txt != null) el.textContent = txt; return el; };
+  /* ── Upcoming Races: full lifecycle + SR badges + tier filter ── */
+  const statusEl=document.getElementById('upcomingStatus');
+  const listEl=document.getElementById('raceList');
+  let activeTierFilter='';
+  let allRaceData=[];
+  let cdInterval=null;
 
-  let raceData = [];
-  let countdownInterval = null;
-
-  const fmt = (iso) => {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    return new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
-  };
-
-  const pad = n => String(n).padStart(2, '0');
-
-  const formatCountdown = (ms) => {
-    if (ms <= 0) return null;
-    const s = Math.floor(ms / 1000);
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    if (h > 0) return pad(h) + ':' + pad(m) + ':' + pad(sec);
-    return pad(m) + ':' + pad(sec);
-  };
-
-  /* PRIO 4: tick — remove started races without reload */
-  const tickCountdowns = () => {
-    const now = Date.now();
-    let anyRemoved = false;
-    raceData = raceData.filter(race => {
-      const startMs = Date.parse(race.startsAtUtc);
-      if (startMs <= now) { anyRemoved = true; return false; }
-      return true;
+  /* Inject tier filter buttons below widget head */
+  const widgetHead=document.querySelector('.upcoming-widget-head');
+  if(widgetHead){
+    const filterRow=document.createElement('div');
+    filterRow.className='race-filter-row';
+    ['','bronze','silver','gold','special'].forEach((t,i)=>{
+      const btn=document.createElement('button');
+      btn.className='race-filter-btn'+(t===''?' active':'');
+      btn.dataset.tier=t;
+      btn.textContent=['Alle','Bronze','Silber','Gold','Special'][i];
+      btn.addEventListener('click',()=>{
+        activeTierFilter=t;
+        filterRow.querySelectorAll('.race-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));
+        renderRaces();
+      });
+      filterRow.appendChild(btn);
     });
-    if (anyRemoved) {
-      renderRaces();
-      if (!raceData.length) {
-        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-        return;
-      }
-    }
-    /* Update countdown text in existing cards */
-    document.querySelectorAll('.race-countdown').forEach(el => {
-      const startMs = Number(el.dataset.start);
-      const remaining = startMs - now;
-      if (remaining <= 0) {
-        /* will be removed on next tick */
-        el.textContent = 'Startet jetzt';
-      } else {
-        const cd = formatCountdown(remaining);
-        el.textContent = cd ? 'Start in ' + cd : '';
-      }
+    widgetHead.insertAdjacentElement('afterend',filterRow);
+  }
+
+  /* Classify race tier from LMU API data
+     Fields: race.tier (string: 'Gold','Silver','Bronze' or null)
+             race.srRequirement (string or null)
+     Special events: no tier AND no srRequirement */
+  const classifyTier=race=>{
+    const t=String(race.tier||'').toLowerCase();
+    if(t==='gold')return'gold';
+    if(t==='silver')return'silver';
+    if(t==='bronze')return'bronze';
+    if(!race.tier)return'special';
+    return'';
+  };
+
+  const tierDefs={
+    gold:{bg:'#78500a',color:'#fcd34d',label:'GOLD'},
+    silver:{bg:'#374151',color:'#d1d5db',label:'SILBER'},
+    bronze:{bg:'#78350f',color:'#d97706',label:'BRONZE'},
+    special:{bg:'#4c1d95',color:'#c084fc',label:'SPECIAL'}
+  };
+
+  const make=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!=null)el.textContent=txt;return el;};
+  const fmt=iso=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return'';return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short'}).format(d);};
+  const pad=n=>String(n).padStart(2,'0');
+  const fmtCd=ms=>{if(ms<=0)return null;const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?pad(h)+':'+pad(m)+':'+pad(sec):pad(m)+':'+pad(sec);};
+
+  const visibleRaces=()=>{
+    const now=Date.now();
+    return allRaceData.filter(r=>{
+      if(Date.parse(r.startsAtUtc)<=now)return false;
+      if(!activeTierFilter)return true;
+      return classifyTier(r)===activeTierFilter;
     });
   };
 
-  const renderRaces = () => {
-    if (!listEl) return;
+  const renderRaces=()=>{
+    if(!listEl)return;
     listEl.replaceChildren();
-    if (!raceData.length) {
-      statusEl.textContent = 'Keine Rennen mehr in diesem Zeitfenster.';
+    const races=visibleRaces();
+    if(!races.length){
+      if(statusEl)statusEl.textContent=allRaceData.length?'Keine Rennen für diesen Filter.':'Keine Rennen im aktuellen Zeitfenster.';
       return;
     }
-    const now = Date.now();
-    raceData.forEach(race => {
-      const startMs = Date.parse(race.startsAtUtc);
-      const remaining = startMs - now;
-      const card = make('article', 'race');
-      card.appendChild(make('div', 'race-name', race.name || 'LMU Race'));
-      const meta = [];
-      if (race.track) meta.push(race.track + (race.trackLayout ? ' · ' + race.trackLayout : ''));
-      const start = fmt(race.startsAtUtc);
-      if (start) meta.push(start);
-      if (race.tier) meta.push(race.tier);
-      if (Array.isArray(race.carClasses) && race.carClasses.length) meta.push(race.carClasses.join(', '));
-      if (race.durationMinutes) meta.push(race.durationMinutes + ' Min');
-      if (race.setup) meta.push('Setup: ' + race.setup);
-      card.appendChild(make('div', 'race-meta', meta.join(' · ')));
-      /* Countdown */
-      if (remaining > 0 && remaining < 24 * 60 * 60 * 1000) {
-        const cdEl = make('div', 'race-countdown');
-        cdEl.dataset.start = String(startMs);
-        const cd = formatCountdown(remaining);
-        cdEl.textContent = cd ? 'Start in ' + cd : '';
+    if(statusEl&&!statusEl.classList.contains('error'))statusEl.textContent='';
+    const now=Date.now();
+    races.forEach(race=>{
+      const startMs=Date.parse(race.startsAtUtc);
+      const rem=startMs-now;
+      const tier=classifyTier(race);
+      const td=tierDefs[tier]||null;
+      const card=make('article','race');
+      if(td)card.style.borderLeft='3px solid '+td.color;
+      const hdr=document.createElement('div');
+      hdr.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px';
+      hdr.appendChild(make('div','race-name',race.name||'LMU Race'));
+      if(td){
+        const badge=make('span');
+        badge.textContent=td.label;
+        badge.style.cssText='font-size:9px;font-weight:800;padding:2px 5px;border-radius:3px;background:'+td.bg+';color:'+td.color+';letter-spacing:.06em';
+        hdr.appendChild(badge);
+      }
+      card.appendChild(hdr);
+      const meta=[];
+      if(race.track)meta.push(race.track+(race.trackLayout?' · '+race.trackLayout:''));
+      const start=fmt(race.startsAtUtc);if(start)meta.push(start);
+      if(race.srRequirement)meta.push('SR: '+race.srRequirement);
+      if(Array.isArray(race.carClasses)&&race.carClasses.length)meta.push(race.carClasses.join(', '));
+      if(race.durationMinutes)meta.push(race.durationMinutes+' Min');
+      if(meta.length)card.appendChild(make('div','race-meta',meta.join(' · ')));
+      if(rem>0&&rem<24*60*60*1000){
+        const cdEl=make('div','race-countdown');
+        cdEl.dataset.start=String(startMs);
+        cdEl.textContent=fmtCd(rem)?'Start in '+fmtCd(rem):'';
         card.appendChild(cdEl);
       }
       listEl.appendChild(card);
     });
   };
 
-  const loadUpcomingRich = async () => {
-    if (!statusEl || !listEl) return;
-    statusEl.className = 'upcoming-status';
-    statusEl.textContent = 'Rennen werden geladen…';
-    listEl.replaceChildren();
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-    try {
-      const response = await fetch('/api/upcoming-races', { cache: 'no-store' });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) throw new Error(data.error || 'Upcoming Races konnten nicht geladen werden.');
-      /* PRIO 4: filter already-started on client too (clock drift safety) */
-      const now = Date.now();
-      raceData = (Array.isArray(data.races) ? data.races : []).filter(r => Date.parse(r.startsAtUtc) > now);
-      if (!raceData.length) {
-        statusEl.textContent = data.switchover?.active ? 'Wochenwechsel läuft. Bitte nach 10:05 UTC erneut prüfen.' : 'Keine Rennen im aktuellen Zeitfenster.';
-        return;
-      }
-      statusEl.textContent = data.stale ? 'Zwischengespeicherte Daten – LMU Portal nicht erreichbar.' : '';
+  /* PRIO 4: tick — removes started races every second */
+  const tick=()=>{
+    const now=Date.now();
+    const prev=allRaceData.length;
+    allRaceData=allRaceData.filter(r=>Date.parse(r.startsAtUtc)>now);
+    if(allRaceData.length!==prev){
       renderRaces();
-      /* PRIO 4: start 1-second tick for auto-remove */
-      countdownInterval = setInterval(tickCountdowns, 1000);
-    } catch (error) {
-      statusEl.className = 'upcoming-status error';
-      statusEl.textContent = error?.message || 'Upcoming Races konnten nicht geladen werden.';
+      if(!allRaceData.length&&cdInterval){clearInterval(cdInterval);cdInterval=null;}
+      return;
     }
+    document.querySelectorAll('.race-countdown').forEach(el=>{
+      const rem=Number(el.dataset.start)-now;
+      el.textContent=rem<=0?'Startet jetzt':(fmtCd(rem)?'Start in '+fmtCd(rem):'');
+    });
   };
 
-  loadUpcomingRich();
+  const loadUpcoming=async()=>{
+    if(!statusEl||!listEl)return;
+    statusEl.className='upcoming-status';
+    statusEl.textContent='Rennen werden geladen…';
+    listEl.replaceChildren();
+    if(cdInterval){clearInterval(cdInterval);cdInterval=null;}
+    try{
+      const r=await fetch('/api/upcoming-races',{cache:'no-store'});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data.success)throw new Error(data.error||'Upcoming Races konnten nicht geladen werden.');
+      const now=Date.now();
+      allRaceData=(Array.isArray(data.races)?data.races:[]).filter(r=>Date.parse(r.startsAtUtc)>now);
+      if(statusEl)statusEl.textContent=data.stale?'Zwischengespeicherte Daten.':'';
+      renderRaces();
+      if(allRaceData.length)cdInterval=setInterval(tick,1000);
+    }catch(e){
+      if(statusEl){statusEl.className='upcoming-status error';statusEl.textContent=e?.message||'Upcoming Races konnten nicht geladen werden.';}
+    }
+  };
+  loadUpcoming();
 })();
 </script>`;
   html = html.replace("</body>", extraJs + "\n</body>");
