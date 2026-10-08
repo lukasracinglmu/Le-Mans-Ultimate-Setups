@@ -32,11 +32,23 @@ export default {
       return response;
     }
 
+    if (path === "/api/setups/upload" && method === "POST") {
+      const permission = await requireUploadDeleteAccess(request, env, ctx);
+      if (permission.error) return permission.error;
+      return uiWorker.fetch(request, env, ctx);
+    }
+
+    if (path === "/api/setups/delete" && method === "POST") {
+      const permission = await requireUploadDeleteAccess(request, env, ctx);
+      if (permission.error) return permission.error;
+      return uiWorker.fetch(request, env, ctx);
+    }
+
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
       const me = await getBaseMe(request, env, ctx);
       if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
       if (me.databaseAccess) return uiWorker.fetch(request, env, ctx);
-      const extraAccess = Boolean(me.user?.canUpload) || await hasDatabaseGrant(me.user?.id, env) || await hasUploadGrant(me.user?.id, env);
+      const extraAccess = await hasDatabaseGrant(me.user?.id, env) || await hasUploadDeleteAccess(me.user?.id, env);
       if (!extraAccess) return json({ success: false, error: "Kein Zugriff auf die Setup Database." }, 403);
       return path === "/api/setups" ? listSetupsForGrantedUser(request, env) : downloadSetupForGrantedUser(request, env);
     }
@@ -66,9 +78,9 @@ async function augmentedMe(request, env, ctx) {
   const me = await safeJson(response);
   if (!me?.loggedIn || !me?.user?.id) return response;
   const individualDb = await hasDatabaseGrant(me.user.id, env);
-  const individualUpload = await hasUploadGrant(me.user.id, env);
-  const databaseAccess = Boolean(me.databaseAccess || me.user.canUpload || individualDb || individualUpload);
-  return json({ ...me, databaseAccess, user: { ...me.user, individualDatabaseAccess: individualDb, individualUploadAccess: individualUpload } }, response.status);
+  const uploadDeleteAccess = await hasUploadDeleteAccess(me.user.id, env);
+  const databaseAccess = Boolean(me.databaseAccess || individualDb || uploadDeleteAccess);
+  return json({ ...me, databaseAccess, user: { ...me.user, canUpload: uploadDeleteAccess, individualDatabaseAccess: individualDb, individualUploadAccess: await hasUploadGrant(me.user.id, env) } }, response.status);
 }
 
 async function requireOwner(request, env, ctx) {
@@ -92,6 +104,26 @@ async function hasUploadGrant(userId, env) {
     const row = await env.ACCESS_DB.prepare("SELECT user_id FROM upload_access WHERE user_id = ? LIMIT 1").bind(String(userId)).first();
     return Boolean(row?.user_id);
   } catch { return false; }
+}
+
+async function hasSetupRequestRole(userId, env) {
+  if (!userId || !env.DISCORD_SETUP_REQUEST_ROLE_ID) return false;
+  const member = await fetchGuildMember(userId, env);
+  return Boolean(member && Array.isArray(member.roles) && member.roles.includes(String(env.DISCORD_SETUP_REQUEST_ROLE_ID)));
+}
+
+async function hasUploadDeleteAccess(userId, env) {
+  if (!userId) return false;
+  if (String(userId) === OWNER_ID) return true;
+  if (await hasUploadGrant(userId, env)) return true;
+  return hasSetupRequestRole(userId, env);
+}
+
+async function requireUploadDeleteAccess(request, env, ctx) {
+  const me = await getBaseMe(request, env, ctx);
+  if (!me?.loggedIn || !me?.user?.id) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
+  if (!await hasUploadDeleteAccess(me.user.id, env)) return { error: json({ success: false, error: "Keine Upload/Delete-Berechtigung." }, 403) };
+  return { user: me.user };
 }
 
 function validUserId(value) {
