@@ -172,8 +172,22 @@ async function requireOwner(request, env) {
   if (s.id !== OWNER_ID) return { error: json({ success: false, error: "Keine Admin-Berechtigung." }, 403) }; return { session: s };
 }
 
-async function listUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC").all(); return json({ success: true, grants: result.results || [] }); }
-async function grantUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const userId = String(body.userId || "").trim(); if (!/^\d{16,22}$/.test(userId)) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("INSERT INTO upload_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by = excluded.granted_by, created_at = CURRENT_TIMESTAMP").bind(userId, auth.session.id).run(); return json({ success: true, userId }); }
+async function listUploadAccess(request, env) {
+  const auth = await requireOwner(request, env); if (auth.error) return auth.error;
+  if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503);
+  const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC").all();
+  const grants = await Promise.all((result.results || []).map(async row => {
+    let accountName = "Unbekannt / nicht verfügbar";
+    try {
+      const member = await fetchGuildMember(String(row.user_id), env);
+      const u = member?.member?.user;
+      if (u) accountName = u.global_name || u.username || accountName;
+    } catch {}
+    return { ...row, account_name: accountName };
+  }));
+  return json({ success: true, grants });
+}
+async function grantUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const userId = String(body.userId || "").trim(); if (!/^\d{16,22}$/.test(userId)) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("INSERT INTO upload_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by = excluded.granted_by").bind(userId, auth.session.id).run(); return json({ success: true, userId }); }
 async function revokeUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const userId = String(body.userId || "").trim(); if (!/^\d{16,22}$/.test(userId)) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("DELETE FROM upload_access WHERE user_id = ?").bind(userId).run(); return json({ success: true, userId }); }
 
 function ghHeaders(env) { const h = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "lmu-setups-worker" }; if (env.GITHUB_TOKEN) h.Authorization = `Bearer ${env.GITHUB_TOKEN}`; return h; }
@@ -204,35 +218,53 @@ async function downloadSetup(request, env) {
   return new Response(file.body, { status: 200, headers });
 }
 
-function isZipSignature(bytes) { return !!bytes && bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && ((bytes[2] === 0x03 && bytes[3] === 0x04) || (bytes[2] === 0x05 && bytes[3] === 0x06) || (bytes[2] === 0x07 && bytes[3] === 0x08)); }
 async function uploadSetups(request, env) {
   const sizeError = validateRequestSize(request); if (sizeError) return sizeError;
-  const s = await readSession(request, env.SESSION_SECRET); if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401); if (!await canUserUpload(s, env)) return json({ success: false, error: "Keine Upload-Berechtigung." }, 403); if (!env.GITHUB_TOKEN) return json({ success: false, error: "Upload nicht konfiguriert." }, 503);
-  const form = await request.formData(); const cat = safe(form.get("category")); const veh = safe(form.get("vehicle")); if (!cat || !veh) return json({ success: false, error: "Fahrzeugdaten fehlen." }, 400);
-  const files = form.getAll("files").filter(x => x && typeof x.arrayBuffer === "function"); if (!files.length) return json({ success: false, error: "Keine Datei ausgewählt." }, 400); if (files.length > MAX_FILES) return json({ success: false, error: `Maximal ${MAX_FILES} Dateien gleichzeitig.` }, 400);
-  const results = [], errors = [];
-  for (const file of files) { const originalName = String(file.name || ""); const name = safe(originalName); if (!name || name !== originalName.trim() || name.length > 180 || !/^[\p{L}\p{N} _().+\-]+\.zip$/u.test(name)) { errors.push({ name: originalName || "Unbekannte Datei", error: "Ungültiger Dateiname." }); continue; } if (file.size <= 0 || file.size > MAX_SETUP_BYTES) { errors.push({ name, error: "Ungültige Dateigröße." }); continue; } const bytes = new Uint8Array(await file.arrayBuffer()); if (!isZipSignature(bytes)) { errors.push({ name, error: "Datei ist kein gültiges ZIP-Archiv." }); continue; } const fpath = `setups/${cat}/${veh}/${name}`; const epath = fpath.split("/").map(enc).join("/"); const existing = await ghReq(`/${ghRepo(env)}/contents/${epath}?ref=${enc(ghBranch(env))}`, {}, env); if (existing.ok) { errors.push({ name, error: "Setup existiert bereits." }); continue; } if (existing.status !== 404) { errors.push({ name, error: "Prüfung fehlgeschlagen." }); continue; } let bin = ""; const chunk = 0x8000; for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk)); const content = btoa(bin); const put = await ghReq(`/${ghRepo(env)}/contents/${epath}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: `Add setup: ${veh} - ${name}`, content, branch: ghBranch(env) }) }, env); if (!put.ok) { errors.push({ name, error: "Upload fehlgeschlagen." }); continue; } results.push({ name, ...classifySetup(name, veh) }); }
-  return json({ success: true, uploaded: results, errors });
+  const s = await readSession(request, env.SESSION_SECRET); if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401); if (!await canUserUpload(s, env)) return json({ success: false, error: "Keine Upload-Berechtigung." }, 403);
+  let form; try { form = await request.formData(); } catch { return json({ success: false, error: "Ungültige Upload-Anfrage." }, 400); }
+  const cat = safe(form.get("category")); const veh = safe(form.get("vehicle")); const files = form.getAll("files"); if (!cat || !veh || files.length < 1 || files.length > MAX_FILES) return json({ success: false, error: "Ungültige Upload-Anfrage." }, 400);
+  const uploaded = [], errors = [];
+  for (const file of files) {
+    const name = safe(file?.name); if (!file || !name || !/\.zip$/i.test(name) || file.size < 1 || file.size > MAX_SETUP_BYTES) { errors.push({ name: name || "Unbekannt", error: "Ungültige ZIP-Datei." }); continue; }
+    try { const arr = await file.arrayBuffer(); const content = bytesToBase64(new Uint8Array(arr)); const path = `setups/${cat}/${veh}/${name}`; const apiPath = `/${ghRepo(env)}/contents/${encPath(path)}`; const existing = await ghReq(`${apiPath}?ref=${enc(ghBranch(env))}`, {}, env); let sha = undefined; if (existing.ok) { const x = await existing.json(); sha = x.sha; } const body = { message: `Upload setup ${name}`, content, branch: ghBranch(env), ...(sha ? { sha } : {}) }; const r = await ghReq(apiPath, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }, env); if (!r.ok) errors.push({ name, error: "GitHub Upload fehlgeschlagen." }); else uploaded.push({ name }); }
+    catch { errors.push({ name, error: "Upload fehlgeschlagen." }); }
+  }
+  return json({ success: errors.length === 0, uploaded, errors }, uploaded.length ? 200 : 502);
 }
-async function deleteSetup(request, env) { const s = await readSession(request, env.SESSION_SECRET); if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401); if (!await canUserUpload(s, env)) return json({ success: false, error: "Keine Berechtigung." }, 403); if (!env.GITHUB_TOKEN) return json({ success: false, error: "Löschen nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const cat = safe(body.category), veh = safe(body.vehicle), name = safe(body.name); if (!cat || !veh || !name) return json({ success: false, error: "Fehlende Parameter." }, 400); const fpath = `setups/${cat}/${veh}/${name}`; const epath = fpath.split("/").map(enc).join("/"); const current = await ghReq(`/${ghRepo(env)}/contents/${epath}?ref=${enc(ghBranch(env))}`, {}, env); if (current.status === 404) return json({ success: false, error: "Setup wurde nicht gefunden." }, 404); if (!current.ok) return json({ success: false, error: "Setup konnte nicht geprüft werden." }, 502); const currentData = await current.json(); const del = await ghReq(`/${ghRepo(env)}/contents/${epath}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: `Delete setup: ${veh} - ${name}`, sha: currentData.sha, branch: ghBranch(env) }) }, env); if (!del.ok) return json({ success: false, error: "Löschen fehlgeschlagen." }, 502); return json({ success: true }); }
 
-async function createRequest(request, env) { const auth = await requireDatabaseAccess(request, env); if (auth.error) return auth.error; let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } return json({ success: true }); }
-async function discordChannels(request, env) { return json({ success: false, error: "Discord Mini Player entfernt." }, 404); }
-async function discordMessages(request, env) { return json({ success: false, error: "Discord Mini Player entfernt." }, 404); }
-async function discordSendMessage(request, env) { return json({ success: false, error: "Discord Mini Player entfernt." }, 404); }
-async function verifyDiscordInteraction(request, rawBody, env) { return true; }
-async function discordInteraction(request, env) { return json({ type: 1 }); }
-async function registerRequestCommand(request, env) { const a = await requireOwner(request, env); if (a.error) return a.error; return json({ success: true }); }
+async function deleteSetup(request, env) {
+  const s = await readSession(request, env.SESSION_SECRET); if (!s) return json({ success: false, error: "Nicht angemeldet." }, 401); if (!await canUserUpload(s, env)) return json({ success: false, error: "Keine Upload-Berechtigung." }, 403);
+  let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
+  const cat = safe(body.category); const veh = safe(body.vehicle); const name = safe(body.name); if (!cat || !veh || !name || !/\.zip$/i.test(name)) return json({ success: false, error: "Ungültiger Löschvorgang." }, 400);
+  const apiPath = `/${ghRepo(env)}/contents/${encPath(`setups/${cat}/${veh}/${name}`)}`; const existing = await ghReq(`${apiPath}?ref=${enc(ghBranch(env))}`, {}, env); if (!existing.ok) return json({ success: false, error: "Setup nicht gefunden." }, 404); const x = await existing.json(); const r = await ghReq(apiPath, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: `Delete setup ${name}`, sha: x.sha, branch: ghBranch(env) }) }, env); if (!r.ok) return json({ success: false, error: "Setup konnte nicht gelöscht werden." }, 502); return json({ success: true });
+}
 
-async function serveHome(request, env) { const owner = env.GITHUB_OWNER || "lukasracinglmu"; const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"; const branch = ghBranch(env); const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/index.html`, { cache: "no-store" }); if (!r.ok) return withSecurityHeaders(await env.ASSETS.fetch(request)); const html = await r.text(); return new Response(html, { headers: securityHeaders(new Headers({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" })) }); }
+async function createRequest(request, env) { const auth = await requireDatabaseAccess(request, env); if (auth.error) return auth.error; return json({ success: false, error: "Request route handled by production worker." }, 503); }
+async function discordChannels() { return json({ success: false, error: "Nicht verfügbar." }, 404); }
+async function discordMessages() { return json({ success: false, error: "Nicht verfügbar." }, 404); }
+async function discordSendMessage() { return json({ success: false, error: "Nicht verfügbar." }, 404); }
+async function registerRequestCommand(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; return json({ success: true }); }
+async function verifyDiscordInteraction() { return true; }
+async function discordInteraction() { return discordJson({ type: 1 }); }
+
+async function serveHome(request, env) {
+  const owner = env.GITHUB_OWNER || "lukasracinglmu"; const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"; const branch = env.GITHUB_BRANCH || "main";
+  try { const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/index.html`, { cache: "no-store" }); if (r.ok) return withSecurityHeaders(new Response(await r.text(), { headers: { "Content-Type": "text/html; charset=UTF-8", "Cache-Control": "no-store" } })); } catch {}
+  return withSecurityHeaders(await env.ASSETS.fetch(request));
+}
+
+function clean(v, max = 120) { return String(v || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max); }
+function enc(v) { return encodeURIComponent(v); } function encPath(p) { return p.split("/").map(enc).join("/"); }
+function json(data, status = 200) { const h = securityHeaders(new Headers({ "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store" })); return new Response(JSON.stringify(data), { status, headers: h }); }
+function discordJson(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } }); }
 async function df(path, opts = {}) { return fetch(DISCORD_API + path, opts); }
-function enc(v) { return encodeURIComponent(v); }
-function cookie(name, value, maxAge) { return `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`; }
-function parseCookies(header) { const out = {}; for (const p of header.split(";")) { const i = p.indexOf("="); if (i > 0) out[p.slice(0, i).trim()] = p.slice(i + 1).trim(); } return out; }
-function logout() { const h = securityHeaders(new Headers({ Location: "/" })); h.append("Set-Cookie", cookie(SESSION_COOKIE, "", 0)); h.append("Set-Cookie", cookie(STATE_COOKIE, "", 0)); return new Response(null, { status: 302, headers: h }); }
-function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: securityHeaders(new Headers({ "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store" })) }); }
-async function createSession(payload, secret) { const data = JSON.stringify(payload); const body = btoa(unescape(encodeURIComponent(data))).replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_"); const sig = await hmac(body, secret); return `${body}.${sig}`; }
-async function readSession(request, secret) { if (!secret) return null; const token = parseCookies(request.headers.get("Cookie") || "")[SESSION_COOKIE]; if (!token) return null; const [body, sig] = token.split("."); if (!body || !sig) return null; const expected = await hmac(body, secret); if (!timingSafeEqual(sig, expected)) return null; try { const normalized = body.replace(/-/g, "+").replace(/_/g, "/"); const pad = normalized + "===".slice((normalized.length + 3) % 4); const data = decodeURIComponent(escape(atob(pad))); const payload = JSON.parse(data); if (!payload?.id || !payload?.exp || payload.exp <= Math.floor(Date.now() / 1000)) return null; return payload; } catch { return null; } }
-async function hmac(input, secret) { const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(input))); return bytesToBase64Url(sig); }
-function bytesToBase64Url(bytes) { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_"); }
-function timingSafeEqual(a, b) { if (a.length !== b.length) return false; let x = 0; for (let i = 0; i < a.length; i++) x |= a.charCodeAt(i) ^ b.charCodeAt(i); return x === 0; }
+function parseCookies(raw) { const out = {}; for (const part of raw.split(";")) { const i = part.indexOf("="); if (i < 0) continue; const k = part.slice(0, i).trim(); const v = part.slice(i + 1).trim(); try { out[k] = decodeURIComponent(v); } catch { out[k] = v; } } return out; }
+function cookie(name, value, maxAge) { return `${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`; }
+function b64urlEncode(bytes) { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function b64urlDecode(s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; const bin = atob(s); return Uint8Array.from(bin, c => c.charCodeAt(0)); }
+function b64urlEncodeText(s) { return b64urlEncode(new TextEncoder().encode(s)); }
+async function hmac(data, secret) { const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data))); }
+async function createSession(payload, secret) { const p = b64urlEncodeText(JSON.stringify(payload)); const sig = b64urlEncode(await hmac(p, secret)); return `${p}.${sig}`; }
+async function readSession(request, secret) { if (!secret) return null; const token = parseCookies(request.headers.get("Cookie") || "")[SESSION_COOKIE]; if (!token) return null; const [p, sig] = token.split("."); if (!p || !sig) return null; const expected = b64urlEncode(await hmac(p, secret)); if (sig.length !== expected.length) return null; let diff = 0; for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i); if (diff !== 0) return null; try { const data = JSON.parse(new TextDecoder().decode(b64urlDecode(p))); if (!data?.id || !data?.exp || data.exp < Math.floor(Date.now() / 1000)) return null; return data; } catch { return null; } }
+function logout() { const h = securityHeaders(new Headers({ Location: "/" })); h.append("Set-Cookie", cookie(SESSION_COOKIE, "", 0)); return new Response(null, { status: 302, headers: h }); }
+function bytesToBase64(bytes) { let binary = ""; const CHUNK = 0x8000; for (let i = 0; i < bytes.length; i += CHUNK) binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK)); return btoa(binary); }
