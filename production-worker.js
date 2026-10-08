@@ -312,7 +312,8 @@ async function verifyDiscordInteraction(request, rawBody, env) {
   if (!publicKey || !signatureBytes) return false;
   try {
     const key = await crypto.subtle.importKey("raw", publicKey, { name: "Ed25519" }, false, ["verify"]);
-    return crypto.subtle.verify({ name: "Ed25519" }, key, signatureBytes, new TextEncoder().encode(timestamp + rawBody));
+    const message = new TextEncoder().encode(timestamp + rawBody);
+    return await crypto.subtle.verify("Ed25519", key, signatureBytes, message);
   } catch { return false; }
 }
 
@@ -399,8 +400,9 @@ main,aside.upcoming-dock{position:relative;z-index:1}
 .upcoming-dock .race{background:var(--surface2);padding:10px;border:1px solid var(--border);border-radius:8px}.upcoming-dock .race-name{font-size:13px;font-weight:800;line-height:1.25}.upcoming-dock .race-meta{font-size:11px;line-height:1.4;color:var(--muted);margin-top:5px}
 .race-countdown{font-size:11px;font-weight:700;color:var(--accent);margin-top:3px}.upcoming-source{flex:0 0 auto;padding:10px 2px 2px;font-size:9px;color:var(--muted)}.upcoming-source a{color:inherit}
 .race-filter-row{display:flex;gap:4px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px}.race-filter-btn{padding:4px 9px;border-radius:12px;font-size:10px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}.race-filter-btn.active,.race-filter-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
-.race-tier-badge{font-size:9px;font-weight:800;padding:2px 5px;border-radius:3px;letter-spacing:.06em}.race-tier-bronze{background:#5a3219;color:#cd7f32}.race-tier-silver{background:#3a3f46;color:#d8dce2}.race-tier-gold{background:#5e4700;color:#ffd54a}.race-tier-special{background:#4b1f6f;color:#d98cff}
-.race.tier-bronze{border-left:4px solid #cd7f32!important}.race.tier-silver{border-left:4px solid #c0c0c0!important}.race.tier-gold{border-left:4px solid #d4af37!important}.race.tier-special{border-left:4px solid #a855f7!important}
+.race-tier-badge{font-size:9px;font-weight:800;padding:2px 5px;border-radius:3px;letter-spacing:.06em}
+.race-tier-bronze{background:#5a3219;color:#ffd8ad}.race-tier-silver{background:#555b66;color:#f0f3f7}.race-tier-gold{background:#735a00;color:#fff1a6}.race-tier-weekly{background:#68b9e8;color:#082234}.race-tier-special{background:#7a3fa8;color:#f7e8ff}
+.race.tier-bronze{background:#5a3219!important;border-color:#8f562d!important}.race.tier-silver{background:#555b66!important;border-color:#8b929e!important}.race.tier-gold{background:#735a00!important;border-color:#ad8d19!important}.race.tier-weekly{background:#68b9e8!important;border-color:#9bd4f2!important;color:#082234}.race.tier-special{background:#7a3fa8!important;border-color:#a86bd3!important}.race.tier-weekly .race-meta,.race.tier-weekly .race-countdown{color:#11364c!important}.race.tier-bronze .race-meta,.race.tier-silver .race-meta,.race.tier-gold .race-meta,.race.tier-special .race-meta{color:rgba(255,255,255,.82)!important}.race.tier-bronze .race-countdown,.race.tier-silver .race-countdown,.race.tier-gold .race-countdown,.race.tier-special .race-countdown{color:#fff!important}
 .manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
 @media(max-width:800px){.layout{display:block}.upcoming-dock{position:relative!important;top:auto!important;width:calc(100% - 28px)!important;min-width:0!important;max-width:none!important;resize:none!important;height:280px;margin:14px;border:1px solid var(--border);border-radius:12px}.brand-logo{width:72px!important;height:38px!important}body:before{width:90vw;height:60vw;opacity:.05}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
 `;
@@ -424,37 +426,67 @@ main,aside.upcoming-dock{position:relative;z-index:1}
   let cdInterval=null;
 
   const normalizeRaceCategory=race=>{
-    if(race?.specialEvent===true)return'special';
-    const t=String(race?.tier||'').toLowerCase();
-    if(t.includes('bronze'))return'bronze';
-    if(t.includes('silver'))return'silver';
-    if(t.includes('gold'))return'gold';
+    const text=[race?.name,race?.tier].filter(Boolean).join(' ').toLowerCase();
+    if(race?.specialEvent===true||text.includes('special'))return'special';
+    if(text.includes('weekly'))return'weekly';
+    const t=String(race?.tier||'').trim().toLowerCase();
+    if(t==='bronze')return'bronze';
+    if(t==='silver'||t==='silber')return'silver';
+    if(t==='gold')return'gold';
+    const sr=String(race?.srRequirement||'').trim().toLowerCase();
+    if(sr==='bronze')return'bronze';
+    if(sr==='silver'||sr==='silber')return'silver';
+    if(sr==='gold')return'gold';
     return'';
   };
 
-  const formatDate=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';};
-  const countdown=value=>{const ms=new Date(value).getTime()-Date.now();if(!Number.isFinite(ms)||ms<=0)return'läuft / gestartet';const m=Math.floor(ms/60000);const d=Math.floor(m/1440),h=Math.floor((m%1440)/60),min=m%60;if(d>0)return'in '+d+'d '+h+'h';if(h>0)return'in '+h+'h '+min+'m';return'in '+min+'m';};
-  const escText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const widgetHead=document.querySelector('.upcoming-widget-head');
+  if(widgetHead&&!document.querySelector('.race-filter-row')){
+    const filterRow=document.createElement('div');
+    filterRow.className='race-filter-row';
+    [['','Alle'],['bronze','Bronze'],['silver','Silver'],['gold','Gold'],['weekly','Weekly'],['special','Special']].forEach(([t,label])=>{
+      const btn=document.createElement('button');btn.className='race-filter-btn'+(t===''?' active':'');btn.dataset.tier=t;btn.textContent=label;
+      btn.addEventListener('click',()=>{activeTierFilter=t;filterRow.querySelectorAll('.race-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));renderRaces();});
+      filterRow.appendChild(btn);
+    });
+    widgetHead.insertAdjacentElement('afterend',filterRow);
+  }
 
-  const renderFilters=()=>{
-    const old=document.getElementById('raceFilters');if(old)old.remove();
-    if(!listEl)return;
-    const row=document.createElement('div');row.id='raceFilters';row.className='race-filter-row';
-    [{k:'',l:'Alle'},{k:'bronze',l:'Bronze'},{k:'silver',l:'Silver'},{k:'gold',l:'Gold'},{k:'special',l:'Special'}].forEach(f=>{const b=document.createElement('button');b.type='button';b.className='race-filter-btn'+(activeTierFilter===f.k?' active':'');b.textContent=f.l;b.onclick=()=>{activeTierFilter=f.k;renderFilters();renderRaces();};row.appendChild(b);});
-    listEl.parentElement?.insertBefore(row,listEl);
-  };
+  const make=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!=null)el.textContent=txt;return el;};
+  const fmt=iso=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return'';return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short'}).format(d);};
+  const pad=n=>String(n).padStart(2,'0');
+  const fmtCd=ms=>{if(ms<=0)return null;const s=Math.ceil(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?pad(h)+':'+pad(m)+':'+pad(sec):pad(m)+':'+pad(sec);};
+
+  const visibleRaces=()=>{const now=Date.now();return allRaceData.filter(r=>Date.parse(r.startsAtUtc)>now&&(!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter));};
 
   const renderRaces=()=>{
-    if(!listEl)return;
-    const races=allRaceData.filter(r=>!activeTierFilter||normalizeRaceCategory(r)===activeTierFilter);
-    listEl.innerHTML='';
-    if(!races.length){listEl.innerHTML='<div class="race-meta">Keine passenden Rennen.</div>';return;}
-    races.forEach(r=>{const cat=normalizeRaceCategory(r);const card=document.createElement('div');card.className='race'+(cat?' tier-'+cat:'');const classes=Array.isArray(r.carClasses)&&r.carClasses.length?r.carClasses.join(', '):'';const tierLabel=cat==='special'?'SPECIAL':(r.tier||'');card.innerHTML='<div class="race-name">'+escText(r.name||'Unbekannt')+'</div><div class="race-meta">'+escText([r.track,r.trackLayout].filter(Boolean).join(' · '))+'</div><div class="race-meta">'+escText(formatDate(r.startsAtUtc))+'</div><div class="race-countdown" data-start="'+escText(r.startsAtUtc)+'">'+escText(countdown(r.startsAtUtc))+'</div>'+(tierLabel?'<div class="race-meta"><span class="race-tier-badge race-tier-'+(cat||'')+'">'+escText(tierLabel)+'</span></div>':'')+(classes?'<div class="race-meta">'+escText(classes)+'</div>':'');listEl.appendChild(card);});
+    if(!listEl)return;listEl.replaceChildren();const races=visibleRaces();
+    if(!races.length){if(statusEl)statusEl.textContent=allRaceData.length?'Keine Rennen für diesen Filter.':'Keine Rennen im aktuellen Zeitfenster.';return;}
+    if(statusEl&&!statusEl.classList.contains('error'))statusEl.textContent='';
+    const now=Date.now();
+    races.forEach(race=>{
+      const category=normalizeRaceCategory(race);const startMs=Date.parse(race.startsAtUtc);const rem=startMs-now;const card=make('article','race'+(category?' tier-'+category:''));
+      const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px';hdr.appendChild(make('div','race-name',race.name||'LMU Race'));
+      if(category){const labels={bronze:'BRONZE',silver:'SILVER',gold:'GOLD',weekly:'WEEKLY',special:'SPECIAL'};hdr.appendChild(make('span','race-tier-badge race-tier-'+category,labels[category]));}
+      card.appendChild(hdr);
+      const meta=[];if(race.track)meta.push(race.track+(race.trackLayout?' · '+race.trackLayout:''));const start=fmt(race.startsAtUtc);if(start)meta.push(start);if(race.srRequirement)meta.push('SR: '+race.srRequirement);if(Array.isArray(race.carClasses)&&race.carClasses.length)meta.push(race.carClasses.join(', '));if(race.durationMinutes)meta.push(race.durationMinutes+' Min');if(meta.length)card.appendChild(make('div','race-meta',meta.join(' · ')));
+      if(rem>0){const cd=make('div','race-countdown');cd.dataset.start=String(startMs);cd.textContent='Start in '+fmtCd(rem);card.appendChild(cd);}listEl.appendChild(card);
+    });
   };
 
-  const refreshCountdowns=()=>{document.querySelectorAll('.race-countdown[data-start]').forEach(el=>{el.textContent=countdown(el.dataset.start);});};
-  const loadRaces=async()=>{if(!statusEl||!listEl)return;statusEl.classList.remove('error');statusEl.textContent='Rennen werden geladen…';try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||'Fehler');allRaceData=Array.isArray(d.races)?d.races:[];statusEl.textContent=d.stale?'Letzter verfügbarer Stand':'Aktuelle LMU-Rennen';renderFilters();renderRaces();refreshCountdowns();if(cdInterval)clearInterval(cdInterval);cdInterval=setInterval(refreshCountdowns,30000);}catch(e){statusEl.classList.add('error');statusEl.textContent=e?.message||'Upcoming Races konnten nicht geladen werden.';listEl.innerHTML='';}};
-  loadRaces();
+  const tick=()=>{
+    const now=Date.now();
+    const before=allRaceData.length;
+    allRaceData=allRaceData.filter(r=>{const startMs=Date.parse(r.startsAtUtc);return Number.isFinite(startMs)&&startMs>now;});
+    if(before!==allRaceData.length){renderRaces();return;}
+    document.querySelectorAll('.race-countdown').forEach(el=>{const rem=Number(el.dataset.start)-now;if(rem<=0){renderRaces();return;}const text=fmtCd(rem);el.textContent=text?'Start in '+text:'';});
+  };
+
+  const loadUpcoming=async()=>{
+    if(!statusEl||!listEl)return;statusEl.className='upcoming-status';statusEl.textContent='Rennen werden geladen…';listEl.replaceChildren();if(cdInterval){clearInterval(cdInterval);cdInterval=null;}
+    try{const r=await fetch('/api/upcoming-races',{cache:'no-store'});const data=await r.json().catch(()=>({}));if(!r.ok||!data.success)throw new Error(data.error||'Upcoming Races konnten nicht geladen werden.');const now=Date.now();allRaceData=(Array.isArray(data.races)?data.races:[]).filter(r=>{const startMs=Date.parse(r.startsAtUtc);return Number.isFinite(startMs)&&startMs>now;}).sort((a,b)=>Date.parse(a.startsAtUtc)-Date.parse(b.startsAtUtc));statusEl.textContent=data.stale?'Zwischengespeicherte Daten.':'';renderRaces();cdInterval=setInterval(tick,1000);}catch(e){statusEl.className='upcoming-status error';statusEl.textContent=e?.message||'Upcoming Races konnten nicht geladen werden.';}
+  };
+  loadUpcoming();
 })();
 </script>`;
   html = html.replace("</body>", extraJs + "\n</body>");
