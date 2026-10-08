@@ -57,7 +57,7 @@ const HOTFIX_JS = `<script>
     window.addEventListener('resize',()=>apply(Number(localStorage.getItem(widthKey))||panel.getBoundingClientRect().width));
   };
 
-  const initLogo=()=>{const logo=document.querySelector('.brand-logo');if(!logo)return;logo.src='/assets/three-peaks-racing-logo.webp';logo.alt='Three Peaks Racing';logo.width=96;logo.height=48;logo.removeAttribute('hidden');logo.style.display='block';logo.style.visibility='visible';logo.style.opacity='1';logo.onerror=null;};
+  const initLogo=()=>{const logo=document.querySelector('.brand-logo');if(!logo)return;logo.src='/assets/header-logo.webp';logo.alt='Three Peaks Racing';logo.width=96;logo.height=48;logo.removeAttribute('hidden');logo.style.display='block';logo.style.visibility='visible';logo.style.opacity='1';logo.onerror=null;};
   const initManufacturerCarousel=()=>{
     const original=document.getElementById('manufacturerImage');if(!original)return;
     const img=original.cloneNode(false);original.replaceWith(img);

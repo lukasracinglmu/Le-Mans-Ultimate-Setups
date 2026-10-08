@@ -7,9 +7,6 @@ const LMU_TIMEOUT_MS = 8000;
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
 const REPO_ASSETS = new Set([
-  "/assets/header-logo.webp",
-  "/assets/three-peaks-racing-logo.webp",
-  "/assets/bp-logo.webp",
   "/assets/manufacturers/go-setups.webp",
   "/assets/manufacturers/hymo-setups.webp",
   "/assets/manufacturers/bealien.webp"
@@ -346,11 +343,11 @@ function enhanceHome(source) {
 
   html = html.replace(
     /<link rel="preload" href="\/assets\/three-peaks-racing-logo\.webp" as="image" type="image\/webp">/,
-    '<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp" as="image" type="image/webp">'
+    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp" as="image" type="image/webp">'
   );
   html = html.replace(
     /<img class="brand-logo"[^>]*>/,
-    '<img class="brand-logo" src="/assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
+    '<img class="brand-logo" src="/assets/header-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
   );
   html = html.replace(
     'Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.',
