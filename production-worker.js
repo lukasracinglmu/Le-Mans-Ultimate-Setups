@@ -528,10 +528,11 @@ async function serveRepoAsset(request, env) {
   const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
   const branch = env.GITHUB_BRANCH || "main";
   const url = new URL(request.url);
-  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${url.pathname}`, { cache: "force-cache" });
+  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${url.pathname}`, { cache: "no-store" });
   if (!response.ok) return baseWorker.fetch(request, env);
   const headers = new Headers(response.headers);
-  headers.set("Cache-Control", "public, max-age=3600");
+  headers.set("Content-Type", "image/webp");
+  headers.set("Cache-Control", "no-store");
   headers.set("X-Content-Type-Options", "nosniff");
   return new Response(response.body, { status: response.status, headers });
 }
