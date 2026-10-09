@@ -1,124 +1,264 @@
 <div align="center">
 
-<img src="assets/header-logo.webp" alt="Three Peaks Racing" width="260">
+<img src="assets/header-logo.webp" alt="Three Peaks Racing" width="300">
 
-# 🏁 LMU Setup Database
+# LMU Setup Database
 
-### Three Peaks Racing · Le Mans Ultimate
+### 🏁 Three Peaks Racing × Le Mans Ultimate
 
-**Setup-Datenbank · Discord-Integration · Cloudflare Worker · D1 · R2**
+**Eine zentrale Setup-Plattform für LMU – schnell, übersichtlich und Discord-integriert.**
 
-![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
-![Discord](https://img.shields.io/badge/Discord-Integration-5865F2?logo=discord&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?logo=github&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+<br>
+
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-OAuth_%26_Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)
+
+![D1](https://img.shields.io/badge/Cloudflare-D1-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![R2](https://img.shields.io/badge/Cloudflare-R2-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![LMU](https://img.shields.io/badge/Le_Mans-Ultimate-C8102E?style=flat-square)
+![Status](https://img.shields.io/badge/Projekt-Aktiv-success?style=flat-square)
+
+<br>
+
+> **Setup Database · Versionsverwaltung · Discord OAuth · Upload/Delete · Setup Requests · LMUPORTAL**
 
 </div>
 
 ---
 
-## 🏎️ Projekt
+## 🏎️ Was ist die LMU Setup Database?
 
-Die **LMU Setup Database** ist die interne Setup-Plattform von **Three Peaks Racing** für *Le Mans Ultimate*. Setups werden nach Fahrzeugklasse und Fahrzeug organisiert und können – abhängig von den Discord-Berechtigungen – angesehen, heruntergeladen, hochgeladen und verwaltet werden.
+Die **LMU Setup Database** ist die interne Setup-Plattform von **Three Peaks Racing** für **Le Mans Ultimate**. Sie bündelt Fahrzeug- und Strecken-Setups in einer zentralen Oberfläche und verbindet die Website direkt mit Discord sowie der Cloudflare-Infrastruktur.
 
-Die Website läuft über **Cloudflare Workers**. Persistente Berechtigungs- und Setup-Metadaten werden über **Cloudflare D1** verwaltet; Upload-Infrastruktur nutzt außerdem **R2**. Die Anmeldung und Rechteprüfung erfolgt über **Discord OAuth**.
+Je nach Berechtigung können Nutzer Setups **ansehen, herunterladen, hochladen, löschen und Metadaten bearbeiten**. Bestehende Rechte werden serverseitig geprüft.
 
 <div align="center">
-<img src="assets/bp-logo.webp" alt="Three Peaks Racing Logo" width="420">
+<br>
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing Branding" width="480">
+<br><br>
 </div>
 
-## ✨ Funktionen
+---
 
-- Fahrzeugklassen: **Hypercar, LMP2, LMP3 und LMGT3**
-- Setup-Suche und Fahrzeug-/Herstellerfilter
-- Herstellerbereiche für **GO, HYMO und beAlien**
-- Setup-Download sowie berechtigter Upload/Delete
-- Strikt sequenzieller Multi-ZIP-Upload
-- Setup-Versionen inklusive nachträglicher Bearbeitung
-- Discord OAuth und serverseitige Rechteprüfung
-- Individuelle Database- und Upload/Delete-Freigaben
-- Discord Setup Requests mit Role-/User-Ping
-- LMU Upcoming Races / LMUPORTAL-Integration
-- Separater Discord-Presence-Bot
+## ✨ Features auf einen Blick
 
-## 🖼️ Verwendete Grafiken
-
-| Bereich | Datei |
+| Bereich | Funktionen |
 |---|---|
-| Header | `assets/header-logo.webp` |
-| Hintergrund / Branding | `assets/bp-logo.webp` |
-| Three Peaks Racing | `assets/three-peaks-racing-logo.webp` |
-| GO | `assets/manufacturers/go-setups.webp` |
-| HYMO | `assets/manufacturers/hymo-setups.webp` |
-| beAlien | `assets/manufacturers/bealien.webp` |
+| 🏁 **Fahrzeuge** | Hypercar · LMP2 · LMP3 · LMGT3 |
+| 🔎 **Navigation** | Fahrzeugklassenfilter · Streckensuche · Herstellerfilter |
+| 🧪 **Setup-Anbieter** | GO · HYMO · beAlien |
+| 📦 **Setups** | Download · Upload · Delete · Setup Counts |
+| 🔢 **Versionen** | Version beim Upload · nachträgliches Bearbeiten · persistente Speicherung |
+| ⚡ **Multi-Upload** | mehrere ZIPs · strikt sequenziell · Concurrency 1 · Retry |
+| 🔐 **Access** | Discord OAuth · Database Access · Upload/Delete Access |
+| 🤖 **Discord** | Setup Requests · User Ping · Role Ping · Presence Bot |
+| 🏆 **Racing** | LMUPORTAL · Upcoming Races · Weekly/Special · Bronze/Silver/Gold |
+| ☁️ **Backend** | Cloudflare Workers · D1 · R2 · GitHub |
+
+---
+
+## 🖼️ Hersteller
 
 <div align="center">
-<img src="assets/manufacturers/go-setups.webp" alt="GO" width="180">&nbsp;&nbsp;
-<img src="assets/manufacturers/hymo-setups.webp" alt="HYMO" width="180">&nbsp;&nbsp;
-<img src="assets/manufacturers/bealien.webp" alt="beAlien" width="180">
+
+| GO | HYMO | beAlien |
+|:---:|:---:|:---:|
+| <img src="assets/manufacturers/go-setups.webp" alt="GO Setups" width="210"> | <img src="assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="210"> | <img src="assets/manufacturers/bealien.webp" alt="beAlien Setups" width="210"> |
+
 </div>
+
+Die Hersteller-Grafiken werden auch in der bestehenden Website-Diashow verwendet.
+
+---
 
 ## 🧩 Architektur
 
 ```text
-Browser
-   │
-   ▼
-runtime-worker.js
-   │
-   ▼
-access-worker.js
-   │
-   ▼
-ui-hotfix.js
-   │
-   ▼
-production-worker.js
-   │
-   ▼
-worker.js
-   ├── Discord OAuth / Rechte
-   ├── Setup API
-   ├── GitHub
-   ├── Cloudflare D1
-   └── Cloudflare R2
+                         ┌─────────────────────┐
+                         │       Browser       │
+                         │   LMU Setup DB UI   │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │  runtime-worker.js  │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │  access-worker.js   │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │    ui-hotfix.js     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ production-worker.js│
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │      worker.js      │
+                         └──────────┬──────────┘
+                                    │
+             ┌──────────────────────┼──────────────────────┐
+             │                      │                      │
+             ▼                      ▼                      ▼
+      ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
+      │   Discord   │        │ Cloudflare  │        │   GitHub    │
+      │ OAuth / Bot │        │  D1 + R2    │        │ Repo/Data   │
+      └─────────────┘        └─────────────┘        └─────────────┘
 ```
 
-## 📁 Repository-Struktur
+### Worker-Layer
+
+| Datei | Aufgabe |
+|---|---|
+| `runtime-worker.js` | produktiver Cloudflare Entry Point |
+| `access-worker.js` | Access-/Berechtigungs-Layer |
+| `ui-hotfix.js` | bestehende UI-Integrationen |
+| `production-worker.js` | produktive Integrationslogik |
+| `worker.js` | Kern-API, OAuth, Uploads, Discord und Datenzugriffe |
+| `setup-version.js` | persistente Setup-Versionen und Edit-Funktion |
+
+---
+
+## 📁 Repository Map
 
 ```text
 Le-Mans-Ultimate-Setups/
-├── assets/
+│
+├── 🎨 assets/
+│   ├── header-logo.webp
+│   ├── bp-logo.webp
+│   ├── three-peaks-racing-logo.webp
 │   └── manufacturers/
-├── discord-presence/
+│       ├── go-setups.webp
+│       ├── hymo-setups.webp
+│       └── bealien.webp
+│
+├── 🤖 discord-presence/
 │   ├── index.js
 │   ├── bot.js
 │   ├── package.json
 │   ├── .env.example
 │   └── README.txt
-├── setups/
-├── index.html
-├── runtime-worker.js
-├── access-worker.js
-├── ui-hotfix.js
-├── production-worker.js
-├── worker.js
-├── setup-version.js
-├── setups.json
-├── schema.sql
-├── wrangler.jsonc
-└── CHANGELOG.md
+│
+├── 📦 setups/
+│
+├── 🌐 index.html
+├── ⚙️ runtime-worker.js
+├── 🔐 access-worker.js
+├── 🧩 ui-hotfix.js
+├── 🚀 production-worker.js
+├── ☁️ worker.js
+├── 🔢 setup-version.js
+├── 🗃️ setups.json
+├── 🧱 schema.sql
+├── 🔧 wrangler.jsonc
+├── 📝 CHANGELOG.md
+└── 📖 README.md
 ```
 
-## 🤖 Discord Bot
+---
 
-Der separate Presence-Bot befindet sich unter `discord-presence/`. Der produktive Einstiegspunkt für Wispbyte ist:
+## 🔐 Berechtigungsmodell
 
-```bash
-node index.js
+```text
+┌───────────────────────┐
+│    Database Access    │
+├───────────────────────┤
+│ ✓ Datenbank ansehen   │
+│ ✓ Setups herunterladen│
+│ ✗ Upload              │
+│ ✗ Delete              │
+│ ✗ Edit                │
+└───────────────────────┘
+            │
+            │ höhere Berechtigungsstufe
+            ▼
+┌────────────────────────┐
+│ Upload / Delete Access │
+├────────────────────────┤
+│ ✓ Datenbank ansehen    │
+│ ✓ Download             │
+│ ✓ Upload               │
+│ ✓ Delete               │
+│ ✓ Setup-Version Edit   │
+└────────────────────────┘
 ```
 
-Installation:
+Die relevanten Berechtigungen werden **serverseitig** geprüft. Das Ausblenden von UI-Elementen ist nicht die eigentliche Zugriffskontrolle.
+
+---
+
+## 📦 Setup Upload Pipeline
+
+Der Multi-ZIP-Upload bleibt bewusst strikt sequenziell:
+
+```text
+ZIP-Dateien auswählen
+        │
+        ▼
+ Version festlegen
+        │
+        ▼
+   Upload Queue
+        │
+        ├──► ZIP 1 ──► fertig
+        │
+        ├──► ZIP 2 ──► fertig
+        │
+        └──► ZIP 3 ──► fertig
+
+       Concurrency = 1
+```
+
+Fehlgeschlagene Uploads können erneut versucht werden. Die dem Upload zugewiesene Version bleibt dabei erhalten.
+
+---
+
+## 🔢 Setup-Versionen
+
+Versionen werden als Metadaten eindeutig einem Setup zugeordnet und persistent gespeichert.
+
+```text
+Setup
+├── Fahrzeug / Klasse
+├── Strecke / Datei
+├── bestehende Metadaten
+└── Version
+```
+
+Neue Uploads können beispielsweise folgende Versionswerte verwenden:
+
+`1.0` · `1.4` · `v2` · `2.1.3` · `2026.10`
+
+Ältere Setups ohne gespeicherte Versionsinformation zeigen **`—`**. Upload/Delete-berechtigte Nutzer können die Version über die Edit-Funktion nachtragen oder später ändern, ohne die Setup-Datei erneut hochzuladen.
+
+---
+
+## 🤖 Discord Integration
+
+### Website
+
+Discord übernimmt unter anderem:
+
+- OAuth Login
+- Benutzeridentität
+- serverseitige Rechteprüfung
+- Setup Requests
+- User Ping
+- Role Ping
+
+### Presence Bot
+
+Der eigenständige Presence-Bot befindet sich in `discord-presence/`.
 
 ```bash
 cd discord-presence
@@ -126,20 +266,48 @@ npm install
 npm start
 ```
 
-Die benötigte Umgebungsvariable ist in `.env.example` dokumentiert. **Echte Tokens gehören niemals ins Repository.**
+Produktiver Wispbyte-Entry-Point:
 
-## ☁️ Cloudflare
+```bash
+node index.js
+```
 
-Die Worker-Konfiguration befindet sich in `wrangler.jsonc`. Der produktive Worker nutzt unter anderem:
+Der Bot zeigt die konfigurierte **Le Mans Ultimate**-Aktivität über Discord an.
 
-- **D1** für Zugriffsrechte und persistente Metadaten
-- **R2** für Upload-Infrastruktur
-- **Worker Secrets** für vertrauliche Zugangsdaten
-- GitHub als Quelle für Website-, Setup- und Asset-Dateien
+---
 
-## 🔐 Sicherheit
+## ☁️ Cloudflare Stack
 
-Folgende Werte dürfen **nicht** in GitHub committed werden:
+<div align="center">
+
+**Workers** → Anwendung & API  
+**D1** → Berechtigungen & persistente Metadaten  
+**R2** → Upload-Infrastruktur  
+**Secrets** → vertrauliche Konfiguration
+
+</div>
+
+Die zentrale Worker-Konfiguration befindet sich in `wrangler.jsonc`. Der produktive Entry Point ist `runtime-worker.js`.
+
+---
+
+## 🛡️ Security
+
+Die Anwendung setzt auf serverseitige Schutzmechanismen, ohne den normalen berechtigten Nutzerfluss unnötig zu verändern.
+
+Unter anderem relevant:
+
+- Discord OAuth State Validation
+- serverseitige Authorization
+- Same-Origin-Prüfungen für schreibende Requests
+- sichere Session-Cookies
+- Input Validation
+- Request-Größenlimits
+- Security Header / CSP
+- D1 Prepared Statements
+- geschützte Worker-Secrets
+
+### 🔒 Niemals committen
 
 ```text
 DISCORD_CLIENT_SECRET
@@ -148,30 +316,62 @@ GITHUB_TOKEN
 SESSION_SECRET
 LMUPORTAL_API1
 LMUPORTAL_API2
+.env
+.dev.vars
 ```
 
-Lokale `.env`-Dateien, `.dev.vars`, `node_modules` und Wrangler-Lokalzustände werden über `.gitignore` ausgeschlossen.
-
-## 🔑 Berechtigungsmodell
-
-**Database Access** erlaubt das Anzeigen und Herunterladen der Setup-Datenbank. **Upload/Delete Access** ist die höhere Berechtigungsstufe und erlaubt zusätzlich Upload, Delete und das Bearbeiten von Setup-Metadaten wie der Version. Die sicherheitsrelevanten Prüfungen erfolgen serverseitig.
-
-## 🗂️ Setup-Versionen
-
-Neue Uploads besitzen eine frei eingegebene Version. Bei Multi-Uploads wird die Version auf den jeweiligen Upload-Vorgang angewendet. Ältere Setups ohne Versionsinformation bleiben unverändert und zeigen `—`; berechtigte Nutzer können die Version nachträglich über die Edit-Funktion ergänzen oder ändern.
-
-## 🚀 Deployment
-
-Der produktive Cloudflare-Worker verwendet `runtime-worker.js` als Entry Point. Änderungen auf dem produktiven Branch werden über die bestehende Cloudflare/GitHub-Deployment-Pipeline bereitgestellt.
+`node_modules`, lokale Wrangler-Daten und Environment-Dateien werden über `.gitignore` ausgeschlossen.
 
 ---
 
+## 🚀 Deployment Flow
+
+```text
+GitHub / main
+      │
+      ▼
+Cloudflare Build
+      │
+      ▼
+npx wrangler deploy
+      │
+      ▼
+Cloudflare Worker
+      │
+      ▼
+Production
+```
+
+Änderungen am produktiven Branch werden über die bestehende GitHub-/Cloudflare-Pipeline bereitgestellt.
+
+---
+
+## 🧰 Tech Stack
+
 <div align="center">
 
-### 🏁 Three Peaks Racing
+| Frontend | Backend | Daten | Integration | Hosting |
+|:---:|:---:|:---:|:---:|:---:|
+| HTML · CSS · JavaScript | Cloudflare Workers | D1 · R2 · GitHub | Discord API/OAuth | Cloudflare |
 
-**LMU Setup Database**
+</div>
 
-*Built for Le Mans Ultimate.*
+---
+
+## 🏁 Three Peaks Racing
+
+<div align="center">
+
+<img src="assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing" width="300">
+
+### LMU Setup Database
+
+**Built for Le Mans Ultimate. Built for the team.**
+
+`Hypercar` · `LMP2` · `LMP3` · `LMGT3`
+
+<br>
+
+**Three Peaks Racing © 2026**
 
 </div>
