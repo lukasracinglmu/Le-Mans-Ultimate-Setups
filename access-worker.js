@@ -1,4 +1,5 @@
 import uiWorker from "./ui-hotfix.js";
+import { enrichSetupVersions } from "./setup-version.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GITHUB_API = "https://api.github.com";
@@ -229,7 +230,8 @@ async function listSetupsForGrantedUser(request, env) {
   if (r.status === 404) return json({ success: true, setups: [] });
   if (!r.ok) return json({ success: false, error: "Setups konnten nicht geladen werden." }, 502);
   const items = await r.json();
-  const setups = (Array.isArray(items) ? items : []).filter(i => i.type === "file" && /\.zip$/i.test(i.name)).map(i => ({ name: i.name, sha: i.sha, download: `/api/setups/download?category=${enc(cat)}&vehicle=${enc(veh)}&name=${enc(i.name)}`, ...classifySetup(i.name, veh) })).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true,sensitivity:"base"}));
+  let setups = (Array.isArray(items) ? items : []).filter(i => i.type === "file" && /\.zip$/i.test(i.name)).map(i => ({ name: i.name, sha: i.sha, download: `/api/setups/download?category=${enc(cat)}&vehicle=${enc(veh)}&name=${enc(i.name)}`, ...classifySetup(i.name, veh) })).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true,sensitivity:"base"}));
+  setups = await enrichSetupVersions(setups, cat, veh, env);
   return json({ success: true, setups });
 }
 
