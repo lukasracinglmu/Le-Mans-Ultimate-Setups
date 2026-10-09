@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/header-logo.webp" alt="Three Peaks Racing" width="360">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/header-logo.webp" alt="Three Peaks Racing" width="360">
 
 # 🏁 LMU SETUP DATABASE
 
@@ -50,7 +50,7 @@ Fahrzeuge · Strecken · Setup-Versionen · Discord · Cloudflare
 
 </td>
 <td width="50%" align="center">
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing Logo" width="310">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing Logo" width="310">
 </td>
 </tr>
 </table>
@@ -124,11 +124,11 @@ Upcoming Races mit Weekly/Special sowie Bronze/Silver/Gold-Klassifizierung.
 
 <br>
 
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/manufacturers/go-setups.webp" alt="GO Setups" width="220">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/manufacturers/go-setups.webp" alt="GO Setups" width="220">
 &nbsp;&nbsp;&nbsp;
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="220">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="220">
 &nbsp;&nbsp;&nbsp;
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/manufacturers/bealien.webp" alt="beAlien Setups" width="220">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/manufacturers/bealien.webp" alt="beAlien Setups" width="220">
 
 <br><br>
 
@@ -403,7 +403,7 @@ Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumen
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing" width="280">
+<img src="https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/raw/refs/heads/main/assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing" width="280">
 
 ## 🏁 THREE PEAKS RACING
 
