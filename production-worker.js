@@ -45,7 +45,10 @@ export default {
         if (parsed.error) return json({ success: false, error: parsed.error }, 400);
         const category = String(form.get("category") || "").trim();
         const vehicle = String(form.get("vehicle") || "").trim();
-        const forwarded = new Request(request.url, { method: "POST", headers: request.headers, body: form });
+        const headers = new Headers(request.headers);
+        headers.delete("Content-Type");
+        headers.delete("Content-Length");
+        const forwarded = new Request(request.url, { method: "POST", headers, body: form });
         const response = await baseWorker.fetch(forwarded, env, ctx);
         if (!response.ok) return response;
         const data = await safeJson(response.clone());
