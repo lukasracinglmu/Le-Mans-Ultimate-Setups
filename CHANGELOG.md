@@ -2,6 +2,95 @@
 
 Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, GitHub und Cloudflare werden hier dokumentiert. Secrets, Tokens, Passwörter und vertrauliche User-Daten werden nicht eingetragen.
 
+## 2026-10-09 – Nachtrag
+
+### Setup-Versionen
+- Freies Versionsfeld beim bestehenden Setup-Upload ergänzt; es wird kein automatisches oder starres SemVer-Schema erzwungen.
+- Versionswerte werden getrimmt, serverseitig validiert und auf eine sinnvolle Maximallänge von 40 Zeichen begrenzt.
+- Eine beim Multi-ZIP-Upload eingegebene Version wird auf alle Dateien dieses Upload-Vorgangs angewendet.
+- Die bestehende strikt sequenzielle Upload-Verarbeitung mit Concurrency `1` bleibt erhalten.
+- Retry-Vorgänge behalten die ursprünglich dem Upload zugewiesene Version.
+- Setup-Versionen werden persistent in D1 gespeichert und beim Laden der Setup-Liste wieder mit dem jeweiligen Setup zusammengeführt.
+- Die Zuordnung erfolgt über Fahrzeugklasse, Fahrzeug und Setup-Datei statt über DOM-Position oder Array-Index.
+- Alte Setups ohne gespeicherte Versionsinformation bleiben vollständig kompatibel und zeigen `—`.
+- Nach erfolgreichem Upload werden Setup und Version über die bestehende Aktualisierung ohne erzwungenen Seitenreload sichtbar.
+- Upload-Forwarding für Multipart/FormData korrigiert, nachdem ein übernommener Multipart-Header neue Uploads blockiert hatte.
+
+### Setup-Versionen nachträglich bearbeiten
+- Edit-/Stift-Funktion für vorhandene Setup-Einträge ergänzt.
+- Das Edit-Icon wird ausschließlich für Nutzer mit bestehender Upload/Delete-Berechtigung angeboten.
+- Database-only Nutzer können Setups und Versionen weiterhin ansehen und herunterladen, aber nicht bearbeiten.
+- Der Edit-Endpunkt prüft die Upload/Delete-Berechtigung zusätzlich serverseitig und verweigert unberechtigte Änderungen mit `403`.
+- Bestehende Setups mit `Version: —` können nachträglich eine Version erhalten.
+- Bereits vorhandene Versionswerte können später geändert werden.
+- Beim Bearbeiten der Version wird die eigentliche ZIP-Datei nicht erneut hochgeladen oder verändert.
+- Vor dem Speichern wird serverseitig geprüft, dass das referenzierte Setup tatsächlich existiert.
+- Nach dem Speichern wird die sichtbare Version ohne `location.reload()` aktualisiert.
+
+### Fahrzeugübersicht / Navigation
+- Zusätzlicher Fahrzeugklassenfilter für `Alle`, `Hypercar`, `LMP2`, `LMP3` und `LMGT3` ergänzt.
+- Der Klassenfilter verwendet die bestehende Fahrzeugdatenstruktur und arbeitet gemeinsam mit der vorhandenen Fahrzeugsuche.
+- Klassenfilter und interner GO/HYMO/beAlien-Filter besitzen getrennte Zustände.
+- Beim Öffnen eines Fahrzeugs wird die aktuelle Scrollposition der Fahrzeugübersicht gespeichert.
+- Fahrzeugdetailseiten öffnen unabhängig von der vorherigen Position immer oben.
+- Beim Zurückkehren aus der Fahrzeugdetailseite wird die vorherige Scrollposition der Übersicht wiederhergestellt.
+- Der bestehende Herstellerfilter innerhalb der Fahrzeugansicht wird beim Verlassen weiterhin auf `Alle` zurückgesetzt.
+
+### Berechtigungen / Database Access
+- Individueller Database Access und Upload/Delete Access technisch voneinander getrennt.
+- Upload/Delete Access umfasst weiterhin Database Access; reiner Database Access verleiht keine Upload-, Delete- oder Edit-Rechte.
+- Individuelle Upload-Freigaben über `upload_access` bleiben als höhere Berechtigungsstufe erhalten.
+- Die für Upload/Delete verwendete Discord-Rollenprüfung wurde in den Access-Layer integriert.
+- Upload-, Delete- und Setup-Version-Edit-Endpunkte werden zusätzlich serverseitig auf die höhere Berechtigung geprüft.
+- Kombinierte Admin-Ansicht für individuell freigegebene Database-/Upload-Nutzer ergänzt; vorhandene D1-Freigaben bleiben bestehen.
+- Discord-Anzeigenamen werden für die Admin-Übersicht serverseitig aufgelöst; bei nicht verfügbarer Auflösung wird ein neutraler Fallback verwendet.
+
+### Hersteller-Diashow
+- Fehlerhafte Auslieferung der GO-, HYMO- und beAlien-Grafiken korrigiert.
+- Herstellerbilder werden wieder mit dem korrekten MIME-Type `image/webp` ausgeliefert.
+- Fehlerhafte Cache-Behandlung der Herstellerbilder korrigiert, ohne die bestehende Diashow oder deren Design umzubauen.
+
+### Discord Bot / Presence
+- Separaten Discord-Presence-Bot als vollständigen Projektbestandteil unter `discord-presence/` dokumentiert.
+- Produktiven Wispbyte-Einstiegspunkt `discord-presence/index.js` ergänzt.
+- `discord-presence/package.json` auf den tatsächlichen Wispbyte-Entry-Point `index.js` ausgerichtet.
+- Presence verwendet den bestehenden Discord-Bot mit Status DND und der Aktivität `Le Mans Ultimate`.
+- `.env.example`/Projektstruktur dokumentieren die benötigte Bot-Konfiguration, ohne echte Tokens einzuchecken.
+- Technische Discord-Einschränkung dokumentiert: normale Bot-Gateway-Presence kann kein frei konfiguriertes Rich-Presence-Large-Image wie ein Game/Client-RPC erzwingen.
+
+### GitHub / Repository
+- Repository um eine `.gitignore` für Secrets, lokale Environment-Dateien, `node_modules` und lokale Wrangler-Daten ergänzt.
+- Tatsächlich verwendete Website-/Worker-Scripts, finale Branding-/Hersteller-Assets und Discord-Bot-Scripts als Projektbestandteile zusammengeführt bzw. dokumentiert.
+- Deutsches Projekt-README vollständig neu aufgebaut.
+- README anschließend nochmals visuell erweitert: große Technologie-Badges, Feature-Matrix, Hersteller-Showcase, Architekturdiagramm, Repository-Map, Berechtigungsmodell, Upload-Pipeline, Versionssystem, Discord-/Cloudflare-Bereiche, Deployment-Flow und Tech-Stack.
+- Keine Secrets oder Tokens wurden für die Repository-Dokumentation committed.
+- `KNOWN_GOOD_ROLLBACK` wurde auf den dokumentierten funktionierenden Projektstand aktualisiert, bevor weitere Security-Arbeiten begonnen werden.
+
+### Security-Vorbereitung
+- Security-Hardening-Vorgabe dokumentiert: bestehende Funktionen, Design, UI und UX haben Vorrang und dürfen durch optionale Security-Maßnahmen nicht verändert werden.
+- Vor weiteren Security-Änderungen wurde ein bekannter Rollback-Stand festgehalten.
+- Bestehende Schutzmechanismen wurden geprüft, darunter HTTPS-Prüfung, Same-Origin-Prüfung für schreibende Requests, Request-Größenlimit, Security-Header/CSP, OAuth-State-Prüfung, serverseitige Session-/Rollenprüfung und parameterisierte D1-Abfragen.
+- Weiteres Hardening soll ausschließlich in kompatiblen, kleinen Änderungspaketen erfolgen; Maßnahmen mit Risiko für bestehende legitime Abläufe werden nicht blind aktiviert.
+
+### Temporär getestete und wieder entfernte Änderung
+- Fahrzeugbilder in der Fahrzeugdetailansicht wurden testweise ergänzt.
+- Die Änderung wurde anschließend auf Wunsch vollständig zurückgenommen: UI-Integration, Sprite/Asset und Runtime-Integration wurden wieder entfernt.
+- Der übrige Website-Stand wurde dabei nicht absichtlich verändert.
+
+## 2026-10-08 – Nachtrag
+
+### Access-Layer / Rechte
+- Access-Wrapper für die bestehende Production-Worker-Kette erweitert.
+- Database Access und Upload/Delete Access als getrennte Berechtigungsstufen umgesetzt.
+- Server-Schutz für Upload und Delete auf die höhere Berechtigungsstufe gelegt.
+- Individuelle Database-Freigaben in D1 berücksichtigt, ohne bestehende Upload-Freigaben zu migrieren oder zu löschen.
+- Upload/Delete-berechtigte Nutzer erhalten automatisch auch Zugriff auf die Setup-Datenbank.
+- Reine Database-Freigaben erhalten ausdrücklich keine zusätzlichen Upload/Delete-Rechte.
+
+### Navigation / Filter
+- Verhalten des GO/HYMO/beAlien-Filters beim Verlassen einer Fahrzeugdetailseite korrigiert: Rückkehr zur Übersicht setzt diesen Filter wieder auf `Alle`.
+- Sonstige Fahrzeug-, Setup- und Upload-Abläufe blieben unverändert.
+
 ## 2026-10-07
 
 ### LMU Portal / Upcoming Races
