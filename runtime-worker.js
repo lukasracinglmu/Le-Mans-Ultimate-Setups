@@ -20,16 +20,7 @@ export default {
       return new Response(source.body, { status: 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
     }
 
-    const response = await productionWorker.fetch(request, env, ctx);
-    if (request.method === "GET" && response.headers.get("Content-Type")?.includes("text/html")) {
-      const html = await response.text();
-      if (html.includes("</body>")) {
-        const headers = new Headers(response.headers);
-        headers.delete("Content-Length");
-        return new Response(html.replace("</body>", '<script src="/car-images-ui.js"></script></body>'), { status: response.status, statusText: response.statusText, headers });
-      }
-    }
-    return response;
+    return productionWorker.fetch(request, env, ctx);
   },
 
   async queue(batch, env, ctx) {
