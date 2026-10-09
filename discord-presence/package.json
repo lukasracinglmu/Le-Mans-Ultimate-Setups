@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Persistent Discord presence for the LMU Setup Database bot",
-  "main": "bot.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node index.js"
   },
   "engines": {
     "node": ">=20"
