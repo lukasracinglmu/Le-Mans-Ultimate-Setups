@@ -21,6 +21,7 @@ const HOTFIX_CSS = `
 .vehicle-setup-count{position:relative;z-index:1;margin-top:8px;color:var(--muted);font-size:12px}
 .database-access-state{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin:0 0 26px;box-shadow:var(--shadow)}
 .database-access-state h2{margin:0 0 8px;font-size:24px}.database-access-state p{margin:0;color:var(--muted);line-height:1.55}.database-access-state .discord-button{display:inline-block;margin-top:16px;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700}
+.setup-version-input{width:120px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 11px;outline:none}.setup-version-input:focus{border-color:var(--accent)}
 html:not([data-db-access="authorized"]) #homePage>.hero,
 html:not([data-db-access="authorized"]) #mfrFilter,
 html:not([data-db-access="authorized"]) #search,
@@ -67,6 +68,18 @@ const HOTFIX_JS = `<script>
     show(0);timer=setInterval(()=>show(index+1),5000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearTimeout(swapTimer);},{once:true});
   };
 
+  const initVersionUpload=()=>{
+    const area=document.getElementById('uploadArea');const btn=document.getElementById('uploadBtn');if(!area||!btn)return;
+    let input=document.getElementById('setupVersion');
+    if(!input){input=document.createElement('input');input.id='setupVersion';input.className='setup-version-input';input.type='text';input.maxLength=40;input.placeholder='Version';input.setAttribute('aria-label','Version');btn.before(input);}
+    const originalClick=btn.onclick;
+    btn.addEventListener('click',(e)=>{const value=input.value.trim();if(!value){e.stopImmediatePropagation();e.preventDefault();const s=document.getElementById('uploadStatus');if(s)s.textContent='Version fehlt.';}},true);
+    const originalRun=window.runUploadJobs;
+    if(typeof originalRun==='function'&&!originalRun.__versionWrapped){const wrapped=async function(jobs,opts){if(!(opts&&opts.appendRows)){const value=input.value.trim();if(!value){const s=document.getElementById('uploadStatus');if(s)s.textContent='Version fehlt.';return{ok:0,failed:jobs.length,failedJobs:jobs};}if(value.length>40){const s=document.getElementById('uploadStatus');if(s)s.textContent='Version ist zu lang.';return{ok:0,failed:jobs.length,failedJobs:jobs};}jobs.forEach(j=>{if(j.version==null)j.version=value;});}return originalRun.call(this,jobs,opts);};wrapped.__versionWrapped=true;window.runUploadJobs=wrapped;}
+    const originalSingle=window.uploadSingleJob;
+    if(typeof originalSingle==='function'&&!originalSingle.__versionWrapped){const wrapped=async function(job,statuses){const file=job.file;if(!/\\.zip$/i.test(file.name)){job.error='ungültiger Dateityp';markUploadJob(statuses,job,'err','Fehlgeschlagen');return false}if(file.size<=0||file.size>MAX_UPLOAD_BYTES){job.error='ungültige Dateigröße';markUploadJob(statuses,job,'err','Fehlgeschlagen');return false}markUploadJob(statuses,job,'uploading','Wird hochgeladen...');const form=new FormData();form.append('category',currentCar.category);form.append('vehicle',currentCar.vehicle);form.append('version',String(job.version||''));form.append('files',file,file.name);try{const r=await fetch('/api/setups/upload',{method:'POST',body:form,credentials:'same-origin'});let d={};try{d=await r.json()}catch{job.error='Ungültige Server-Antwort';markUploadJob(statuses,job,'err','Fehlgeschlagen');return false}const uploaded=new Set((d.uploaded||[]).map(x=>x.name));const fileError=(d.errors||[]).find(x=>x.name===file.name)?.error;if(r.ok&&uploaded.has(file.name)){job.error='';markUploadJob(statuses,job,'ok','Erfolgreich');return true}job.error=fileError||d.error||('fehlgeschlagen (HTTP '+r.status+')');markUploadJob(statuses,job,'err','Fehlgeschlagen');return false}catch{job.error='Netzwerkfehler';markUploadJob(statuses,job,'err','Fehlgeschlagen');return false}};wrapped.__versionWrapped=true;window.uploadSingleJob=wrapped;}
+  };
+
   const accessBox=()=>{
     let box=document.getElementById('databaseAccessState');
     if(!box){box=document.createElement('section');box.id='databaseAccessState';box.className='database-access-state';const main=document.querySelector('.layout>main');main?.prepend(box);}
@@ -91,7 +104,7 @@ const HOTFIX_JS = `<script>
     homeButtons.forEach(btn=>{if(btn.dataset.carSync)return;btn.dataset.carSync='1';btn.addEventListener('click',()=>{paint(btn.dataset.mfr||'');refreshVehicleCounts();});});
   };
 
-  const buildSetup=(s)=>{const el=document.createElement('div');el.className='setup';const info=document.createElement('div');info.className='setup-info';const name=document.createElement('div');name.className='setup-track';const vendor=classify(s.name);const tag=vendor?'<span class="vendor-tag '+vendor+'">'+vendor+'</span>':'';name.innerHTML=esc(s.name)+tag;const meta=document.createElement('div');meta.className='setup-meta';meta.textContent=[s.series,s.variant,'ZIP'].filter(Boolean).join(' · ');info.append(name,meta);const actions=document.createElement('div');actions.className='setup-actions';const dl=document.createElement('a');dl.className='download';dl.href=s.download;dl.download='';dl.textContent='Download';actions.appendChild(dl);if(currentUser?.canUpload){const del=document.createElement('button');del.className='delete-btn';del.style.display='flex';del.title='Setup löschen';del.setAttribute('aria-label','Setup löschen');del.textContent='🗑';del.addEventListener('click',()=>openDeleteModal(s.name));actions.appendChild(del);}el.append(info,actions);return el;};
+  const buildSetup=(s)=>{const el=document.createElement('div');el.className='setup';const info=document.createElement('div');info.className='setup-info';const name=document.createElement('div');name.className='setup-track';const vendor=classify(s.name);const tag=vendor?'<span class="vendor-tag '+vendor+'">'+vendor+'</span>':'';name.innerHTML=esc(s.name)+tag;const meta=document.createElement('div');meta.className='setup-meta';meta.textContent=[s.series,s.variant,'ZIP','Version: '+(s.version||'—')].filter(Boolean).join(' · ');info.append(name,meta);const actions=document.createElement('div');actions.className='setup-actions';const dl=document.createElement('a');dl.className='download';dl.href=s.download;dl.download='';dl.textContent='Download';actions.appendChild(dl);if(currentUser?.canUpload){const del=document.createElement('button');del.className='delete-btn';del.style.display='flex';del.title='Setup löschen';del.setAttribute('aria-label','Setup löschen');del.textContent='🗑';del.addEventListener('click',()=>openDeleteModal(s.name));actions.appendChild(del);}el.append(info,actions);return el;};
   const renderVendorSetups=(setups)=>{const list=document.getElementById('setupList');if(!list||document.documentElement.dataset.dbAccess!=='authorized')return;list.innerHTML='';const mfr=currentMfr();const track=(typeof trackSearchVal==='string'?trackSearchVal:'').trim().toLowerCase();const filtered=setups.filter(s=>{const vendor=classify(s.name);if(mfr&&vendor!==mfr)return false;if(track&&!String(s.name||'').toLowerCase().includes(track))return false;return true;});if(!filtered.length){list.innerHTML='<div class="empty">'+(setups.length?'Keine Setups für diesen Filter.':'Noch keine Setups für dieses Fahrzeug verfügbar.')+'</div>';return;}const visibleVendors=mfr?[mfr]:vendors;for(const vendor of visibleVendors){const vendorItems=filtered.filter(s=>classify(s.name)===vendor);if(!vendorItems.length)continue;const section=document.createElement('section');section.className='vendor-section';const vendorTitle=document.createElement('div');vendorTitle.className='vendor-section-title '+vendor;vendorTitle.textContent=vendor;section.appendChild(vendorTitle);for(const [group,items] of groupSetups(vendorItems)){const wrap=document.createElement('section');wrap.className='setup-group';const title=document.createElement('div');title.className='setup-group-title';title.textContent=group;wrap.appendChild(title);items.forEach(s=>wrap.appendChild(buildSetup(s)));section.appendChild(wrap);}list.appendChild(section);}const unclassified=filtered.filter(s=>!classify(s.name));if(!mfr&&unclassified.length){for(const [group,items] of groupSetups(unclassified)){const wrap=document.createElement('section');wrap.className='setup-group';const title=document.createElement('div');title.className='setup-group-title';title.textContent=group;wrap.appendChild(title);items.forEach(s=>wrap.appendChild(buildSetup(s)));list.appendChild(wrap);}}};
   const countFor=(setups)=>{const mfr=currentMfr();return setups.filter(s=>!mfr||classify(s.name)===mfr).length;};
   let countRun=0;
@@ -109,14 +122,14 @@ const HOTFIX_JS = `<script>
       if(!d.databaseAccess){showAccessState('forbidden',d.user);return;}
       showAccessState('authorized',d.user);
       if(typeof loadData==='function')await loadData();
-      syncCarFilter();setTimeout(refreshVehicleCounts,0);
+      syncCarFilter();initVersionUpload();setTimeout(refreshVehicleCounts,0);
     }catch{showAccessState('login');}
   };
 
   const init=()=>{
     initLogo();initManufacturerCarousel();const layout=document.querySelector('.layout');const upcoming=document.getElementById('upcoming');const main=layout?.querySelector('main');if(layout&&upcoming&&main&&upcoming.previousElementSibling!==main)layout.appendChild(upcoming);initResize();
     window.renderSetups=renderVendorSetups;
-    const originalShowCar=window.showCar;if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(...args){if(document.documentElement.dataset.dbAccess!=='authorized')return;const r=await originalShowCar.apply(this,args);syncCarFilter();renderVendorSetups(currentCarSetups);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
+    const originalShowCar=window.showCar;if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(...args){if(document.documentElement.dataset.dbAccess!=='authorized')return;const r=await originalShowCar.apply(this,args);syncCarFilter();initVersionUpload();renderVendorSetups(currentCarSetups);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
     const categories=document.getElementById('categories');if(categories)new MutationObserver(()=>refreshVehicleCounts()).observe(categories,{childList:true,subtree:false});
     authorize();
   };
