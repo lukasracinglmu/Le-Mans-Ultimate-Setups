@@ -65,9 +65,8 @@ function addField(fields, name, value, inline = false) {
 }
 function discordFields(event) {
   const fields = [];
-  const actor = event.discordUserId ? `<@${event.discordUserId}>${event.discordAccount ? ` (${event.discordAccount})` : ""}` : (event.discordAccount || "Unbekannt");
-  addField(fields, "Ausgeführt von", actor);
-  if (event.targetDiscordAccount || event.targetDiscordUserId) addField(fields, "Betroffener User", `${event.targetDiscordAccount || "Unbekannt"}${event.targetDiscordUserId ? `\n${event.targetDiscordUserId}` : ""}`);
+  addField(fields, "Ausgeführt von", event.discordUserId ? `<@${event.discordUserId}>` : (event.discordAccount || "Unbekannt"));
+  if (event.targetDiscordAccount || event.targetDiscordUserId) addField(fields, "Betroffener User", event.targetDiscordUserId ? `<@${event.targetDiscordUserId}>` : (event.targetDiscordAccount || "Unbekannt"));
   addField(fields, "Berechtigung", event.permission, true);
   addField(fields, "Setup", event.setup);
   addField(fields, "Fahrzeug", event.vehicle, true);
@@ -81,13 +80,15 @@ function discordFields(event) {
 }
 async function writeDiscordAuditEvent(event, env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_AUDIT_CHANNEL_ID) return;
-  const userId = /^\d{16,22}$/.test(String(event.discordUserId || "")) ? String(event.discordUserId) : null;
+  const actorId = /^\d{16,22}$/.test(String(event.discordUserId || "")) ? String(event.discordUserId) : null;
+  const targetId = /^\d{16,22}$/.test(String(event.targetDiscordUserId || "")) ? String(event.targetDiscordUserId) : null;
+  const mentionUsers = [...new Set([actorId, targetId].filter(Boolean))];
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_AUDIT_CHANNEL_ID}/messages`, {
     method: "POST",
     headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       embeds: [{ title: discordTitle(event.action), fields: discordFields(event), timestamp: event.timestamp }],
-      allowed_mentions: { parse: [], users: userId ? [userId] : [] }
+      allowed_mentions: { parse: [], users: mentionUsers }
     })
   });
   if (!response.ok) throw new Error(`Discord audit write failed (${response.status})`);
