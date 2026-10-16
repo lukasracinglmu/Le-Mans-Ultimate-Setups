@@ -1,4 +1,5 @@
 import productionWorker from "./access-worker.js";
+import { writeSetupAuditEvent } from "./audit-log.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -20,6 +21,30 @@ export default {
       return new Response(source.body, { status: 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
     }
 
+    const permissionChange = isPermissionChange(request.method, url.pathname);
+    if (permissionChange) {
+      const bodyRequest = request.clone();
+      const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
+      const meResponse = await productionWorker.fetch(meRequest, env, ctx);
+      let actor = null;
+      try { actor = await meResponse.json(); } catch {}
+
+      let targetUserId = null;
+      try { targetUserId = String((await bodyRequest.json())?.userId || "").trim() || null; } catch {}
+
+      const response = await productionWorker.fetch(request, env, ctx);
+      if (response.ok && actor?.loggedIn && actor?.user?.id && targetUserId) {
+        let result = null;
+        try { result = await response.clone().json(); } catch {}
+        if (result?.success) {
+          const event = permissionAuditEvent(request.method, url.pathname, actor.user, targetUserId);
+          const task = writeSetupAuditEvent(event, env).catch(error => console.error("Audit log failed", error instanceof Error ? error.message : "unknown"));
+          if (ctx?.waitUntil) ctx.waitUntil(task); else task.catch(() => {});
+        }
+      }
+      return response;
+    }
+
     return productionWorker.fetch(request, env, ctx);
   },
 
@@ -34,3 +59,23 @@ export default {
     }
   }
 };
+
+function isPermissionChange(method, path) {
+  return (method === "POST" || method === "DELETE") && (path === "/api/admin/database-access" || path === "/api/admin/upload-access");
+}
+
+function permissionAuditEvent(method, path, actor, targetUserId) {
+  const grant = method === "POST";
+  const database = path === "/api/admin/database-access";
+  const permission = database ? "DATABASE_ACCESS" : "UPLOAD_DELETE_ACCESS";
+  return {
+    action: grant ? "PERMISSION_GRANT" : "PERMISSION_REVOKE",
+    discordAccount: actor.username || null,
+    discordUserId: actor.id,
+    targetDiscordUserId: targetUserId,
+    permission,
+    oldValue: grant ? "DENIED" : "GRANTED",
+    newValue: grant ? "GRANTED" : "DENIED",
+    result: "SUCCESS"
+  };
+}
