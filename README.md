@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/header-logo.webp" alt="Three Peaks Racing" width="360">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="360">
 
 # 🏁 LMU SETUP DATABASE
 
@@ -50,7 +50,7 @@ Fahrzeuge · Strecken · Setup-Versionen · Discord · Cloudflare
 
 </td>
 <td width="50%" align="center">
-<img src="assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing Logo" width="310">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing Logo" width="310">
 </td>
 </tr>
 </table>
@@ -403,7 +403,7 @@ Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumen
 
 <div align="center">
 
-<img src="assets/three-peaks-racing-logo.webp" alt="Three Peaks Racing" width="280">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="280">
 
 ## 🏁 THREE PEAKS RACING
 
