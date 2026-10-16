@@ -1,4 +1,5 @@
 const GITHUB_API = "https://api.github.com";
+const DISCORD_API = "https://discord.com/api/v10";
 
 function ghHeaders(env) {
   const headers = {
@@ -50,6 +51,45 @@ async function gh(path, opts, env) {
     headers: { ...ghHeaders(env), ...(opts?.headers || {}) }
   });
 }
+function discordTitle(action) {
+  if (action === "SETUP_UPLOAD") return "SETUP HOCHGELADEN";
+  if (action === "SETUP_DELETE") return "SETUP GELÖSCHT";
+  if (action === "SETUP_VERSION_UPDATE") return "SETUP-VERSION GEÄNDERT";
+  if (action === "PERMISSION_GRANT") return "BERECHTIGUNG HINZUGEFÜGT";
+  if (action === "PERMISSION_REVOKE") return "BERECHTIGUNG ENTFERNT";
+  return action || "AUDIT EVENT";
+}
+function addField(fields, name, value, inline = false) {
+  const v = clean(value);
+  if (v) fields.push({ name, value: v.slice(0, 1024), inline });
+}
+function discordFields(event) {
+  const fields = [];
+  addField(fields, "Ausgeführt von", `${event.discordAccount || "Unbekannt"}${event.discordUserId ? `\n${event.discordUserId}` : ""}`);
+  if (event.targetDiscordAccount || event.targetDiscordUserId) addField(fields, "Betroffener User", `${event.targetDiscordAccount || "Unbekannt"}${event.targetDiscordUserId ? `\n${event.targetDiscordUserId}` : ""}`);
+  addField(fields, "Berechtigung", event.permission, true);
+  addField(fields, "Setup", event.setup);
+  addField(fields, "Fahrzeug", event.vehicle, true);
+  addField(fields, "Strecke", event.track, true);
+  addField(fields, "Hersteller", event.manufacturer, true);
+  addField(fields, "Version", event.version, true);
+  addField(fields, "Alter Wert", event.oldValue, true);
+  addField(fields, "Neuer Wert", event.newValue, true);
+  addField(fields, "Ergebnis", event.result || "SUCCESS", true);
+  return fields;
+}
+async function writeDiscordAuditEvent(event, env) {
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_AUDIT_CHANNEL_ID) return;
+  const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_AUDIT_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      embeds: [{ title: discordTitle(event.action), fields: discordFields(event), timestamp: event.timestamp }],
+      allowed_mentions: { parse: [] }
+    })
+  });
+  if (!response.ok) throw new Error(`Discord audit write failed (${response.status})`);
+}
 
 export async function writeSetupAuditEvent(event, env) {
   if (!env.GITHUB_TOKEN) throw new Error("GitHub audit token unavailable");
@@ -72,5 +112,7 @@ export async function writeSetupAuditEvent(event, env) {
     body: JSON.stringify(body)
   }, env);
   if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
+  try { await writeDiscordAuditEvent(safe, env); }
+  catch (error) { console.error("Discord audit failed", error instanceof Error ? error.message : "unknown"); }
   return safe;
 }
