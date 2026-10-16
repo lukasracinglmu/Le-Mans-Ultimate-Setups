@@ -29,6 +29,9 @@ function normalizeEvent(event) {
     action: clean(event.action),
     discordAccount: clean(event.discordAccount),
     discordUserId: clean(event.discordUserId),
+    targetDiscordAccount: clean(event.targetDiscordAccount),
+    targetDiscordUserId: clean(event.targetDiscordUserId),
+    permission: clean(event.permission),
     setup: clean(event.setup),
     vehicle: clean(event.vehicle),
     track: clean(event.track),
@@ -57,8 +60,9 @@ export async function writeSetupAuditEvent(event, env) {
   });
   const id = crypto.randomUUID();
   const path = `audit-logs/${safe.timestamp.slice(0, 7)}/${safe.timestamp.replace(/[:.]/g, "-")}-${id}.json`;
+  const subject = safe.setup || safe.targetDiscordUserId || safe.vehicle || id;
   const body = {
-    message: `Audit ${safe.action}: ${safe.setup || safe.vehicle || id}`,
+    message: `Audit ${safe.action}: ${subject}`,
     content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + "\n"))),
     branch: ghBranch(env)
   };
