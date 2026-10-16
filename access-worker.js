@@ -1,5 +1,6 @@
 import uiWorker from "./ui-hotfix.js";
 import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
+import { writeSetupAuditEvent } from "./audit-log.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GITHUB_API = "https://api.github.com";
@@ -17,17 +18,16 @@ export default {
     if (path === "/api/admin/database-access" && method === "DELETE") return revokeDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/access" && method === "GET") return listCombinedAccess(request, env, ctx);
 
-    if (path === "/api/admin/upload-access" && method === "POST") {
+    if (path === "/api/admin/upload-access" && (method === "POST" || method === "DELETE")) {
+      const admin = await requireOwner(request, env, ctx);
+      if (admin.error) return admin.error;
       const response = await uiWorker.fetch(request, env, ctx);
-      if (response.ok) {
+      if (method === "POST" && response.ok) {
         const body = await safeJson(response.clone());
         if (body?.success && body?.userId && env.ACCESS_DB) {
-          const owner = await requireOwner(request, env, ctx);
-          if (!owner.error) {
-            await env.ACCESS_DB.prepare(
-              "INSERT INTO database_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO NOTHING"
-            ).bind(String(body.userId), owner.user.id).run();
-          }
+          await env.ACCESS_DB.prepare(
+            "INSERT INTO database_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO NOTHING"
+          ).bind(String(body.userId), admin.user.id).run();
         }
       }
       return response;
@@ -36,7 +36,22 @@ export default {
     if (path === "/api/setups/upload" && method === "POST") {
       const permission = await requireUploadDeleteAccess(request, env, ctx);
       if (permission.error) return permission.error;
-      return uiWorker.fetch(request, env, ctx);
+      const clone = request.clone();
+      const response = await uiWorker.fetch(request, env, ctx);
+      if (response.ok) {
+        const data = await safeJson(response.clone());
+        if (data?.success) {
+          let category="", vehicle="", version="";
+          try { const form = await clone.formData(); category=cleanPath(form.get("category")); vehicle=cleanPath(form.get("vehicle")); version=String(form.get("version")||"").trim(); } catch {}
+          const tasks = [];
+          for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
+            if (!item?.name) continue;
+            tasks.push(safeAudit({ action:"SETUP_UPLOAD", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:item.name, vehicle, manufacturer:classifyManufacturer(item.name), track:inferTrack(item.name), version, result:"SUCCESS" }, env));
+          }
+          runAuditTasks(tasks, ctx);
+        }
+      }
+      return response;
     }
 
     if (path === "/api/setups/version" && method === "POST") {
@@ -54,14 +69,29 @@ export default {
       const existing = await ghReq(filePath, {}, env);
       if (existing.status === 404) return json({ success: false, error: "Setup wurde nicht gefunden." }, 404);
       if (!existing.ok) return json({ success: false, error: "Setup konnte nicht geprüft werden." }, 502);
+      let oldVersion = null;
+      try { oldVersion = await readStoredVersion(category, vehicle, name, env); } catch {}
       await storeSetupVersion(category, vehicle, name, version, env);
+      runAuditTasks([safeAudit({ action:"SETUP_VERSION_UPDATE", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:name, vehicle, manufacturer:classifyManufacturer(name), track:inferTrack(name), oldValue:oldVersion, newValue:version, result:"SUCCESS" }, env)], ctx);
       return json({ success: true, category, vehicle, name, version });
     }
 
     if (path === "/api/setups/delete" && method === "POST") {
       const permission = await requireUploadDeleteAccess(request, env, ctx);
       if (permission.error) return permission.error;
-      return uiWorker.fetch(request, env, ctx);
+      const clone = request.clone();
+      let meta = { category:"", vehicle:"", name:"", version:null };
+      try {
+        const body = await clone.json();
+        meta.category = cleanPath(body?.category); meta.vehicle = cleanPath(body?.vehicle); meta.name = cleanPath(body?.name);
+        if (meta.category && meta.vehicle && meta.name) meta.version = await readStoredVersion(meta.category, meta.vehicle, meta.name, env);
+      } catch {}
+      const response = await uiWorker.fetch(request, env, ctx);
+      if (response.ok) {
+        const data = await safeJson(response.clone());
+        if (data?.success && meta.name) runAuditTasks([safeAudit({ action:"SETUP_DELETE", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:meta.name, vehicle:meta.vehicle, manufacturer:classifyManufacturer(meta.name), track:inferTrack(meta.name), version:meta.version, result:"SUCCESS" }, env)], ctx);
+      }
+      return response;
     }
 
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
@@ -101,13 +131,14 @@ async function augmentedMe(request, env, ctx) {
   const individualDb = await hasDatabaseGrant(me.user.id, env);
   const uploadDeleteAccess = await hasUploadDeleteAccess(me.user.id, env);
   const databaseAccess = Boolean(me.databaseAccess || individualDb || uploadDeleteAccess);
-  return json({ ...me, databaseAccess, user: { ...me.user, canUpload: uploadDeleteAccess, individualDatabaseAccess: individualDb, individualUploadAccess: await hasUploadGrant(me.user.id, env) } }, response.status);
+  const isAdmin = Boolean(me.user.isOwner || me.user.isAdmin);
+  return json({ ...me, databaseAccess, user: { ...me.user, isAdmin, canUpload: uploadDeleteAccess, individualDatabaseAccess: individualDb, individualUploadAccess: await hasUploadGrant(me.user.id, env) } }, response.status);
 }
 
 async function requireOwner(request, env, ctx) {
   const me = await getBaseMe(request, env, ctx);
   if (!me?.loggedIn) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
-  if (!me?.user?.isOwner && me?.user?.id !== OWNER_ID) return { error: json({ success: false, error: "Keine Admin-Berechtigung." }, 403) };
+  if (!me?.user?.isOwner && !me?.user?.isAdmin && me?.user?.id !== OWNER_ID) return { error: json({ success: false, error: "Keine Admin-Berechtigung." }, 403) };
   return { user: me.user };
 }
 
@@ -166,6 +197,11 @@ function enc(value) { return encodeURIComponent(String(value)); }
 function cleanPath(value) { return String(value || "").trim().replace(/[/\\]+/g, "").replace(/\.\./g, "").replace(/[\u0000-\u001F\u007F]/g, ""); }
 async function ghReq(path, opts, env) { return fetch(GITHUB_API + path, { ...opts, headers: { ...ghHeaders(env), ...(opts?.headers || {}) } }); }
 function classifySetup(name, vehicle) { const file = String(name || ""), v = String(vehicle || ""); const variant = /(^|[^a-z0-9])evo([^a-z0-9]|$)/i.test(file) ? "EVO" : "Standard"; let series = null; if (/oreca\s*0?7/i.test(v)) { if (/(^|[^a-z0-9])elms([^a-z0-9]|$)/i.test(file)) series = "ELMS"; else if (/(^|[^a-z0-9])wec([^a-z0-9]|$)/i.test(file)) series = "WEC"; else series = "Other"; } return { variant, series }; }
+function classifyManufacturer(name) { const n=String(name||"").toUpperCase(); if(n.includes("HYMO"))return"HYMO"; if(n.includes("BEALIEN")||n.includes("BE_ALIEN"))return"beAlien"; if(n.includes(" GO")||n.includes("_GO")||/\bGO\b/.test(n))return"GO"; return null; }
+function inferTrack(name) { return String(name||"").replace(/\.zip$/i,"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim() || null; }
+async function readStoredVersion(category,vehicle,name,env){ if(!env.ACCESS_DB)return null; try{const row=await env.ACCESS_DB.prepare("SELECT version FROM setup_versions WHERE category = ? AND vehicle = ? AND file_name = ? LIMIT 1").bind(String(category),String(vehicle),String(name)).first(); return row?.version ?? null;}catch{return null;} }
+async function safeAudit(event,env){ try{return await writeSetupAuditEvent(event,env);}catch(e){console.error("Audit log failed",e instanceof Error?e.message:"unknown");return null;} }
+function runAuditTasks(tasks,ctx){const work=Promise.allSettled(tasks);if(ctx?.waitUntil)ctx.waitUntil(work);else work.catch(()=>{});}
 
 async function listSetupsForGrantedUser(request, env) {
   const url = new URL(request.url), cat = cleanPath(url.searchParams.get("category")), veh = cleanPath(url.searchParams.get("vehicle")); if (!cat || !veh) return json({ success: false, error: "Fahrzeug fehlt." }, 400);
@@ -175,9 +211,7 @@ async function listSetupsForGrantedUser(request, env) {
 }
 async function downloadSetupForGrantedUser(request, env) {
   const url = new URL(request.url), cat = cleanPath(url.searchParams.get("category")), veh = cleanPath(url.searchParams.get("vehicle")), name = cleanPath(url.searchParams.get("name")); if (!cat || !veh || !name || !/\.zip$/i.test(name)) return json({ success: false, error: "Ungültiger Download." }, 400);
-  const path = `/${ghRepo(env)}/contents/setups/${enc(cat)}/${enc(veh)}/${enc(name)}?ref=${enc(ghBranch(env))}`; const meta = await ghReq(path, {}, env); if (meta.status === 404) return json({ success: false, error: "Setup wurde nicht gefunden." }, 404); if (!meta.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502);
-  const item = await meta.json(); if (!item?.download_url) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502); const file = await fetch(item.download_url, { cache: "no-store" }); if (!file.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502);
-  const headers = new Headers(file.headers); headers.set("Content-Type", "application/zip"); headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(name)}`); headers.set("Cache-Control", "private, no-store"); headers.set("X-Content-Type-Options", "nosniff"); return new Response(file.body, { status: 200, headers });
+  const path = `/${ghRepo(env)}/contents/setups/${enc(cat)}/${enc(veh)}/${enc(name)}?ref=${enc(ghBranch(env))}`; const meta = await ghReq(path, {}, env); if (meta.status === 404) return json({ success: false, error: "Setup nicht gefunden." }, 404); if (!meta.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502); const data = await meta.json(); const file = await fetch(data.download_url, { headers: { Accept: "application/octet-stream" } }); if (!file.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502); const headers = new Headers(file.headers); headers.set("Content-Type", "application/zip"); headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(name)}`); headers.set("Cache-Control", "private, no-store"); headers.set("X-Content-Type-Options", "nosniff"); return new Response(file.body, { status: 200, headers });
 }
 
 function fixHeaderLogo(html) { return html.replace('<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">','<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">').replace('<img class="brand-logo" src="/assets/three-peaks-racing-logo.webp"','<img class="brand-logo" src="/assets/header-logo.webp"').replace("logo.src='/assets/three-peaks-racing-logo.webp'","logo.src='/assets/header-logo.webp'"); }
@@ -185,7 +219,7 @@ function injectAdminUi(html) {
   const oldPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button onclick="grantUploadAccess()">Upload freigeben</button><button onclick="revokeUploadAccess()">Freigabe entfernen</button><button onclick="registerRequestCommand()">/request registrieren</button></div><div id="adminResult" class="request-message"></div></div>';
   const newPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button type="button" onclick="grantDatabaseAccess()">Database freigeben</button><button type="button" onclick="revokeDatabaseAccess()">Database entfernen</button><button type="button" onclick="grantUploadAccess()">Upload/Delete freigeben</button><button type="button" onclick="revokeUploadAccess()">Upload/Delete entfernen</button></div><div id="adminResult" class="request-message"></div><div id="adminAccessList" style="margin-top:16px;display:grid;gap:10px"></div></div>';
   html = html.replace(oldPanel, newPanel);
-  const script = `<script>(()=>{const escAdmin=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');async function loadAdminAccessList(){const panel=document.getElementById('adminPanel'),list=document.getElementById('adminAccessList');if(!panel||!list)return;try{const me=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'}).then(r=>r.json());if(!me?.user?.isOwner){panel.classList.add('hidden');return;}panel.classList.remove('hidden');const r=await fetch('/api/admin/access',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!d.success)throw new Error(d.error||'Fehler');list.innerHTML=(d.users||[]).map(u=>'<div style="border:1px solid var(--border);border-radius:8px;padding:12px"><div><strong>User ID:</strong> '+escAdmin(u.userId)+'</div><div style="margin-top:4px"><strong>Discord-Name:</strong> '+escAdmin(u.username)+'</div><div style="margin-top:4px"><strong>Recht:</strong> '+escAdmin(u.permission||'')+'</div></div>').join('')||'<div class="empty">Noch keine individuellen Freigaben.</div>';}catch(e){list.textContent=e.message||'Freigaben konnten nicht geladen werden.';}}async function mutate(url,method,userId){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({userId})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||'Fehler.');await loadAdminAccessList();}window.adminSetDatabase=async(id,grant)=>{try{await mutate('/api/admin/database-access',grant?'POST':'DELETE',id);const out=document.getElementById('adminResult');if(out)out.textContent=grant?'Datenbank freigegeben.':'Datenbank entfernt.';}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.adminSetUpload=async(id,grant)=>{try{await mutate('/api/admin/upload-access',grant?'POST':'DELETE',id);}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.grantDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,true);};window.revokeDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,false);};window.grantUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,true);};window.revokeUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,false);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loadAdminAccessList,0),{once:true});else setTimeout(loadAdminAccessList,0);})();</script>`;
+  const script = `<script>(()=>{const escAdmin=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');async function loadAdminAccessList(){const panel=document.getElementById('adminPanel'),list=document.getElementById('adminAccessList');if(!panel||!list)return;try{const me=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'}).then(r=>r.json());if(!me?.user?.isAdmin){panel.classList.add('hidden');return;}panel.classList.remove('hidden');const r=await fetch('/api/admin/access',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!d.success)throw new Error(d.error||'Fehler');list.innerHTML=(d.users||[]).map(u=>'<div style="border:1px solid var(--border);border-radius:8px;padding:12px"><div><strong>User ID:</strong> '+escAdmin(u.userId)+'</div><div style="margin-top:4px"><strong>Discord-Name:</strong> '+escAdmin(u.username)+'</div><div style="margin-top:4px"><strong>Recht:</strong> '+escAdmin(u.permission||'')+'</div></div>').join('')||'<div class="empty">Noch keine individuellen Freigaben.</div>';}catch(e){list.textContent=e.message||'Freigaben konnten nicht geladen werden.';}}async function mutate(url,method,userId){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({userId})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||'Fehler.');await loadAdminAccessList();}window.adminSetDatabase=async(id,grant)=>{try{await mutate('/api/admin/database-access',grant?'POST':'DELETE',id);const out=document.getElementById('adminResult');if(out)out.textContent=grant?'Datenbank freigegeben.':'Datenbank entfernt.';}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.adminSetUpload=async(id,grant)=>{try{await mutate('/api/admin/upload-access',grant?'POST':'DELETE',id);}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.grantDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,true);};window.revokeDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,false);};window.grantUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,true);};window.revokeUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,false);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loadAdminAccessList,0),{once:true});else setTimeout(loadAdminAccessList,0);})();</script>`;
   return html.replace('</body>', script+'\n</body>');
 }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
