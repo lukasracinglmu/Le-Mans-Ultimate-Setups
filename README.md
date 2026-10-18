@@ -1,115 +1,114 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/assets/banner.svg" alt="LMU Setups Banner" width="100%"/>
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="360">
 
-<!--
-  SVG Banner – paste this into /assets/banner.svg in your repo
-  GitHub renders SVGs from raw.githubusercontent.com inline when used in <img> tags
--->
+# 🏁 LMU SETUP DATABASE
+
+### Three Peaks Racing × Le Mans Ultimate
+
+**Die zentrale Setup-Plattform für das Team.**  
+Fahrzeuge · Strecken · Setup-Versionen · Discord · Cloudflare
+
+<br>
+
+<img alt="Cloudflare Workers" src="https://img.shields.io/badge/CLOUDFLARE-WORKERS-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
+<img alt="Discord" src="https://img.shields.io/badge/DISCORD-OAUTH_%26_BOT-5865F2?style=for-the-badge&logo=discord&logoColor=white">
+<img alt="GitHub" src="https://img.shields.io/badge/GITHUB-REPOSITORY-181717?style=for-the-badge&logo=github&logoColor=white">
+<img alt="Node.js" src="https://img.shields.io/badge/NODE.JS-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white">
+
+<br><br>
+
+<img alt="D1" src="https://img.shields.io/badge/D1-DATABASE-F38020?style=flat-square&logo=cloudflare&logoColor=white">
+<img alt="R2" src="https://img.shields.io/badge/R2-STORAGE-F38020?style=flat-square&logo=cloudflare&logoColor=white">
+<img alt="LMU" src="https://img.shields.io/badge/LE_MANS-ULTIMATE-C8102E?style=flat-square">
+<img alt="Status" src="https://img.shields.io/badge/STATUS-ACTIVE-2EA44F?style=flat-square">
+
+<br><br>
+
+`HYPERCAR`　·　`LMP2`　·　`LMP3`　·　`LMGT3`
 
 </div>
 
 ---
 
-<div align="center">
+## ⚡ Projekt
 
-# 🏎️ Le Mans Ultimate — Private Setup Portal
+> **LMU Setup Database** ist die interne Setup-Plattform von **Three Peaks Racing** für **Le Mans Ultimate**. Sie verbindet eine schnelle Fahrzeug-/Setup-Datenbank mit Discord OAuth, granularen Berechtigungen, Setup Requests und einer Cloudflare-basierten Infrastruktur.
 
-**The fastest laps start before you leave the pits.**
-
-[![Discord](https://img.shields.io/badge/Discord-Join%20Us-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/)
-[![LMU Version](https://img.shields.io/badge/LMU-v1.3-red?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyek0xMiAyMGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6Ii8+PC9zdmc+)](https://game.lemansultimate.com)
-[![Status](https://img.shields.io/badge/Setups-LIVE-brightgreen?style=for-the-badge)](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups)
-[![Cars](https://img.shields.io/badge/Cars-Hypercar%20%7C%20LMP2%20%7C%20GT3-orange?style=for-the-badge)](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups)
-
-</div>
-
----
-
-<div align="center">
-
-## ⚡ What Is This?
-
-</div>
-
-A **private, invite-only setup portal** for Le Mans Ultimate — built for serious sim racers who want every tenth of a second.
-
-Setups are organized by car class, track, and session type. Access is managed via **Discord OAuth** and individual database permissions. If you're reading this, you've been invited.
-
----
-
-<div align="center">
-
-## 🗺️ System Architecture
-
-</div>
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      LE MANS ULTIMATE SETUPS                    │
-│                         Private Portal                          │
-└─────────────────────────────────────────────────────────────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-              ▼                ▼                ▼
-     ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-     │  🔐 Discord  │ │  🚗 Vehicle  │ │  📅 Race     │
-     │  OAuth Login │ │  Overview   │ │  Calendar    │
-     │              │ │  + Setups   │ │  & Countdown │
-     └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
-            │                │                │
-            ▼                ▼                ▼
-     ┌──────────────────────────────────────────────┐
-     │              PERMISSION LAYER                │
-     │  Admin │ Upload+Delete │ Database Access     │
-     └──────────────────────┬───────────────────────┘
-                            │
-            ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
-   ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-   │  📦 Setup    │ │  🤖 Discord  │ │  🌐 LMUPOR-  │
-   │  Upload      │ │  Bot Pings   │ │  TAL Data    │
-   │  Multi-ZIP   │ │  Role / User │ │  Integration │
-   └──────────────┘ └──────────────┘ └──────────────┘
-```
-
----
-
-<div align="center">
-
-## 🏁 Car Classes
-
-</div>
-
-<table align="center">
+<table>
 <tr>
-<td align="center" width="33%">
+<td width="50%">
 
-### HYPERCAR 🔴
+### 🎯 Fokus
 
-`Ferrari 499P` · `Porsche 963`  
-`Toyota GR010` · `BMW M Hybrid V8`  
-`Peugeot 9X8 Evo` · `Cadillac V-Series.R`  
-`Alpine A424` · `Lamborghini SC63`
-
-</td>
-<td align="center" width="33%">
-
-### LMP2 🔵
-
-`Oreca 07`
+- Setups schnell finden
+- nach Klasse, Fahrzeug und Strecke filtern
+- Setup-Versionen nachvollziehen
+- kontrollierter Upload/Delete-Zugriff
+- Discord direkt integrieren
+- Racing-Informationen zentral anzeigen
 
 </td>
-<td align="center" width="33%">
+<td width="50%" align="center">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing Logo" width="310">
+</td>
+</tr>
+</table>
 
-### LMGT3 🟡
+---
 
-`Ferrari 296 GT3` · `McLaren 720S Evo`  
-`Ford Mustang GT3` · `BMW M4 GT3`  
-`Lamborghini Huracán EVO2`  
-`Lexus RC F GT3` · `Corvette Z06`  
-`Porsche 992 GT3 R` · `Aston Martin`
+## ✨ Core Features
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🏎️ Database
+**Hypercar · LMP2 · LMP3 · LMGT3**
+
+Fahrzeugklassenfilter, Fahrzeugsuche, Streckensuche und Setup-Zähler.
+
+</td>
+<td width="33%" valign="top">
+
+### 📦 Setup Management
+**Download · Upload · Delete**
+
+Sequenzieller Multi-ZIP-Upload, Retry-System und direkte Aktualisierung.
+
+</td>
+<td width="33%" valign="top">
+
+### 🔢 Versions
+**Persistent & editierbar**
+
+Version beim Upload vergeben oder bei bestehenden Setups nachtragen.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🔐 Access
+**Server-side permissions**
+
+Database Access und Upload/Delete Access sind sauber voneinander getrennt.
+
+</td>
+<td valign="top">
+
+### 🤖 Discord
+**OAuth · Requests · Bot**
+
+Login, Setup Requests, Role/User Ping und separater Presence Bot.
+
+</td>
+<td valign="top">
+
+### 🏆 Racing
+**LMUPORTAL**
+
+Upcoming Races mit Weekly/Special sowie Bronze/Silver/Gold-Klassifizierung.
 
 </td>
 </tr>
@@ -117,179 +116,305 @@ Setups are organized by car class, track, and session type. Access is managed vi
 
 ---
 
+## 🧪 Setup Partner
+
 <div align="center">
 
-## 🗓️ Setup Types
+### GO　×　HYMO　×　beAlien
+
+<br>
+
+<img src="assets/manufacturers/go-setups.webp" alt="GO Setups" width="220">
+&nbsp;&nbsp;&nbsp;
+<img src="assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="220">
+&nbsp;&nbsp;&nbsp;
+<img src="assets/manufacturers/bealien.webp" alt="beAlien Setups" width="220">
+
+<br><br>
+
+Die drei finalen Grafiken werden direkt aus dem Repository geladen und auch von der Website-Diashow verwendet.
 
 </div>
-
-| Type | Code | Description |
-|:----:|:----:|:------------|
-| 🟢 Qualifying | `Q` | Maximum attack — low fuel, peak downforce where it counts |
-| 🔵 Race | `R` | Balanced for consistency over a full stint |
-| 🟣 Endurance | `Endu` | Long-run optimized, tire care, traffic management |
-| 🌧️ Wet | `Wet` | Rain compounds, adjusted aero, cautious bias |
-| ⚡ Esport | `Esport` | Razor-edge, max performance — not for the faint-hearted |
-| 🛡️ Safe | `Safe` | Forgiving and stable — great base for learning a track |
 
 ---
 
-<div align="center">
+## 🏗️ System Architecture
 
-## 🔐 Access Flow
-
-</div>
-
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                         USER / BROWSER                       │
+│                    LMU SETUP DATABASE UI                     │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                     CLOUDFLARE WORKER STACK                  │
+│                                                              │
+│  runtime-worker.js                                           │
+│         │                                                    │
+│         ▼                                                    │
+│  access-worker.js    ─────►  Database / Upload Permissions   │
+│         │                                                    │
+│         ▼                                                    │
+│  ui-hotfix.js        ─────►  Production UI Integrations      │
+│         │                                                    │
+│         ▼                                                    │
+│  production-worker.js ────►  Production Features            │
+│         │                                                    │
+│         ▼                                                    │
+│  worker.js           ─────►  Core API / OAuth / Upload       │
+└───────────────┬─────────────────┬─────────────────┬──────────┘
+                │                 │                 │
+                ▼                 ▼                 ▼
+        ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+        │   DISCORD    │  │  CLOUDFLARE  │  │    GITHUB    │
+        │ OAuth / Bot  │  │   D1 / R2    │  │ Code / Setup │
+        └──────────────┘  └──────────────┘  └──────────────┘
 ```
-You open the portal
+
+### Worker Chain
+
+| Layer | Rolle |
+|:--|:--|
+| ⚡ `runtime-worker.js` | produktiver Entry Point |
+| 🔐 `access-worker.js` | zentrale Access-/Permission-Schicht |
+| 🧩 `ui-hotfix.js` | bestehende UI-Erweiterungen |
+| 🚀 `production-worker.js` | produktive Integrationen |
+| ☁️ `worker.js` | Core API, Discord OAuth, Upload und GitHub-Zugriff |
+| 🔢 `setup-version.js` | persistente Setup-Versionen |
+
+---
+
+## 🔐 Permission Matrix
+
+| Funktion | Database Access | Upload / Delete Access |
+|:--|:--:|:--:|
+| Setup Database öffnen | ✅ | ✅ |
+| Setups ansehen | ✅ | ✅ |
+| Setups herunterladen | ✅ | ✅ |
+| Setup hochladen | ❌ | ✅ |
+| Setup löschen | ❌ | ✅ |
+| Setup-Version bearbeiten | ❌ | ✅ |
+
+> **Wichtig:** Die Zugriffskontrolle erfolgt serverseitig. Das Ausblenden eines Buttons im Frontend ist niemals die eigentliche Berechtigungsprüfung.
+
+---
+
+## 📦 Upload Pipeline
+
+```text
+          ┌──────────────────────┐
+          │ ZIP-Dateien auswählen│
+          └──────────┬───────────┘
+                     │
+                     ▼
+          ┌──────────────────────┐
+          │   Version eingeben   │
+          └──────────┬───────────┘
+                     │
+                     ▼
+          ┌──────────────────────┐
+          │     Upload Queue     │
+          │    Concurrency: 1    │
+          └──────────┬───────────┘
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+       ZIP #1     ZIP #2     ZIP #3
+          │          │          │
+          ▼          ▼          ▼
+         DONE       DONE       DONE
+```
+
+**Warum sequenziell?** Die bestehende Upload-Pipeline verarbeitet jede ZIP kontrolliert nacheinander. Dadurch bleiben Status, Retry und Post-Upload-Refresh eindeutig.
+
+---
+
+## 🔢 Setup Version System
+
+```text
+SETUP IDENTITY
+│
+├── Klasse
+├── Fahrzeug
+└── Dateiname
         │
         ▼
-  ┌─────────────┐      No access?
-  │ Discord     │ ─────────────────► Contact Admin on Discord
-  │ Login       │
-  └──────┬──────┘
-         │ Authenticated
-         ▼
-  ┌─────────────┐      Not whitelisted?
-  │ Permission  │ ─────────────────► Request access via Discord
-  │ Check       │
-  └──────┬──────┘
-         │ Approved
-         ▼
-  ┌─────────────────────────────────┐
-  │  Full Setup Portal Access       │
-  │  ✓ Browse Vehicles              │
-  │  ✓ Filter by Class / Series     │
-  │  ✓ Download Setups              │
-  │  ✓ View Race Calendar           │
-  │  ✓ See Upcoming Events          │
-  └─────────────────────────────────┘
+   VERSION METADATA
+        │
+        └── D1 persistent
+```
+
+Beispiele: `1.0` · `1.4` · `v2` · `2.1.3` · `2026.10`
+
+Alte Setups ohne gespeicherte Version bleiben kompatibel und zeigen **`—`**. Berechtigte Nutzer können die Version später mit dem Stift-Editor ändern, **ohne die ZIP erneut hochzuladen**.
+
+---
+
+## 🤖 Discord Ecosystem
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🌐 Website Integration
+
+- Discord OAuth Login
+- Discord User Identity
+- serverseitige Rollenprüfung
+- Setup Request System
+- User Ping
+- Role Ping
+
+</td>
+<td width="50%" valign="top">
+
+### 🟣 Presence Bot
+
+- eigener Node.js-Prozess
+- Wispbyte Entry Point `index.js`
+- Discord.js
+- DND Status
+- Aktivität `Le Mans Ultimate`
+
+</td>
+</tr>
+</table>
+
+```bash
+cd discord-presence
+npm install
+npm start
 ```
 
 ---
 
+## ☁️ Cloudflare Infrastructure
+
 <div align="center">
 
-## 🏆 Tracks
+**WORKERS** `Application + API` 　→　 **D1** `Permissions + Metadata` 　→　 **R2** `Upload Infrastructure`
 
 </div>
 
-```
-WEC / ELMS CALENDAR                    SETUP AVAILABILITY
-══════════════════════════════════════════════════════════
+| Service | Verwendung |
+|:--|:--|
+| ⚡ Workers | Website, API und Integrationslogik |
+| 🗄️ D1 | Zugriffsrechte, Setup-Versionen und persistente Metadaten |
+| 📦 R2 | Upload-Infrastruktur |
+| 🔑 Worker Secrets | Discord, GitHub und weitere vertrauliche Konfiguration |
 
-🇫🇷  Le Mans (Full · Mulsanne)          ████████████████ ✓
-🇧🇭  Bahrain International              ████████████████ ✓
-🇺🇸  COTA (Full · National)             ████████████████ ✓
-🇯🇵  Fuji Speedway                      ████████████████ ✓
-🇧🇷  Interlagos                         ████████████████ ✓
-🇮🇹  Monza (WEC · Curva Grande)         ████████████████ ✓
-🇮🇹  Imola                              ████████████████ ✓
-🇵🇹  Portimão                           ████████████████ ✓
-🇺🇸  Sebring                            ████████████████ ✓
-🇬🇧  Silverstone                        ████████████████ ✓
-🇧🇪  Spa-Francorchamps                  ████████████████ ✓
-🇫🇷  Paul Ricard                        ████████████████ ✓
-🇶🇦  Qatar (Lusail)                     ████████████████ ✓
+---
+
+## 🗂️ Repository
+
+```text
+Le-Mans-Ultimate-Setups/
+│
+├── assets/
+│   ├── header-logo.webp
+│   ├── bp-logo.webp
+│   ├── three-peaks-racing-logo.webp
+│   └── manufacturers/
+│       ├── go-setups.webp
+│       ├── hymo-setups.webp
+│       └── bealien.webp
+│
+├── discord-presence/
+│   ├── index.js
+│   ├── bot.js
+│   ├── package.json
+│   └── .env.example
+│
+├── setups/
+├── index.html
+├── runtime-worker.js
+├── access-worker.js
+├── ui-hotfix.js
+├── production-worker.js
+├── worker.js
+├── setup-version.js
+├── setups.json
+├── schema.sql
+├── wrangler.jsonc
+├── CHANGELOG.md
+└── README.md
 ```
 
 ---
 
+## 🛡️ Security Baseline
+
+```text
+✓ Discord OAuth State Validation
+✓ Server-side Authorization
+✓ Same-Origin Checks
+✓ Secure Session Handling
+✓ Input Validation
+✓ Request Size Limits
+✓ Security Headers / CSP
+✓ D1 Prepared Statements
+✓ Worker Secrets
+```
+
+### 🚫 Secrets gehören niemals ins Repository
+
+`DISCORD_CLIENT_SECRET` · `DISCORD_BOT_TOKEN` · `GITHUB_TOKEN` · `SESSION_SECRET` · `LMUPORTAL_API1` · `LMUPORTAL_API2`
+
+Lokale `.env`, `.dev.vars`, `node_modules` und Wrangler-Lokalzustände werden über `.gitignore` ausgeschlossen.
+
+---
+
+## 🚀 Deployment
+
+```text
+┌───────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│ GitHub / main │ ──► │ Cloudflare Build │ ──► │ Worker Deploy   │
+└───────────────┘     └──────────────────┘     └────────┬────────┘
+                                                       │
+                                                       ▼
+                                              ┌─────────────────┐
+                                              │   PRODUCTION    │
+                                              └─────────────────┘
+```
+
+Produktiver Worker Entry Point: **`runtime-worker.js`**
+
+---
+
+## 🧰 Stack
+
 <div align="center">
 
-## 📦 Upload & Versioning
+<img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES_Modules-F7DF1E?style=for-the-badge&logo=javascript&logoColor=000">
+<img alt="Cloudflare" src="https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
+<img alt="Discord" src="https://img.shields.io/badge/Discord-API-5865F2?style=for-the-badge&logo=discord&logoColor=white">
+<img alt="GitHub" src="https://img.shields.io/badge/GitHub-API-181717?style=for-the-badge&logo=github&logoColor=white">
 
 </div>
 
-Authorized uploaders follow this workflow:
+---
 
-```
- Select ZIP(s)                 Version Tag
-      │                             │
-      ▼                             ▼
- ┌─────────┐               ┌──────────────┐
- │  Queue  │               │  e.g. v1.3.2 │
- │  Built  │               │  LMU patch   │
- └────┬────┘               └──────┬───────┘
-      │                           │
-      ▼                           ▼
- ┌───────────────────────────────────────────────┐
- │   Sequential Upload  (Concurrency: 1)         │
- │                                               │
- │   ZIP 1 ──► Extract ──► Validate ──► Store   │
- │   ZIP 2 ──► Extract ──► Validate ──► Store   │
- │   ZIP 3 ──► Extract ──► Validate ──► Store   │
- └───────────────────────────────────────────────┘
-               │
-               ▼
-     Auto-refresh · Live Status · Retry on Fail
-```
+## 📝 Project History
+
+Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumentiert. Dazu gehören Website, Discord-Integration, Setup-Verwaltung, GitHub und Cloudflare.
 
 ---
 
 <div align="center">
 
-## 🤖 Discord Bot
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="280">
 
-</div>
+## 🏁 THREE PEAKS RACING
 
-The portal is directly connected to Discord. When a setup request is made:
+### LMU Setup Database
 
-```
-User clicks "Request Setup"
-           │
-           ▼
-   ┌───────────────────┐
-   │  Discord Bot      │
-   │  @User Ping  ──►  │ ──► Direct message to uploader
-   │  @Role Ping  ──►  │ ──► Notify relevant team role
-   └───────────────────┘
-```
+**Built for Le Mans Ultimate. Built for the team.**
 
-No emails. No forms. Just Discord.
+`HYPERCAR`　·　`LMP2`　·　`LMP3`　·　`LMGT3`
 
----
+<br>
 
-<div align="center">
-
-## 🎖️ Race Calendar — Medal System
-
-</div>
-
-Every race in the calendar is rated:
-
-| Medal | Type | Description |
-|:-----:|:----:|:------------|
-| 🥉 Bronze | Weekly | Standard weekly race events |
-| 🥈 Silver | Weekly+ | Higher-priority weekly events |
-| 🥇 Gold | Special | Championship rounds, marquee events |
-
-Events auto-remove after they expire. Countdown timers update live.
-
----
-
-<div align="center">
-
-## 🔎 Finding Your Setup
-
-</div>
-
-1. **Log in** via Discord
-2. **Select** your car from the Vehicle Overview
-3. **Filter** by class (Hypercar / LMP2 / GT3) or series (GO / HYMO / beAlien)
-4. **Open** the car detail view — scroll to your track
-5. **Download** the setup ZIP
-6. Drop it into `Le Mans Ultimate\UserData\player\Settings\`
-
----
-
-<div align="center">
-
----
-
-*Built for the sim racing community. Access by invitation only.*  
-*Setups are tagged by car, track, session type, and LMU version.*
-
-[![Made with ❤️ for LMU](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20for-Le%20Mans%20Ultimate-red?style=flat-square)](https://game.lemansultimate.com)
+<sub>Three Peaks Racing © 2026 · Internal Project Documentation</sub>
 
 </div>
