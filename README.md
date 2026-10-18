@@ -1,144 +1,117 @@
 <div align="center">
 
-<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="360">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="320">
+
+<br><br>
 
 # 🏁 LMU SETUP DATABASE
 
-### Three Peaks Racing × Le Mans Ultimate
+<h3>Three Peaks Racing &nbsp;×&nbsp; Le Mans Ultimate</h3>
 
-**Die zentrale Setup-Plattform für das Team.**  
-Fahrzeuge · Strecken · Setup-Versionen · Discord · Cloudflare
+<p><strong>Die zentrale Setup-Plattform für das Team.</strong></p>
 
 <br>
 
-<img alt="Cloudflare Workers" src="https://img.shields.io/badge/CLOUDFLARE-WORKERS-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
-<img alt="Discord" src="https://img.shields.io/badge/DISCORD-OAUTH_%26_BOT-5865F2?style=for-the-badge&logo=discord&logoColor=white">
-<img alt="GitHub" src="https://img.shields.io/badge/GITHUB-REPOSITORY-181717?style=for-the-badge&logo=github&logoColor=white">
-<img alt="Node.js" src="https://img.shields.io/badge/NODE.JS-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white">
+![Cloudflare](https://img.shields.io/badge/CLOUDFLARE-WORKERS-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+![Discord](https://img.shields.io/badge/DISCORD-OAUTH_%26_BOT-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+![GitHub](https://img.shields.io/badge/GITHUB-REPOSITORY-181717?style=for-the-badge&logo=github&logoColor=white)
+![Node.js](https://img.shields.io/badge/NODE.JS-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)
+
+<br>
+
+![D1](https://img.shields.io/badge/D1-DATABASE-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![R2](https://img.shields.io/badge/R2-STORAGE-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![LMU](https://img.shields.io/badge/LE_MANS-ULTIMATE-C8102E?style=flat-square)
+![Status](https://img.shields.io/badge/STATUS-ACTIVE-2EA44F?style=flat-square)
 
 <br><br>
 
-<img alt="D1" src="https://img.shields.io/badge/D1-DATABASE-F38020?style=flat-square&logo=cloudflare&logoColor=white">
-<img alt="R2" src="https://img.shields.io/badge/R2-STORAGE-F38020?style=flat-square&logo=cloudflare&logoColor=white">
-<img alt="LMU" src="https://img.shields.io/badge/LE_MANS-ULTIMATE-C8102E?style=flat-square">
-<img alt="Status" src="https://img.shields.io/badge/STATUS-ACTIVE-2EA44F?style=flat-square">
+`HYPERCAR` &nbsp;·&nbsp; `LMP2` &nbsp;·&nbsp; `LMP3` &nbsp;·&nbsp; `LMGT3`
 
-<br><br>
-
-`HYPERCAR`　·　`LMP2`　·　`LMP3`　·　`LMGT3`
+<br>
 
 </div>
 
 ---
 
-## ⚡ Projekt
+<br>
+
+## ⚡&nbsp; Projekt
 
 > **LMU Setup Database** ist die interne Setup-Plattform von **Three Peaks Racing** für **Le Mans Ultimate**. Sie verbindet eine schnelle Fahrzeug-/Setup-Datenbank mit Discord OAuth, granularen Berechtigungen, Setup Requests und einer Cloudflare-basierten Infrastruktur.
 
-<table>
-<tr>
-<td width="50%">
+<br>
 
-### 🎯 Fokus
+### 🎯&nbsp; Fokus
 
-- Setups schnell finden
-- nach Klasse, Fahrzeug und Strecke filtern
-- Setup-Versionen nachvollziehen
-- kontrollierter Upload/Delete-Zugriff
-- Discord direkt integrieren
-- Racing-Informationen zentral anzeigen
-
-</td>
-<td width="50%" align="center">
-<img src="assets/bp-logo.webp" alt="Three Peaks Racing Logo" width="310">
-</td>
-</tr>
-</table>
-
----
-
-## ✨ Core Features
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### 🏎️ Database
-**Hypercar · LMP2 · LMP3 · LMGT3**
-
-Fahrzeugklassenfilter, Fahrzeugsuche, Streckensuche und Setup-Zähler.
-
-</td>
-<td width="33%" valign="top">
-
-### 📦 Setup Management
-**Download · Upload · Delete**
-
-Sequenzieller Multi-ZIP-Upload, Retry-System und direkte Aktualisierung.
-
-</td>
-<td width="33%" valign="top">
-
-### 🔢 Versions
-**Persistent & editierbar**
-
-Version beim Upload vergeben oder bei bestehenden Setups nachtragen.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 🔐 Access
-**Server-side permissions**
-
-Database Access und Upload/Delete Access sind sauber voneinander getrennt.
-
-</td>
-<td valign="top">
-
-### 🤖 Discord
-**OAuth · Requests · Bot**
-
-Login, Setup Requests, Role/User Ping und separater Presence Bot.
-
-</td>
-<td valign="top">
-
-### 🏆 Racing
-**LMUPORTAL**
-
-Upcoming Races mit Weekly/Special sowie Bronze/Silver/Gold-Klassifizierung.
-
-</td>
-</tr>
-</table>
-
----
-
-## 🧪 Setup Partner
-
-<div align="center">
-
-### GO　×　HYMO　×　beAlien
+| | |
+|---|---|
+| 🔍 | Setups schnell finden |
+| 🏎️ | nach Klasse, Fahrzeug und Strecke filtern |
+| 🔢 | Setup-Versionen nachvollziehen |
+| 🔐 | kontrollierter Upload/Delete-Zugriff |
+| 🤖 | Discord direkt integrieren |
+| 🏆 | Racing-Informationen zentral anzeigen |
 
 <br>
 
-<img src="assets/manufacturers/go-setups.webp" alt="GO Setups" width="220">
-&nbsp;&nbsp;&nbsp;
-<img src="assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="220">
-&nbsp;&nbsp;&nbsp;
-<img src="assets/manufacturers/bealien.webp" alt="beAlien Setups" width="220">
+---
 
-<br><br>
+<br>
 
-Die drei finalen Grafiken werden direkt aus dem Repository geladen und auch von der Website-Diashow verwendet.
+## ✨&nbsp; Core Features
+
+<br>
+
+<div align="center">
+
+| 🏎️ Database | 📦 Setup Management | 🔢 Versions |
+|:---:|:---:|:---:|
+| **Hypercar · LMP2 · LMP3 · LMGT3** | **Download · Upload · Delete** | **Persistent & editierbar** |
+| Fahrzeugklassenfilter, Fahrzeugsuche, Streckensuche und Setup-Zähler | Sequenzieller Multi-ZIP-Upload, Retry-System und direkte Aktualisierung | Version beim Upload vergeben oder bei bestehenden Setups nachtragen |
+
+<br>
+
+| 🔐 Access | 🤖 Discord | 🏆 Racing |
+|:---:|:---:|:---:|
+| **Server-side permissions** | **OAuth · Requests · Bot** | **LMUPORTAL** |
+| Database Access und Upload/Delete Access sind sauber voneinander getrennt | Login, Setup Requests, Role/User Ping und separater Presence Bot | Upcoming Races mit Weekly/Special sowie Bronze/Silver/Gold-Klassifizierung |
 
 </div>
 
+<br>
+
 ---
 
-## 🏗️ System Architecture
+<br>
+
+## 🧪&nbsp; Setup Partner
+
+<div align="center">
+
+### GO &nbsp;×&nbsp; HYMO &nbsp;×&nbsp; beAlien
+
+<br>
+
+<img src="assets/manufacturers/go-setups.webp" alt="GO Setups" width="200">
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="assets/manufacturers/hymo-setups.webp" alt="HYMO Setups" width="200">
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="assets/manufacturers/bealien.webp" alt="beAlien Setups" width="200">
+
+<br><br>
+
+Die Grafiken werden direkt aus dem Repository geladen und von der Website-Diashow verwendet.
+
+</div>
+
+<br>
+
+---
+
+<br>
+
+## 🏗️&nbsp; System Architecture
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -172,22 +145,28 @@ Die drei finalen Grafiken werden direkt aus dem Repository geladen und auch von 
         └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
-### Worker Chain
+<br>
 
 | Layer | Rolle |
 |:--|:--|
-| ⚡ `runtime-worker.js` | produktiver Entry Point |
-| 🔐 `access-worker.js` | zentrale Access-/Permission-Schicht |
-| 🧩 `ui-hotfix.js` | bestehende UI-Erweiterungen |
-| 🚀 `production-worker.js` | produktive Integrationen |
+| ⚡ `runtime-worker.js` | Produktiver Entry Point |
+| 🔐 `access-worker.js` | Zentrale Access-/Permission-Schicht |
+| 🧩 `ui-hotfix.js` | Bestehende UI-Erweiterungen |
+| 🚀 `production-worker.js` | Produktive Integrationen |
 | ☁️ `worker.js` | Core API, Discord OAuth, Upload und GitHub-Zugriff |
-| 🔢 `setup-version.js` | persistente Setup-Versionen |
+| 🔢 `setup-version.js` | Persistente Setup-Versionen |
+
+<br>
 
 ---
 
-## 🔐 Permission Matrix
+<br>
 
-| Funktion | Database Access | Upload / Delete Access |
+## 🔐&nbsp; Permission Matrix
+
+<div align="center">
+
+| Funktion | 🗄️ Database Access | 📦 Upload / Delete Access |
 |:--|:--:|:--:|
 | Setup Database öffnen | ✅ | ✅ |
 | Setups ansehen | ✅ | ✅ |
@@ -196,106 +175,98 @@ Die drei finalen Grafiken werden direkt aus dem Repository geladen und auch von 
 | Setup löschen | ❌ | ✅ |
 | Setup-Version bearbeiten | ❌ | ✅ |
 
+</div>
+
+<br>
+
 > **Wichtig:** Die Zugriffskontrolle erfolgt serverseitig. Das Ausblenden eines Buttons im Frontend ist niemals die eigentliche Berechtigungsprüfung.
 
+<br>
+
 ---
 
-## 📦 Upload Pipeline
+<br>
+
+## 📦&nbsp; Upload Pipeline
 
 ```text
-          ┌──────────────────────┐
-          │ ZIP-Dateien auswählen│
-          └──────────┬───────────┘
-                     │
-                     ▼
-          ┌──────────────────────┐
-          │   Version eingeben   │
-          └──────────┬───────────┘
-                     │
-                     ▼
-          ┌──────────────────────┐
-          │     Upload Queue     │
-          │    Concurrency: 1    │
-          └──────────┬───────────┘
-                     │
-          ┌──────────┼──────────┐
-          ▼          ▼          ▼
-       ZIP #1     ZIP #2     ZIP #3
-          │          │          │
-          ▼          ▼          ▼
-         DONE       DONE       DONE
+        ┌──────────────────────┐
+        │  ZIP-Dateien wählen  │
+        └──────────┬───────────┘
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │   Version eingeben   │
+        └──────────┬───────────┘
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │     Upload Queue     │   Concurrency: 1
+        └──────────┬───────────┘
+                   │
+        ┌──────────┼──────────┐
+        ▼          ▼          ▼
+     ZIP #1     ZIP #2     ZIP #3
+        │          │          │
+        ▼          ▼          ▼
+       DONE       DONE       DONE
 ```
 
-**Warum sequenziell?** Die bestehende Upload-Pipeline verarbeitet jede ZIP kontrolliert nacheinander. Dadurch bleiben Status, Retry und Post-Upload-Refresh eindeutig.
+**Warum sequenziell?** Die Upload-Pipeline verarbeitet jede ZIP kontrolliert nacheinander. Dadurch bleiben Status, Retry und Post-Upload-Refresh eindeutig.
+
+<br>
 
 ---
 
-## 🔢 Setup Version System
+<br>
 
-```text
-SETUP IDENTITY
-│
-├── Klasse
-├── Fahrzeug
-└── Dateiname
-        │
-        ▼
-   VERSION METADATA
-        │
-        └── D1 persistent
-```
+## 🔢&nbsp; Setup Version System
 
-Beispiele: `1.0` · `1.4` · `v2` · `2.1.3` · `2026.10`
+Beispiele: `1.0` &nbsp;·&nbsp; `1.4` &nbsp;·&nbsp; `v2` &nbsp;·&nbsp; `2.1.3` &nbsp;·&nbsp; `2026.10`
 
-Alte Setups ohne gespeicherte Version bleiben kompatibel und zeigen **`—`**. Berechtigte Nutzer können die Version später mit dem Stift-Editor ändern, **ohne die ZIP erneut hochzuladen**.
+Alte Setups ohne Version bleiben kompatibel und zeigen **`—`**. Berechtigte Nutzer können die Version mit dem Stift-Editor ändern — **ohne die ZIP erneut hochzuladen**.
+
+<br>
 
 ---
 
-## 🤖 Discord Ecosystem
+<br>
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
-### 🌐 Website Integration
-
-- Discord OAuth Login
-- Discord User Identity
-- serverseitige Rollenprüfung
-- Setup Request System
-- User Ping
-- Role Ping
-
-</td>
-<td width="50%" valign="top">
-
-### 🟣 Presence Bot
-
-- eigener Node.js-Prozess
-- Wispbyte Entry Point `index.js`
-- Discord.js
-- DND Status
-- Aktivität `Le Mans Ultimate`
-
-</td>
-</tr>
-</table>
-
-```bash
-cd discord-presence
-npm install
-npm start
-```
-
----
-
-## ☁️ Cloudflare Infrastructure
+## 🤖&nbsp; Discord Ecosystem
 
 <div align="center">
 
-**WORKERS** `Application + API` 　→　 **D1** `Permissions + Metadata` 　→　 **R2** `Upload Infrastructure`
+| 🌐 Website Integration | 🟣 Presence Bot |
+|:--|:--|
+| Discord OAuth Login | Eigener Node.js-Prozess |
+| Discord User Identity | Entry Point `index.js` |
+| Serverseitige Rollenprüfung | Discord.js |
+| Setup Request System | DND Status |
+| User Ping · Role Ping | Aktivität `Le Mans Ultimate` |
 
 </div>
+
+<br>
+
+```bash
+cd discord-presence && npm install && npm start
+```
+
+<br>
+
+---
+
+<br>
+
+## ☁️&nbsp; Cloudflare Infrastructure
+
+<div align="center">
+
+**WORKERS** `Application + API` &nbsp;→&nbsp; **D1** `Permissions + Metadata` &nbsp;→&nbsp; **R2** `Upload Infrastructure`
+
+</div>
+
+<br>
 
 | Service | Verwendung |
 |:--|:--|
@@ -304,16 +275,46 @@ npm start
 | 📦 R2 | Upload-Infrastruktur |
 | 🔑 Worker Secrets | Discord, GitHub und weitere vertrauliche Konfiguration |
 
+<br>
+
 ---
 
-## 🗂️ Repository
+<br>
+
+## 🛡️&nbsp; Security Baseline
+
+```text
+✓  Discord OAuth State Validation
+✓  Server-side Authorization
+✓  Same-Origin Checks
+✓  Secure Session Handling
+✓  Input Validation
+✓  Request Size Limits
+✓  Security Headers / CSP
+✓  D1 Prepared Statements
+✓  Worker Secrets
+```
+
+<br>
+
+> 🚫 **Secrets gehören niemals ins Repository**
+>
+> `DISCORD_CLIENT_SECRET` · `DISCORD_BOT_TOKEN` · `GITHUB_TOKEN` · `SESSION_SECRET` · `LMUPORTAL_API1` · `LMUPORTAL_API2`
+
+<br>
+
+---
+
+<br>
+
+## 🗂️&nbsp; Repository
 
 ```text
 Le-Mans-Ultimate-Setups/
 │
 ├── assets/
-│   ├── header-logo.webp
 │   ├── bp-logo.webp
+│   ├── header-logo.webp
 │   ├── three-peaks-racing-logo.webp
 │   └── manufacturers/
 │       ├── go-setups.webp
@@ -341,69 +342,65 @@ Le-Mans-Ultimate-Setups/
 └── README.md
 ```
 
----
-
-## 🛡️ Security Baseline
-
-```text
-✓ Discord OAuth State Validation
-✓ Server-side Authorization
-✓ Same-Origin Checks
-✓ Secure Session Handling
-✓ Input Validation
-✓ Request Size Limits
-✓ Security Headers / CSP
-✓ D1 Prepared Statements
-✓ Worker Secrets
-```
-
-### 🚫 Secrets gehören niemals ins Repository
-
-`DISCORD_CLIENT_SECRET` · `DISCORD_BOT_TOKEN` · `GITHUB_TOKEN` · `SESSION_SECRET` · `LMUPORTAL_API1` · `LMUPORTAL_API2`
-
-Lokale `.env`, `.dev.vars`, `node_modules` und Wrangler-Lokalzustände werden über `.gitignore` ausgeschlossen.
+<br>
 
 ---
 
-## 🚀 Deployment
+<br>
+
+## 🚀&nbsp; Deployment
 
 ```text
 ┌───────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │ GitHub / main │ ──► │ Cloudflare Build │ ──► │ Worker Deploy   │
 └───────────────┘     └──────────────────┘     └────────┬────────┘
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │   PRODUCTION    │
-                                              └─────────────────┘
+                                                        │
+                                                        ▼
+                                               ┌─────────────────┐
+                                               │   PRODUCTION    │
+                                               └─────────────────┘
 ```
 
 Produktiver Worker Entry Point: **`runtime-worker.js`**
 
+<br>
+
 ---
 
-## 🧰 Stack
+<br>
+
+## 🧰&nbsp; Stack
 
 <div align="center">
 
-<img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES_Modules-F7DF1E?style=for-the-badge&logo=javascript&logoColor=000">
-<img alt="Cloudflare" src="https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
-<img alt="Discord" src="https://img.shields.io/badge/Discord-API-5865F2?style=for-the-badge&logo=discord&logoColor=white">
-<img alt="GitHub" src="https://img.shields.io/badge/GitHub-API-181717?style=for-the-badge&logo=github&logoColor=white">
+![JavaScript](https://img.shields.io/badge/JavaScript-ES_Modules-F7DF1E?style=for-the-badge&logo=javascript&logoColor=000)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-API-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-API-181717?style=for-the-badge&logo=github&logoColor=white)
 
 </div>
 
----
-
-## 📝 Project History
-
-Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumentiert. Dazu gehören Website, Discord-Integration, Setup-Verwaltung, GitHub und Cloudflare.
+<br>
 
 ---
+
+<br>
+
+## 📝&nbsp; Project History
+
+Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumentiert.
+
+<br>
+
+---
+
+<br>
 
 <div align="center">
 
-<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="280">
+<img src="assets/bp-logo.webp" alt="Three Peaks Racing" width="240">
+
+<br><br>
 
 ## 🏁 THREE PEAKS RACING
 
@@ -411,7 +408,9 @@ Alle relevanten Änderungen werden in **[`CHANGELOG.md`](CHANGELOG.md)** dokumen
 
 **Built for Le Mans Ultimate. Built for the team.**
 
-`HYPERCAR`　·　`LMP2`　·　`LMP3`　·　`LMGT3`
+<br>
+
+`HYPERCAR` &nbsp;·&nbsp; `LMP2` &nbsp;·&nbsp; `LMP3` &nbsp;·&nbsp; `LMGT3`
 
 <br>
 
