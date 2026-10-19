@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-19T18:12:15.194Z",
+  "action": "SETUP_VERSION_UPDATE",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Lexus Qatar HYMO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Qatar HYMO",
+  "manufacturer": "HYMO",
+  "oldValue": "1.4.2",
+  "newValue": "1.4.2",
+  "result": "SUCCESS"
+}
