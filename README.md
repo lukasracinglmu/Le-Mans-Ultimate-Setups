@@ -51,7 +51,6 @@
 | 🔢 | Setup-Versionen nachvollziehen |
 | 🔐 | kontrollierter Upload/Delete-Zugriff |
 | 🤖 | Discord direkt integrieren |
-| 🏆 | Racing-Informationen zentral anzeigen |
 
 <br>
 
@@ -72,10 +71,10 @@
 
 <br>
 
-| 🔐 Access | 🤖 Discord | 🏆 Racing |
-|:---:|:---:|:---:|
-| **Server-side permissions** | **OAuth · Requests · Bot** | **LMUPORTAL** |
-| Database Access und Upload/Delete Access sind sauber voneinander getrennt | Login, Setup Requests, Role/User Ping und separater Presence Bot | Upcoming Races mit Weekly/Special sowie Bronze/Silver/Gold-Klassifizierung |
+| 🔐 Access | 🤖 Discord |
+|:---:|:---:|
+| **Server-side permissions** | **OAuth · Requests · Bot** |
+| Database Access und Upload/Delete Access sind sauber voneinander getrennt | Login, Setup Requests, Role/User Ping und separater Presence Bot |
 
 </div>
 
@@ -299,7 +298,7 @@ cd discord-presence && npm install && npm start
 
 > 🚫 **Secrets gehören niemals ins Repository**
 >
-> `DISCORD_CLIENT_SECRET` · `DISCORD_BOT_TOKEN` · `GITHUB_TOKEN` · `SESSION_SECRET` · `LMUPORTAL_API1` · `LMUPORTAL_API2`
+> `DISCORD_CLIENT_SECRET` · `DISCORD_BOT_TOKEN` · `GITHUB_TOKEN` · `SESSION_SECRET`
 
 <br>
 
