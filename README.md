@@ -246,11 +246,11 @@ Beim normalen Löschen sperrt die Oberfläche während der Anfrage die Bestätig
 
 ### Bug melden
 
-Rechts unter der Kopfzeile, außerhalb des Balkens mit Logout und Light Mode, führt **Bug melden** auf die eigene Seite `/bug-report`. Angemeldete Nutzer können das Problem mit 10 bis 3500 Zeichen beschreiben und optional ein PNG-, JPG- oder WebP-Bild bis 5 MiB anhängen. Eine Vorschau zeigt das gewählte Bild.
+Rechts unter der Kopfzeile, außerhalb des Balkens mit Logout und Light Mode, führt **Bug melden** auf die eigene Seite `/bug-report`. Angemeldete Nutzer können das Problem mit 3 bis 3500 Zeichen beschreiben und optional ein PNG-, JPG- oder WebP-Bild bis 5 MiB anhängen. Eine Vorschau zeigt das gewählte Bild.
 
 Der bestehende Discord-Bot schickt die Meldung mit Absenderkennung direkt an `1033453785416208564`. Dafür werden das vorhandene `DISCORD_BOT_TOKEN` und `ACCESS_DB` genutzt; ein zusätzlicher Dienst ist nicht nötig. Erst eine bestätigte Discord-Antwort zeigt Erfolg. Bei einem Versandfehler bleiben Text und Bild erhalten. Discord muss dem Bot Direktnachrichten an den Empfänger erlauben.
 
-`bug_report_limits` speichert nur Nutzer-ID, Zeitpunkt, Meldungsnummer und Versandstatus zur Begrenzung auf eine Meldung pro Minute und zur Erkennung wiederholter Anfragen. Fehlgeschlagene Meldungen können nach kurzer Wartezeit erneut gesendet werden. Beschreibung und Bild werden direkt an Discord übertragen und nicht in GitHub oder D1 abgelegt. Beide neuen Tabellen sind in `schema.sql` enthalten.
+`bug_report_limits` speichert nur Nutzer-ID, Zeitpunkt, Meldungsnummer und Versandstatus zur Erkennung wiederholter Anfragen. Es gibt keinen eigenen Cooldown: Neue und fehlgeschlagene Meldungen können sofort gesendet werden. Ein von Discord selbst gemeldetes API-Limit wird als Fehler angezeigt. Beschreibung und Bild werden direkt an Discord übertragen und nicht in GitHub oder D1 abgelegt. Beide neuen Tabellen sind in `schema.sql` enthalten.
 
 Die Angabe ist eine manuell gepflegte Kennzeichnung. Das System vergleicht keine Versionsnummern, sortiert nicht nach einer SemVer-Regel und prüft nicht, ob die ZIP zu einer bestimmten LMU-Spielversion passt. Versionen wie `v2` und `2.0` werden als unterschiedliche Texte behandelt.
 

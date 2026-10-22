@@ -4,6 +4,14 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-22 – Bugmeldungen ohne Cooldown
+
+### Geändert
+
+- Eigene Wartezeit zwischen Bugmeldungen entfernt. Neue Meldungen und fehlgeschlagene Versuche können sofort gesendet werden.
+- Mindestlänge der Beschreibung in Formular und API von zehn auf drei Zeichen gesenkt. Bestätigte doppelte Anfragen bleiben gegen versehentlichen Mehrfachversand geschützt.
+- README angepasst; die externen Discord-API-Limits werden weiterhin korrekt als Fehler angezeigt.
+
 ## 2026-10-22 – Anzeigenamen und Bugmeldungen
 
 ### Ergänzt

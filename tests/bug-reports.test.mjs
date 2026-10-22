@@ -4,7 +4,7 @@ import {submitBugReport,BUG_REPORT_RECIPIENT,reportImage} from '../bug-reports.j
 import runtime from '../runtime-worker.js';
 const user={id:'222222222222222222',username:'Reporter'},reportId='a'.repeat(25),channelId='333333333333333333',messageId='444444444444444444';
 function database(){let row=null;return {get row(){return row;},prepare(sql){return{bind(...values){return{
- async first(){if(sql.startsWith('SELECT'))return row?{...row}:null;if(sql.startsWith('INSERT')){const [userId,now,id,cutoff,retryCutoff]=values;if(row&&!(row.last_attempt_at<=cutoff||(row.report_id===id&&row.status==='failed'&&row.last_attempt_at<=retryCutoff)))return null;row={user_id:userId,last_attempt_at:now,report_id:id,status:'sending'};return {user_id:userId};}throw Error('Unexpected first');},
+ async first(){if(sql.startsWith('SELECT'))return row?{...row}:null;if(sql.startsWith('INSERT')){const [userId,now,id]=values;row={user_id:userId,last_attempt_at:now,report_id:id,status:'sending'};return {user_id:userId};}throw Error('Unexpected first');},
  async run(){if(sql.includes("status = 'sent'"))row.status='sent';else if(sql.includes("status = 'failed'"))row.status='failed';return {success:true};}
 };}};}};}
 function request({description='Beim Hochladen wird die Liste nicht aktualisiert.',id=reportId,image,origin='https://example.test',headers={}}={}){const form=new FormData();form.set('description',description);form.set('reportId',id);if(image)form.set('image',image);return new Request('https://example.test/api/bug-reports',{method:'POST',headers:{Origin:origin,...headers},body:form});}
@@ -28,12 +28,12 @@ test('other-origin requests and logged-out users cannot send reports',async()=>{
 });
 test('invalid descriptions, IDs, spoofed images and oversized bodies are rejected before Discord',async()=>{
  await harness(async({calls,env})=>{
-  for(const options of [{description:'short'},{description:'x'.repeat(3501)},{id:'invalid'},{image:new File(['<svg/>'],'x.svg',{type:'image/svg+xml'})},{image:new File([new Uint8Array([137,80,78,71,13,10,26,10])],'x.jpg',{type:'image/jpeg'})}])assert.equal((await submitBugReport(request(options),user,env)).status,400);
+  for(const options of [{description:'ab'},{description:'x'.repeat(3501)},{id:'invalid'},{image:new File(['<svg/>'],'x.svg',{type:'image/svg+xml'})},{image:new File([new Uint8Array([137,80,78,71,13,10,26,10])],'x.jpg',{type:'image/jpeg'})}])assert.equal((await submitBugReport(request(options),user,env)).status,400);
   assert.equal((await submitBugReport(request({headers:{'Content-Length':String(6*1024*1024)}}),user,env)).status,413);assert.equal(calls.length,0);
  });
 });
-test('separate reports from the same user respect cooldown',async()=>{
- await harness(async({calls,env})=>{assert.equal((await submitBugReport(request(),user,env)).status,200);const next=await submitBugReport(request({id:'b'.repeat(25)}),user,env);assert.equal(next.status,429);assert.equal(next.headers.get('Retry-After'),'60');assert.equal(calls.length,2);});
+test('separate reports from the same user send immediately without cooldown',async()=>{
+ await harness(async({calls,env})=>{assert.equal((await submitBugReport(request(),user,env)).status,200);const next=await submitBugReport(request({id:'b'.repeat(25)}),user,env);assert.equal(next.status,200);assert.equal(next.headers.get('Retry-After'),null);assert.equal(calls.length,4);});
 });
 for(const options of [{dmStatus:403},{messageStatus:403},{missingId:true}])test('Discord failure does not produce a false delivery confirmation '+JSON.stringify(options),async()=>{
  await harness(async({env})=>{const r=await submitBugReport(request(),user,env);assert.equal(r.status,502);assert.equal((await r.json()).success,false);assert.equal(env.ACCESS_DB.row.status,'failed');},options);
@@ -51,3 +51,5 @@ test('report page uses canonical asset fallback without a redirect loop during G
 test('Discord rate limit is surfaced with Retry-After instead of a false success',async()=>{
  await harness(async({env})=>{const r=await submitBugReport(request(),user,env);assert.equal(r.status,429);assert.equal(r.headers.get('Retry-After'),'60');assert.equal((await r.json()).success,false);},{messageStatus:429});
 });
+
+test('three trimmed characters are accepted',async()=>{await harness(async({env})=>{assert.equal((await submitBugReport(request({description:' abc '}),user,env)).status,200);});});

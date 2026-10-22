@@ -36,7 +36,7 @@ export async function submitBugReport(request,user,env){
     form=await readReportForm(request);
     const raw=form.get('description');if(typeof raw!=='string')return json({success:false,error:'Beschreibung fehlt.'},400);
     description=raw.trim();reportId=form.get('reportId');
-    if(description.length<10||description.length>3500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(description))return json({success:false,error:'Bitte das Problem mit 10 bis 3500 Zeichen beschreiben.'},400);
+    if(description.length<3||description.length>3500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(description))return json({success:false,error:'Bitte das Problem mit 3 bis 3500 Zeichen beschreiben.'},400);
     if(typeof reportId!=='string'||!/^[a-f0-9]{25}$/.test(reportId))return json({success:false,error:'Formular bitte neu laden.'},400);
     const images=form.getAll('image');if(images.length>1)return json({success:false,error:'Bitte höchstens ein Bild anhängen.'},400);
     image=await reportImage(images[0]);
@@ -45,8 +45,8 @@ export async function submitBugReport(request,user,env){
   try{
     const previous=await env.ACCESS_DB.prepare('SELECT last_attempt_at, report_id, status FROM bug_report_limits WHERE user_id = ?').bind(user.id).first();
     if(previous?.report_id===reportId&&previous.status==='sent')return json({success:true,alreadySent:true});
-    const lease=await env.ACCESS_DB.prepare("INSERT INTO bug_report_limits (user_id, last_attempt_at, report_id, status) VALUES (?, ?, ?, 'sending') ON CONFLICT(user_id) DO UPDATE SET last_attempt_at = excluded.last_attempt_at, report_id = excluded.report_id, status = 'sending' WHERE bug_report_limits.last_attempt_at <= ? OR (bug_report_limits.report_id = excluded.report_id AND bug_report_limits.status = 'failed' AND bug_report_limits.last_attempt_at <= ?) RETURNING user_id").bind(user.id,now,reportId,now-60,now-5).first();
-    if(!lease)return json({success:false,error:'Bitte kurz warten, bevor du erneut eine Meldung sendest.'},429,{'Retry-After':'60'});
+    const lease=await env.ACCESS_DB.prepare("INSERT INTO bug_report_limits (user_id, last_attempt_at, report_id, status) VALUES (?, ?, ?, 'sending') ON CONFLICT(user_id) DO UPDATE SET last_attempt_at = excluded.last_attempt_at, report_id = excluded.report_id, status = 'sending' RETURNING user_id").bind(user.id,now,reportId).first();
+    if(!lease)throw Error('report persistence');
     reserved=true;
     const opened=await discordRequest('/users/@me/channels',env,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipient_id:BUG_REPORT_RECIPIENT})});
     const channel=await opened.json().catch(()=>({}));
