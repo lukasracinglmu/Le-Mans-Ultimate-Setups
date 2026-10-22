@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:18:59.830Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Road Atlanta HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
