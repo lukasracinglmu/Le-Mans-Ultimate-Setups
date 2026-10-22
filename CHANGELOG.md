@@ -8,6 +8,8 @@ Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie u
 
 ### Weitere Setup-Aktivitäten
 
+- Zwischen den letzten beiden Funktionsänderungen 4 ZIP-Löschungen und 7 Audit-Commits zur tatsächlichen Website-Nutzung nachgetragen. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/44309fc3ed7c618e7983df8851de9a945da56e8c...8863b650177f08224d757acd483e733bb8ad23a8).
+
 - Seit dem vorherigen dokumentierten Stand wurden 14 ZIP-Uploads und 12 ZIP-Löschungen in der GitHub-Historie erfasst. Dazu kamen 25 Audit-Commits, davon 1 zur Versionsänderung. Dies beschreibt die zwischenzeitliche Nutzung der Website, nicht Testlöschungen dieser Änderung. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc...8b8a84b985bb18d59dd396d05cdf007c5e81d298).
 
 ### Session Upload Progress
@@ -51,6 +53,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Bis zu fünf Upload-Versuche je Datei mit steigenden Pausen, Berücksichtigung von GitHub-Limits und sichtbaren Fehlerursachen ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Geändert
+
+- Zuerst den Versionsdialog anzeigen, auch bei einer einzelnen ZIP. Erst danach passende Bestandsdateien desselben Herstellers auf identischen Inhalt und sicher ältere Version prüfen. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
 
 - Die Auswahl „Ja“ bei gleicher Setup-Version öffnet jetzt zunächst ein gemeinsames optionales Versionsfeld. Erst die Bestätigung setzt den Upload fort. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
 
@@ -112,6 +116,12 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- Gleichnamige alte ZIPs lassen sich beim Veraltet-Markieren auswählen. Die neue ZIP wird unter einem eindeutigen Versionsnamen gespeichert; alter Inhalt und alte Version bleiben erhalten und nur der alte Dateistand wird als veraltet markiert. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
+
+- Die Auswahl zum Ersetzen oder Veraltet-Markieren erscheint nur für passende ältere Versionen. Gleich alte, ältere, fehlende oder nicht vergleichbare Versionsangaben bereinigen keine Bestandsdateien. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
+
+- Identische ZIPs serverseitig bestätigen und vorhandene Versionsangaben dabei nicht herabsetzen. Verlorene Erfolgsantworten beim gleichnamigen Ersetzen bleiben anhand des geprüften Dateiinhalt wiederholbar. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
+
 - Löschvorgänge gegen gleichzeitige GitHub-Änderungen und verlorene Antworten abgesichert. Der Dialog sperrt doppelte Aktionen; die sichtbare Liste wird nach bestätigtem Löschen sofort aktualisiert. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
 
 - Für Setup-Requests die Rolle `1538601074074849330` und eine gezielte `allowed_mentions`-Freigabe eingerichtet. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
@@ -131,6 +141,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- README und Regressionstests für Versionsvergleich, Doppelungsprüfung und den Erhalt gleichnamiger ZIPs ergänzt. 61 Node-Tests und 26 UI-Szenarien erfolgreich. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
 
 - D1-Status-Tabelle `setup_lifecycle`, Audit-Ereignis für veraltete Setups, Regressionstests und README ergänzt. Validierung: 53 Node-Tests, 19 UI-Szenarien und 23 Changelog-Tests erfolgreich. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
 
