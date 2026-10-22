@@ -4,6 +4,12 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-22 – Bug-Button hervorheben
+
+### Geändert
+
+- „Bug melden“ unter der Kopfzeile größer gestaltet: 16-Pixel-Schrift, größere Klickfläche und roter Hintergrund mit weißer Schrift. Hover- und Tastaturfokus sind hervorgehoben.
+
 ## 2026-10-22 – Bugmeldungen ohne Cooldown
 
 ### Geändert
