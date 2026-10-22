@@ -28,6 +28,26 @@ Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie u
 
 Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+### Ergänzt
+
+- Automatische Changelog-Erstellung: 4 Dateien hinzugefügt. Betroffen: `.github/changelog/README.md`, `.github/changelog/changelog.yml.example`, `.github/changelog/test_update_changelog.py`, `.github/changelog/update_changelog.py`. ([Commit 6367e97](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/6367e9761f636763828506f44d26fad7ce65f097))
+
+- GitHub-Automationen: 1 Datei hinzugefügt. Betroffen: `.github/workflows/changelog-check.yml`. ([Commit 6367e97](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/6367e9761f636763828506f44d26fad7ce65f097))
+
+- Automatische Changelog-Pflege ohne KI-Dienst oder API-Schlüssel ergänzt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
+
+### Geändert
+
+- Deutsche Einträge werden aus Changelog-Abschnitten der Commit-Nachrichten oder aus festen Regeln für die geänderten Dateien erzeugt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
+
+- Setup- und Audit-Aktionen werden gesammelt mit Datum und Commit-Verweisen dokumentiert. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
+
+- Changelog-Workflows starten ausschließlich bei öffentlichen Repositories auf kostenlosen Standard-Runnern. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
+
+### Entfernt
+
+- Die vorbereitete kostenpflichtige KI-Anbindung und ihre inaktive Workflow-Vorlage entfernt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
+
 ## 2026-10-20 – Nachtrag
 
 ### LMU Portal / Upcoming Races entfernt
