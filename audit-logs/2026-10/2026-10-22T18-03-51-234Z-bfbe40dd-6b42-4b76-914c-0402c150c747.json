@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T18:03:51.234Z",
+  "action": "SETUP_VERSION_UPDATE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Le Mans GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Le Mans GO",
+  "manufacturer": "GO",
+  "newValue": "V1.4.2",
+  "result": "SUCCESS"
+}
