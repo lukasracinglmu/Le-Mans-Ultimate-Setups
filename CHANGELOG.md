@@ -30,6 +30,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Ergänzt
 
+- Persönliche Owner-ID und Owner-Rolle getrennt konfigurierbar gemacht; vollständigen Zugriff des persönlichen Owners erhalten. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
+
 - Automatische Changelog-Erstellung: 4 Dateien hinzugefügt. Betroffen: `.github/changelog/README.md`, `.github/changelog/changelog.yml.example`, `.github/changelog/test_update_changelog.py`, `.github/changelog/update_changelog.py`. ([Commit 6367e97](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/6367e9761f636763828506f44d26fad7ce65f097))
 
 - GitHub-Automationen: 1 Datei hinzugefügt. Betroffen: `.github/workflows/changelog-check.yml`. ([Commit 6367e97](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/6367e9761f636763828506f44d26fad7ce65f097))
@@ -41,6 +43,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Bis zu fünf Upload-Versuche je Datei mit steigenden Pausen, Berücksichtigung von GitHub-Limits und sichtbaren Fehlerursachen ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Geändert
+
+- Teamrolle für lesenden Zugriff, Setup Supply für Setup-Änderungen und Owner-Rolle für externe Datenbankfreigaben auf dem angegebenen Discord-Server eingerichtet. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
 - Deutsche Einträge werden aus Changelog-Abschnitten der Commit-Nachrichten oder aus festen Regeln für die geänderten Dateien erzeugt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
 
@@ -61,6 +65,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Die vorbereitete kostenpflichtige KI-Anbindung und ihre inaktive Workflow-Vorlage entfernt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
 
 ### Dokumentation
+
+- Cloudflare-Variablen, Secrets und Berechtigungen in der README erklärt. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
 - README mit Schwarz-Gold-Banner, mobilen Grafiken, direkten Links und einer kompakten Funktionsübersicht neu gestaltet. ([Commit 2787af6](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2787af6025c6ed19e7d5aa417a604bceecd8d79c))
 
@@ -96,6 +102,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- GitHub-Zielpfad beim Löschen eines Setups korrigiert. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
+
+- Setup-Request-Pings von Schreibrechten getrennt und Berechtigungsprüfungen der Worker-Schichten vereinheitlicht. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
+
 - Fehlerhafte Rückgabe nach Abschluss eines Upload-Vorgangs korrigiert. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
 
 - Verlorene Upload-Antworten durch Prüfung der Git-Blob-Prüfsumme abgefangen; identische ZIPs werden bestätigt und andere Inhalte nicht überschrieben. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
@@ -103,6 +113,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- Rollen, externe Freigaben und verweigerte Zugriffe mit automatisierten Tests geprüft. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
 - Tests für optionale Upload-Versionen und die getrennte Speicherung je Datei ergänzt. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
 
