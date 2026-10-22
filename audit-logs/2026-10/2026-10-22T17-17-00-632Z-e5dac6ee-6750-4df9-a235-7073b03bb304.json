@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:17:00.632Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Bahrain HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Bahrain HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
