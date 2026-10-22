@@ -48,6 +48,12 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - Die vorbereitete kostenpflichtige KI-Anbindung und ihre inaktive Workflow-Vorlage entfernt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
 
+### Dokumentation
+
+- README mit Schwarz-Gold-Banner, mobilen Grafiken, direkten Links und einer kompakten Funktionsübersicht neu gestaltet. ([Commit 2787af6](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2787af6025c6ed19e7d5aa417a604bceecd8d79c))
+
+- Architektur, Zugangsrechte und Upload-Ablauf übersichtlich dokumentiert und den kostenlosen automatischen Changelog verlinkt. ([Commit 2787af6](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2787af6025c6ed19e7d5aa417a604bceecd8d79c))
+
 ## 2026-10-20 – Nachtrag
 
 ### LMU Portal / Upcoming Races entfernt
