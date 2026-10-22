@@ -54,6 +54,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Geändert
 
+- Nach Datei- und Versionseingabe die Entscheidung bei jedem passenden vorhandenen Setup anzeigen. Gleiche, ältere, fehlende oder nicht numerisch vergleichbare Versionen sowie identische ZIP-Inhalte blenden den Dialog nicht mehr aus. Damit ersetzt dieser Ablauf die vorherige Beschränkung auf sicher neuere Versionen. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
+
+- Behalten, durch den aktuellen Upload ersetzen, alte Datei nach bestätigtem Upload löschen und als veraltet markieren als getrennte Entscheidungen anbieten. Hersteller, Fahrzeug und passende Dateizuordnung bleiben eingeschränkt. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
+
 - Zuerst den Versionsdialog anzeigen, auch bei einer einzelnen ZIP. Erst danach passende Bestandsdateien desselben Herstellers auf identischen Inhalt und sicher ältere Version prüfen. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
 
 - Die Auswahl „Ja“ bei gleicher Setup-Version öffnet jetzt zunächst ein gemeinsames optionales Versionsfeld. Erst die Bestätigung setzt den Upload fort. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
@@ -116,6 +120,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- Auch bei identischen gleichnamigen ZIPs für „Veraltet markieren“ und „Alte Datei löschen“ zuerst eine separate neue Datei speichern. Danach ausschließlich den ausgewählten alten Dateistand markieren oder löschen; Wiederholungen erzeugen keine weitere Kopie. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
+
 - Gleichnamige alte ZIPs lassen sich beim Veraltet-Markieren auswählen. Die neue ZIP wird unter einem eindeutigen Versionsnamen gespeichert; alter Inhalt und alte Version bleiben erhalten und nur der alte Dateistand wird als veraltet markiert. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
 
 - Die Auswahl zum Ersetzen oder Veraltet-Markieren erscheint nur für passende ältere Versionen. Gleich alte, ältere, fehlende oder nicht vergleichbare Versionsangaben bereinigen keine Bestandsdateien. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
@@ -141,6 +147,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- README und Regressionstests auf den bestätigten Bestandsdatei-Ablauf angepasst. 60 Node-Tests, 27 UI-Szenarien und 23 Changelog-Tests erfolgreich. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
 
 - README und Regressionstests für Versionsvergleich, Doppelungsprüfung und den Erhalt gleichnamiger ZIPs ergänzt. 61 Node-Tests und 26 UI-Szenarien erfolgreich. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
 
