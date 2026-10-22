@@ -2,6 +2,143 @@
 
 Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, GitHub und Cloudflare werden hier dokumentiert. Secrets, Tokens, Passwörter und vertrauliche User-Daten werden nicht eingetragen.
 
+Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
+
+## 2026-10-22 – Nachtrag
+
+### Session Upload Progress
+
+- Zusätzliche Fortschrittsanzeige direkt im bestehenden Upload-Bereich ergänzt.
+- Die Anzeige enthält die Gesamtzahl der ZIP-Dateien, die Anzahl abgeschlossener Versuche, den aktuellen Dateinamen, einen Prozentwert und einen Fortschrittsbalken.
+- Der Fortschritt wird aus dem echten Zähler der Upload-Schleife berechnet. Es gibt keine zeitgesteuerte Simulation.
+- Erfolgreiche und fehlgeschlagene Upload-Versuche zählen beide als verarbeitet. Fehlgeschlagene Dateien behalten ihren eigenen Fehlerstatus.
+- Nach Abschluss aller Versuche erreicht die Anzeige `100 %`, auch wenn einzelne Dateien fehlgeschlagen sind.
+- Jeder neue Upload-Vorgang startet bei null. Ein Retry startet eine eigene Berechnung nur für die fehlgeschlagenen Dateien; erfolgreiche Dateien werden nicht erneut hochgeladen.
+- Beim Öffnen einer Fahrzeugansicht wird die vorherige Fortschrittsanzeige ausgeblendet.
+- Fortschrittswert und Statusänderungen sind über ARIA-Attribute auch für Screenreader ausgezeichnet.
+- Der bestehende Upload bleibt strikt sequenziell mit Concurrency `1`. Upload-API, Reihenfolge, Versionszuordnung, Retry und Aktualisierung nach dem Upload wurden für diese Ergänzung nicht umgebaut.
+
+### Browser-Tab / Favicon
+
+- Das vorhandene goldene 3P-Logo unter `assets/header-logo.webp` als Favicon eingebunden.
+- Der HTML-Eintrag verwendet `rel="icon"`, den MIME-Type `image/webp` und den lokalen Pfad `/assets/header-logo.webp?v=3p1`.
+- Die Version im Favicon-Pfad berücksichtigt den Browser-Cache; globale Cache-Einstellungen bleiben unverändert.
+- Die am 20. Oktober ergänzte `assets/favicon.png` ist nicht lesbar und wird deshalb nicht als Favicon verwendet.
+- Das sichtbare Header-Logo wurde nicht verändert. Die Umsetzung von Session Progress und Favicon war auf `index.html` begrenzt.
+
+Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/068e0849a0ae219c8281d5572296ea80c6ae3428).
+
+## 2026-10-20 – Nachtrag
+
+### LMU Portal / Upcoming Races entfernt
+
+- Die LMU-Portal-Anbindung aus `production-worker.js` entfernt: API-Abruf, Zeitüberschreitung, Normalisierung der Renndaten sowie die zugehörigen Cache-Helfer.
+- Den bisherigen Handler für `/api/upcoming-races` und die Einbindung des Upcoming-Races-Widgets entfernt.
+- Die dazugehörige Darstellung mit Rennfiltern, SR-/Tier-Anzeigen, Countdowns und regelmäßigen Aktualisierungen aus dem Production-Renderer entfernt.
+- Verweise auf LMU Portal und Upcoming Races anschließend aus dem README entfernt.
+- Der Schemaeintrag `lmu_schedule_cache` ist weiterhin in `schema.sql` vorhanden. Der Commit enthält keine Datenbankmigration zum Löschen der Tabelle.
+- Den vorherigen Stand im Branch `backup-before-remove-lmuportal-20261020` festgehalten.
+
+### Favicon-Vorbereitung
+
+- `assets/favicon.png` zum Repository hinzugefügt. Die funktionierende Einbindung über das vorhandene WebP-Logo folgte am 22. Oktober.
+
+Belege: [Integration entfernt](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/da786daee8d86287cc7672251cc9387cbf726764) · [README bereinigt](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/ee2b6b1bc84b410901d68772f67c40fdd07428c6) · [PNG-Asset ergänzt](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/e01dc10fc7bccb2fb8adccd203f48bef46fd37bd).
+
+## 2026-10-19 – Nachtrag
+
+### Gespeicherte Setup-Versionen
+
+- Zwei Audit-Einträge für das Speichern der Version von `Lexus Qatar HYMO.zip` ergänzt.
+- Der erste Eintrag setzt die Version auf `1.4.2`; der zweite protokolliert das erneute Speichern von `1.4.2` auf denselben Wert.
+- Diese Commits enthalten Audit-Metadaten und keine erneut hochgeladene Setup-ZIP.
+
+Belege: [Version gespeichert](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/364afc228c0bfac797ee8b6326bbcb471ab65c71) · [Erneutes Speichern protokolliert](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/7ae77274b3c6fc03870370d9be3bb323fb6b6e2f).
+
+## 2026-10-18 – Nachtrag
+
+### README / Repository-Darstellung
+
+- Eine README-Neugestaltung mit dem neuen SVG-Banner `assets/banner.svg` eingecheckt.
+- Diese README-Neugestaltung anschließend zurückgenommen und den vorherigen README-Inhalt wiederhergestellt.
+- Danach Abstände, Überschriften, Tabellen und die visuelle Gliederung des README überarbeitet.
+- Das SVG-Banner blieb nach der Rücknahme als Asset im Repository erhalten; das aktuelle README bindet es nicht ein.
+
+Belege: [README und Banner](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/b320fe6e1aebcbb0c6455ba4614be33a8ffe34f4) · [README wiederhergestellt](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/8dc260373a52a8c3768af937d78d5a738df7be09) · [Abschließende Gestaltung](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/1a3a238e68bf32991009659a15c7331a1d7d1307).
+
+## 2026-10-16 – Nachtrag
+
+### Audit-Logs für Setups
+
+- `audit-log.js` als zentrales Modul zur Protokollierung von Setup-Aktionen ergänzt.
+- Erfolgreiche Uploads, Löschungen und gespeicherte Versionsänderungen lösen serverseitig die Ereignisse `SETUP_UPLOAD`, `SETUP_DELETE` und `SETUP_VERSION_UPDATE` aus.
+- Für jedes Ereignis wird eine eigene JSON-Datei unter `audit-logs/JJJJ-MM/` im konfigurierten GitHub-Branch gespeichert. UTC-Zeitstempel und zufällige ID machen die Dateinamen eindeutig.
+- Die Ereignisse enthalten den ausführenden Discord-Account sowie die verfügbaren Setup-Angaben, zum Beispiel Datei, Fahrzeug, Hersteller und Version.
+- Der Hersteller wird aus dem Dateinamen ermittelt. Das Feld `track` wird ebenfalls aus dem Dateinamen abgeleitet und ist keine unabhängig geprüfte Streckenangabe.
+- Bei Versionsänderungen werden der zuvor gespeicherte Wert und der neue Wert protokolliert, soweit vorhanden.
+- Nur vom jeweiligen Endpunkt als erfolgreich bestätigte Aktionen erzeugen diese Erfolgseinträge.
+- Die Log-Aufgaben werden über `ctx.waitUntil` weitergeführt, sofern verfügbar. Ein Fehler beim Schreiben des Logs macht eine bereits ausgeführte Setup-Aktion nicht nachträglich erfolglos.
+
+### Audit-Logs für Berechtigungen
+
+- Vergabe und Entzug individueller Database- und Upload/Delete-Freigaben in die Protokollierung aufgenommen.
+- Die Ereignisse `PERMISSION_GRANT` und `PERMISSION_REVOKE` enthalten ausführenden Nutzer, betroffenen Nutzer, Berechtigungsart und Zustandswechsel.
+- Diese Protokollierung sitzt im Runtime-Layer und erfolgt nach einer erfolgreichen Antwort der bestehenden Rechteverwaltung.
+
+### Discord-Ausgabe der Audit-Logs
+
+- `DISCORD_AUDIT_CHANNEL_ID` in der Worker-Konfiguration ergänzt.
+- Nach erfolgreicher Speicherung in GitHub werden die Ereignisse zusätzlich als Discord-Embed an den konfigurierten Audit-Kanal gesendet.
+- Deutsche Titel für Upload, Löschen, Versionsänderung und Rechtevergabe beziehungsweise Rechteentzug ergänzt.
+- Ausführenden Nutzer und bei Rechteänderungen auch den betroffenen Nutzer als Discord-Mention dargestellt.
+- `allowed_mentions` beschränkt die erlaubten Mentions auf die geprüften beteiligten Nutzer-IDs.
+- Fehler beim Discord-Versand werden abgefangen; der zuvor gespeicherte GitHub-Eintrag bleibt bestehen.
+
+### Admin-Erkennung / Rechteverwaltung
+
+- Admin-Erkennung in `/api/me` und in der Admin-Oberfläche auf `isAdmin` abgestimmt. Der Owner wird dabei als Admin erkannt.
+- Upload/Delete-Freigabe-Endpunkte prüfen die Admin-Berechtigung bereits im Access-Layer vor der Weiterleitung.
+- Die zusätzliche individuelle Database-Freigabe bei Vergabe von Upload/Delete Access bleibt erhalten.
+
+### Browser-Navigation / Discord-Anmeldung
+
+- Fahrzeugübersicht und Fahrzeugansichten mit `history.replaceState`, `history.pushState` und `popstate` an die Browser-History angebunden.
+- Browser-Zurück, Maustasten und `Alt + Pfeil links` können damit aus einer Fahrzeugansicht zur vorherigen App-Ansicht zurückführen; Vorwärts stellt die gespeicherte Fahrzeugansicht wieder her.
+- Der vorhandene Zurück-Button nutzt beim Verlassen einer Fahrzeugansicht die Browser-History.
+- Die vorhandenen Funktionen für Ansichtswechsel, Filter und Scrollposition bleiben Grundlage der Navigation.
+- Nach erfolgreichem OAuth-Callback wird die Anwendung über eine kurze HTML-Antwort mit `window.location.replace` geöffnet. Für deaktiviertes JavaScript ist eine Meta-Refresh-Weiterleitung enthalten.
+- Die Callback-Antwort setzt die Session, entfernt den OAuth-State-Cookie und wird mit `Cache-Control: no-store` ausgeliefert.
+
+### Core-Worker / technische Korrekturen
+
+- Einen Syntaxfehler im Session-Parser korrigiert.
+- Erstellung und Prüfung der HMAC-Sessions auf die Web-Crypto-Helfer mit `crypto.subtle.sign` beziehungsweise `crypto.subtle.verify` abgestimmt; Base64url-Konvertierung und Cookie-Helfer angepasst.
+- Die Startseite wird im Core-Worker aus `env.ASSETS` statt über einen GitHub-Raw-Abruf geladen.
+- GitHub-API-Helfer, Dateinamen-Normalisierung, ZIP-Verarbeitung und Download-Weiterleitung im Core-Worker überarbeitet. Die Binärdaten-Konvertierung nach Base64 erfolgt in Blöcken.
+- Im Core-Worker vorhandene Platzhalter für Discord-Kanäle, Nachrichten, Requests, Slash-Command-Registrierung und Interactions wieder durch Handler ersetzt. Diese enthalten Kanalberechtigungsprüfungen beziehungsweise die Prüfung von Discord-Interaction-Signaturen.
+- Die Download-Weiterleitung für individuell freigegebene Nutzer im Access-Layer auf einen expliziten `Accept: application/octet-stream`-Header angepasst.
+
+### Setup-Bestand / gespeicherte Ereignisse
+
+- `Duqueine Laguna Seca GO.zip` beim Fahrzeug Duqueine D09 gelöscht und die Löschung als JSON-Audit gespeichert.
+- Das Speichern von `Toyota COTA HYMO.zip` mit Version `1.4.2` protokolliert.
+- Erste JSON-Audit-Dateien für Vergabe und Entzug von Database Access eingecheckt. Einzelne Nutzer-IDs und Accountdaten werden hier nicht wiederholt.
+
+### README-Bildverweise
+
+- Logo-Darstellung im README korrigiert und die Verweise auf vorhandene gültige Repository-Assets angepasst.
+
+Belege: [Setup-Audits und Admin-Erkennung](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2acac0cb3ae281a411c53067667ac3b7d2efd6e1) · [Rechte-Audits](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/fd82cecb06518225400b1859a111a02712ce9dd5) · [Discord-Audits](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/8937efb050a8b92b1b49c918b400730cd0eff229) · [Beide Nutzer in Audit-Mentions](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/7007878490f6e6faf152c91d65755a83fdcb72fe) · [Browser-History](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/37b1ba3df830af8c25a5057a48d4d52f36467f27) · [OAuth-Abschluss und Core-Worker](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/cccd737a0ef6522e514ddf3ea9ed780453854c31) · [Parser-Korrektur](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/5e8df43a11326cc6b9edc0fde0d0c0baf318fbf5) · [README-Assets](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/cb544034e2a921ef058ae8d8311b7c5ab441ac9f).
+
+## 2026-10-15 – Nachtrag
+
+### Setup-Bestand
+
+- `BMW V8 Le Mans GO.zip` beim BMW M Hybrid V8 hinzugefügt und am selben Tag wieder gelöscht. Daraus entstand kein dauerhafter Zuwachs im Setup-Bestand.
+
+Belege: [Setup hinzugefügt](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/8b27894e180e16d6e87969bc2c63d3d15261a2b3) · [Setup wieder gelöscht](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/4c6bd37dd9c38b6c61316251084c2e126edcce63).
+
+
 ## 2026-10-09 – Nachtrag
 
 ### Setup-Versionen
@@ -77,6 +214,14 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 - Die Änderung wurde anschließend auf Wunsch vollständig zurückgenommen: UI-Integration, Sprite/Asset und Runtime-Integration wurden wieder entfernt.
 - Der übrige Website-Stand wurde dabei nicht absichtlich verändert.
 
+### Weitere README-Korrekturen nach dem bisherigen Nachtrag
+
+- Das README am 9. Oktober nach dem letzten Changelog-Commit nochmals gestaltet und Bildverweise für die GitHub-Darstellung angepasst.
+- In einem Folgecommit die betreffenden Bildverweise auf GitHub-Media-URLs umgestellt. Spätere Bildkorrekturen sind unter dem 16. Oktober dokumentiert.
+
+Belege: [README überarbeitet](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/16fc3b6ee676f805f6c1f4ba74f5d9522baf43fd) · [Media-Bildverweise](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/583a6437eeb9e497cc77e90c29df0a6436a4fca5).
+
+
 ## 2026-10-08 – Nachtrag
 
 ### Access-Layer / Rechte
@@ -90,6 +235,54 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 ### Navigation / Filter
 - Verhalten des GO/HYMO/beAlien-Filters beim Verlassen einer Fahrzeugdetailseite korrigiert: Rückkehr zur Übersicht setzt diesen Filter wieder auf `Alle`.
 - Sonstige Fahrzeug-, Setup- und Upload-Abläufe blieben unverändert.
+
+### Ergänzung: Upload / Retry / Aktualisierung
+
+- Multi-ZIP-Uploads auf strikt sequenzielle Verarbeitung mit Concurrency `1` umgestellt; jede ZIP wird einzeln gesendet.
+- Laufende Uploads gegen den gleichzeitigen Start einer weiteren Upload- oder Retry-Queue abgesichert.
+- Dateistatus für wartende, laufende, erfolgreiche und fehlgeschlagene Versuche beibehalten; ungültige Dateitypen und Dateigrößen werden zusätzlich im Frontend abgefangen.
+- Das Limit beträgt 50 ausgewählte ZIP-Dateien pro Vorgang und 25 MiB pro ZIP.
+- Der Retry verarbeitet ausschließlich die weiterhin fehlgeschlagenen Jobs.
+- Retry-Button bei vorhandenen Fehlern sichtbar gehalten und rot hervorgehoben. Die Pulsanimation berücksichtigt `prefers-reduced-motion`.
+- Nach Abschluss einer Queue mit erfolgreichen Uploads werden Setup-Liste und Fahrzeugzähler aktualisiert, ohne Seitenreload.
+- Vor dieser Aktualisierung werden Cache und offene Request-Zuordnung des betroffenen Fahrzeugs verworfen, damit neu hochgeladene Dateien und Zähler tatsächlich neu geladen werden.
+- Den Fahrzeugzähler-Helfer global verfügbar gemacht, damit die Upload-Abschlusslogik ihn erreichen kann.
+
+### Ergänzung: Streckensuche / Hersteller / Setup-Zähler
+
+- Streckensuche in der Fahrzeugansicht ergänzt; die Suche arbeitet auf den Setup-Dateinamen und lässt sich mit dem Herstellerfilter kombinieren.
+- Herstellerfilter für `Alle`, `GO`, `HYMO` und `beAlien` zwischen Übersicht und Fahrzeugansicht synchronisiert.
+- Herstellerabschnitte mit GO in Rot, HYMO in Lila und beAlien in Grün eingeführt; vorhandene Varianten- und Rennseriengruppen bleiben darunter erhalten.
+- Fahrzeugkarten um die tatsächliche Zahl verfügbarer Setup-Dateien ergänzt. Ein ausgewählter Hersteller wird bei der Zählung berücksichtigt.
+- Rekursive Aktualisierung der Zähler durch den DOM-Observer behoben: Die Beobachtung reagiert auf Änderungen der Fahrzeugliste statt auf die neu eingefügten Zähler.
+- Die Hersteller-Diashow auf einen zuständigen Controller für das sichtbare Bild abgestimmt. Die manuellen Pfeile wurden entfernt; der automatische Wechsel alle fünf Sekunden bleibt bestehen.
+
+### Ergänzung: Zugriff auf die Setup-Datenbank
+
+- Fahrzeugkatalog `/setups.json`, Setup-Liste und Downloads an angemeldeten Database Access gebunden.
+- Öffentliche Zwischenlösungen zum Umgehen dieser Prüfung wieder entfernt.
+- Ohne Anmeldung wird `401`, bei fehlendem Database Access `403` zurückgegeben.
+- Das Frontend zeigt bis zur abgeschlossenen Prüfung einen passenden Login-, Prüf- oder Zugriffshinweis und lädt die Fahrzeugdaten erst nach Freigabe.
+- Separate Konfigurationswerte für Database-Rolle und Upload/Delete-Rolle dokumentiert.
+
+### Ergänzung: Setup Requests / Discord-Mentions
+
+- Den anfragenden Nutzer aus der serverseitig geprüften Anmeldung beziehungsweise der Discord-Interaction übernommen und als User-Mention in die Request-Nachricht aufgenommen.
+- Optionalen Rollen-Ping über `DISCORD_SETUP_REQUEST_ROLE_ID` ergänzt.
+- `allowed_mentions` auf den anfragenden Nutzer und eine gültig konfigurierte Request-Rolle beschränkt.
+- Die zusätzliche Überschrift in der erzeugten Discord-Request-Nachricht entfernt.
+
+### Ergänzung: damaliges Upcoming-Races-Widget
+
+- Das Widget rechts neben dem Inhalt angeordnet und für Desktop als haftende Seitenleiste mit internem Scrollbereich umgesetzt.
+- Breitenänderung über den linken Rand korrigiert und die gewählte Breite lokal gespeichert.
+- Bronze-, Silver-, Gold-, Weekly- und Special-Kategorien sowie zugehörige Filter und Farben abgestimmt; Special-/Weekly-Angaben und SR-Anforderungen bei der Zuordnung berücksichtigt.
+- Countdowns regelmäßig aktualisiert und Rennen nach Erreichen ihrer Startzeit aus der Upcoming-Liste entfernt.
+- Die mobile Darstellung und die Wiederherstellung des modularen Runtime-Entry-Points nach zwischenzeitlichen Bundle-Änderungen korrigiert.
+- Diese Widget-Funktionen sind historisch dokumentiert; die Anbindung wurde am 20. Oktober entfernt.
+
+Belege: [Sequenzieller Upload](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/3ab3c40f5895af6f3ece53da7378e40f9742d130) · [Upload-Abschluss](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/c66b1d972205037ed437f5907ca24657840af578) · [Zähler nachladen](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/62ba7330f1fbabc331a1fec48fa8c4b2fb91940d) · [Hersteller und Suche](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/4eec53236f6c2f41b5cafe05038b9d4a36aaece8) · [Diashow und Zähler](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/a31acdaa00cce3d7d4925b511ef9b6982ce66f92) · [Katalog-Zugriff](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e7874f71bc32ffd2576897516a1163fc52549df) · [Request-Mentions](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/e35a298e787b1abea6fd8f947aacea53d9fe5855) · [Request-Überschrift](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/9941c5bede47f90eb084634496e242fb9eca597c) · [Widget und Klassifizierung](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/8606a62ef9e08f227cb89c37a306a4034b3406fd) · [Linker Resize-Rand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/886193c47ac42a53d458012d191ce7e9d78f152d).
+
 
 ## 2026-10-07
 
@@ -173,3 +366,24 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 - **Setup Request End-to-End:** Die sichtbare Entfernung der beiden Felder und der serverseitige reduzierte Request-Pfad sind implementiert; ein tatsächlicher erfolgreicher Discord-Versand wurde in der automatisierten Browser-Session nicht durchgeführt, da dort keine authentifizierte User-Session vorlag.
 - **Discord Bot Presence / DND / dynamische Activity:** Der bestehende Cloudflare Worker ist stateless und hält keine dauerhafte Discord-Gateway-Verbindung. Presence-Updates werden deshalb nicht mit einer unsicheren oder unzuverlässigen Ersatzlösung emuliert.
 - **Fahrzeugbilder mit 3P-Livery:** Es liegen weiterhin keine verifizierten passenden Fahrzeugbilder im Repository vor. Es werden keine falschen Bilder oder erfundenen Assets eingesetzt.
+
+### Ergänzung: Core-Worker-Schutz und Upload-Grenzen
+
+- HTTPS-Prüfung, Prüfung unerwarteter HTTP-Methoden sowie Origin-/Referer-Prüfungen für schreibende Anfragen im Core-Worker ergänzt.
+- Security-Header um Content Security Policy, Frame-Schutz, `nosniff`, Referrer-Policy, Permissions-Policy und Cross-Origin-Policies erweitert.
+- Eine `Content-Length`-Kontrolle mit 26 MiB als Request-Grenze sowie zusätzliche Dateinamen- und Größenprüfungen beim Upload ergänzt.
+- Fehlerausgaben des Core-Workers auf neutrale Fehlertypen reduziert, damit interne Fehlermeldungen nicht ungefiltert in Logs ausgegeben werden.
+- Setup-API und Downloads zusätzlich hinter der Discord-Anmeldung geschützt.
+- Mehrfachuploads auf eine ZIP je HTTP-Anfrage umgestellt. Die spätere Begrenzung auf Concurrency `1` erfolgte am 8. Oktober.
+- Retry-Button für fehlgeschlagene Uploads wiederhergestellt und seine Sichtbarkeit korrigiert.
+- Einen Frontend-Syntaxfehler bei Theme-/Login-Initialisierung korrigiert; Dark Mode ist der Standard, ein gespeicherter Light Mode wird vor dem Rendern berücksichtigt.
+
+### Ergänzung: Cloudflare-Konfiguration / Runtime
+
+- `run_worker_first` aktiviert, damit Worker-Routen vor der statischen Asset-Auslieferung verarbeitet werden.
+- Bindings für `UPLOADS_R2` und `UPLOAD_QUEUE` sowie einen Queue-Consumer in `wrangler.jsonc` ergänzt.
+- Einen Queue-Handler im Runtime-Entry-Point ergänzt, damit die konfigurierte Queue bei Deployments einen passenden Consumer besitzt.
+- Die vorhandene Queue-Konfiguration beschreibt keinen automatisch aktiven Hintergrund-Upload: Der aktuelle Website-Upload sendet jede ZIP über die bestehende HTTP-API direkt an die GitHub-Verarbeitung.
+- Nach zwischenzeitlichen Runtime-Bundles den modularen Entry Point wiederhergestellt und Template-Literal-Syntaxfehler korrigiert.
+
+Belege: [Core-Worker-Hardening](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/134b4ba9a7b4a4ee4a0ac15950f4245d42be347f) · [Setup-API mit Anmeldung](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/9a343cc01b60cb1e52b65dcce11f21ee85105221) · [Eine ZIP je Anfrage](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/8acea5d1b56e54ff97acdcca163e187f32ce5dc4) · [Theme und Login](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/471eadd25852dfbae525201cf351e365153dcd6b) · [R2-/Queue-Bindings](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/467bbeb6b4a140c16a3107a3d893fc1fb6076583) · [Modularer Runtime-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/48e7355f395a352688863727f5564761cb3a6300).
