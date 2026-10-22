@@ -139,12 +139,13 @@ Die Oberfläche bietet einen gespeicherten Hell-/Dunkelmodus. Übersichtsseite u
 
 | Schritt | Was passiert? |
 | :--- | :--- |
-| **01 · Version setzen** | Vor der Dateiauswahl eine Versionsangabe eingeben. Sie gilt für die Dateien des Upload-Vorgangs. |
+| **01 · Version setzen** | Optional eine gemeinsame Versionsangabe eingeben. Sie wird bei Einzel-Uploads und bei der Auswahl „Ja“ verwendet. |
 | **02 · ZIPs auswählen** | Bis zu 50 Dateien auswählen. Jede ZIP darf höchstens 25 MiB groß und nicht leer sein. |
-| **03 · Einzeln verarbeiten** | Die Oberfläche sendet jeweils eine Datei an den Worker. Er prüft unter anderem Berechtigung, Dateiendung, Größe und ZIP-Signatur. |
-| **04 · Fortschritt verfolgen** | Verarbeitete Dateien, Gesamtzahl, Prozentwert, aktuelle Datei und Einzelstatus bleiben sichtbar. |
-| **05 · Ergebnis übernehmen** | Erfolgreiche ZIPs liegen in GitHub; die zugehörige Version wird in D1 gespeichert. Die Fahrzeugliste wird nach dem Vorgang aktualisiert. |
-| **06 · Fehler erneut versuchen** | Der Retry verarbeitet nur fehlgeschlagene Dateien. Bereits erfolgreiche Uploads werden dabei ausgelassen. |
+| **03 · Versionen zuordnen** | Bei mehreren ZIPs erscheint „Haben alle Setups die gleiche Version?“. **Ja** startet den Upload mit der gemeinsamen Version. **Nein** öffnet eine Liste mit Dateinamen und je einem optionalen Versionsfeld; anschließend „Hochladen“ wählen. |
+| **04 · Einzeln verarbeiten** | Die Oberfläche sendet jeweils eine Datei an den Worker. Er prüft unter anderem Berechtigung, Dateiendung, Größe und ZIP-Signatur. |
+| **05 · Fortschritt verfolgen** | Verarbeitete Dateien, Gesamtzahl, Prozentwert, aktuelle Datei und Einzelstatus bleiben sichtbar. |
+| **06 · Ergebnis übernehmen** | Erfolgreiche ZIPs liegen in GitHub; die zugehörige Version wird in D1 gespeichert. Die Fahrzeugliste wird nach dem Vorgang aktualisiert. |
+| **07 · Fehler erneut versuchen** | Der Retry verarbeitet nur fehlgeschlagene Dateien. Bereits erfolgreiche Uploads werden dabei ausgelassen. |
 
 ```mermaid
 flowchart TB
@@ -173,7 +174,7 @@ Bereits vorhandene Dateinamen werden beim Upload abgelehnt. Ein Upload überschr
 
 Während eines Vorgangs sind Upload- und Retry-Schaltfläche gesperrt. Der Prozentwert wird nach abgeschlossenen Dateiversuchen erhöht; es gibt keine Messung der übertragenen Bytes innerhalb einer einzelnen ZIP. Während einer großen Datei kann der Gesamtwert deshalb kurz unverändert bleiben.
 
-Die ausgewählten Dateien und Fehlerjobs liegen im Arbeitsspeicher des Browser-Tabs. Die Anwendung hat im aktuellen Upload-Pfad keine dauerhaft gespeicherte Wiederaufnahme nach Neuladen oder Schließen des Tabs. Für einen zuverlässigen Abschluss die Fahrzeugansicht und den Tab während des Vorgangs geöffnet lassen. Ein neuer Vorgang übernimmt die dann eingegebene Version; ein Retry behält die ursprünglich den Jobs zugeordnete Version.
+Die ausgewählten Dateien und Fehlerjobs liegen im Arbeitsspeicher des Browser-Tabs. Die Anwendung hat im aktuellen Upload-Pfad keine dauerhaft gespeicherte Wiederaufnahme nach Neuladen oder Schließen des Tabs. Für einen zuverlässigen Abschluss die Fahrzeugansicht und den Tab während des Vorgangs geöffnet lassen. Ein neuer Vorgang fragt bei mehreren ZIPs erneut nach der Versionszuordnung. Ein Retry behält die ursprünglich jeder Datei zugeordnete Version, auch wenn das gemeinsame Feld inzwischen geändert wurde. „Abbrechen“ oder Escape schließt die Abfrage ohne Upload; bis zur Bestätigung wird keine ZIP gesendet.
 
 Die 50-Dateien-Grenze gilt für eine Auswahl. Die Oberfläche bündelt nicht alle ZIPs in einen einzigen großen Request, sondern sendet eine Datei nach der anderen. Der Retry wird manuell gestartet; eine feste automatische Zahl von Wiederholungen pro Datei ist nicht eingebaut.
 
@@ -197,15 +198,17 @@ Eine ZIP kann beim erneuten Versuch deshalb mit „Setup existiert bereits.“ a
 | Eigenschaft | Verhalten |
 | :--- | :--- |
 | **Format** | Freitext, zum Beispiel `1.0`, `v2`, `2.1.3` oder `2026.10` |
-| **Länge** | Maximal 40 Zeichen; keine leeren Werte oder Steuerzeichen |
+| **Länge** | Maximal 40 Zeichen; keine Steuerzeichen. Beim Upload optional, im nachträglichen Stift-Editor ist eine Angabe erforderlich |
 | **Speicherort** | D1-Tabelle `setup_versions`, zugeordnet über Klasse, Fahrzeug und Dateiname |
-| **Bestehende Setups** | Ohne hinterlegte Version wird `—` angezeigt |
+| **Bestehende Setups** | Ohne hinterlegte Version wird `—` angezeigt; auch neue ZIPs dürfen ohne Version hochgeladen werden |
 | **Nachträgliche Änderung** | Stift-Editor für Nutzer mit Upload-/Delete-Zugriff, auch bei älteren Setups |
 | **ZIP-Datei** | Bleibt bei einer reinen Versionsänderung unverändert; kein erneuter Upload erforderlich |
 
 **Version bearbeiten:** Fahrzeug öffnen, neben der gewünschten ZIP auf den Stift klicken, Versionswert eingeben und speichern. Bei Erfolg wird die sichtbare Liste angepasst. Bei einem Fehler bleibt das Formular mit der Fehlermeldung offen. „Abbrechen“ bzw. ein Klick auf den Hintergrund schließt es ohne Speichern.
 
 Die Angabe ist eine manuell gepflegte Kennzeichnung. Das System vergleicht keine Versionsnummern, sortiert nicht nach einer SemVer-Regel und prüft nicht, ob die ZIP zu einer bestimmten LMU-Spielversion passt. Versionen wie `v2` und `2.0` werden als unterschiedliche Texte behandelt.
+
+Die Upload-Versionsprüfung und Speicherung lassen sich ohne zusätzliche Pakete mit `node --test tests/setup-upload-versions.test.mjs` prüfen (Node.js 22 oder neuer).
 
 #### Löschen und Wiederherstellen
 
@@ -462,7 +465,7 @@ Setup-Listen und Downloads verwenden `category` und `vehicle`; eine einzelne Dat
 | :--- | :--- | :--- |
 | `GET /api/setups` | Query `category`, `vehicle` | `success`, Liste `setups` mit unter anderem `name`, `sha`, `download`, `variant`, `series`, gegebenenfalls `version` |
 | `GET /api/setups/download` | Query `category`, `vehicle`, `name` | ZIP-Response mit Download-Dateiname |
-| `POST /api/setups/upload` | `FormData`: `category`, `vehicle`, `version`, `files` | `success`, `uploaded` und dateibezogene `errors` |
+| `POST /api/setups/upload` | `FormData`: `category`, `vehicle`, optionale `version`, `files` | `success`, `uploaded` und dateibezogene `errors` |
 | `POST /api/setups/delete` | JSON: `category`, `vehicle`, `name` | `success` oder Fehlermeldung |
 | `POST /api/setups/version` | JSON: `category`, `vehicle`, `name`, `version` | Bestätigte Datei-Zuordnung und gespeicherter Versionswert |
 | Admin-Freigabe `POST`/`DELETE` | JSON: `userId` | `success` und betroffene User ID |
@@ -703,12 +706,12 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | **„Nicht angemeldet.“ / `401`** | Session fehlt, ist ungültig oder abgelaufen | Erneut mit Discord anmelden; Website-Domain und sichere Cookies prüfen |
 | **„Erforderliche Discord-Rolle fehlt.“ / kein Datenbankzugang** | Rolle oder individuelle Freigabe | Zielserver, Datenbankrolle und D1-Freigabe prüfen; anschließend Rechte neu laden |
 | **Upload-Button sichtbar, aber `403` beim Upload** | Unterschiedliche äußere und Core-Rollenprüfung | Request-Rolle, Core-Upload-Rolle und individuelle Upload-Freigabe gemeinsam prüfen |
-| **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Nicht leere Angabe mit höchstens 40 Zeichen verwenden |
+| **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload darf das Feld leer bleiben; im Stift-Editor ist eine Angabe erforderlich |
 | **„Ungültige ZIP-Datei.“** | Dateiendung, Inhaltssignatur, leere oder zu große Datei | Eine tatsächliche ZIP bis 25 MiB wählen; bloßes Umbenennen einer anderen Datei reicht nicht |
 | **„Setup existiert bereits.“** | Derselbe Dateipfad ist bereits belegt | Vorhandene ZIP und Version prüfen; bei einer reinen Metadatenkorrektur den Stift-Editor verwenden |
 | **„Request zu groß.“ / `413`** | Upload-Größe und Verarbeitungspfad | Dateigröße und Einzelanfragen prüfen; nicht mehrere große ZIPs zu einem eigenen Sammelrequest zusammenfassen |
 | **„Ungültige Server-Antwort“ / Netzwerkfehler** | Antwortformat oder unterbrochener Request | Status und Antwort im Netzwerk-Tab prüfen; vor Retry nach bereits vorhandener Datei suchen |
-| **Datei vorhanden, aber Version `—`** | Fehlende D1-Metadaten oder fehlgeschlagener Versionsabruf | `ACCESS_DB`, Tabelle und Zuordnung aus Klasse/Fahrzeug/Dateiname prüfen; Version gegebenenfalls nachtragen |
+| **Datei vorhanden, aber Version `—`** | Ohne Version hochgeladen, fehlende D1-Metadaten oder fehlgeschlagener Versionsabruf | `ACCESS_DB`, Tabelle und Zuordnung aus Klasse/Fahrzeug/Dateiname prüfen; Version gegebenenfalls nachtragen |
 | **„Anzeige konnte nicht aktualisiert werden.“** | Upload lief, Nachladen der Liste scheiterte | Upload-Zähler und gespeicherte Dateien prüfen; Ansicht anschließend neu laden |
 | **Admin-Panel fehlt** | Aktueller Nutzer wird nicht als Owner erkannt | `/api/me` und die feste Owner-Zuordnung in beiden Worker-Dateien prüfen |
 | **Freigabenliste leer oder Name unbekannt** | Nur Rollenrechte bzw. fehlende Discord-Auflösung | Individuelle Einträge in D1 von Rollenrechten unterscheiden; Bot-/Server-Zugriff prüfen |
@@ -740,6 +743,7 @@ Bei einer gemeldeten Störung sind konkrete Route, HTTP-Status, Zeitpunkt und un
 | Angemeldeter Nutzer ohne Zusatzrechte | Datenbankzugang und schreibende Setup-Routen bleiben gesperrt; der Request-Endpunkt prüft separat die Anmeldung |
 | Lesender Nutzer | Katalog, passende Fahrzeugliste und ZIP-Download funktionieren; Upload und Versionsänderung bleiben gesperrt |
 | Individuell freigegebener Uploader | Eine eigene Test-ZIP mit Version hochladen, Liste/Version prüfen und das Audit kontrollieren |
+| Multi-Upload | „Ja“ mit gemeinsamer Version, „Nein“ mit unterschiedlichen und leeren Feldern, Abbrechen sowie Retry mit unveränderter Dateiversion prüfen |
 | Versions-Editor | Version an derselben Testdatei ändern; alter und neuer Wert erscheinen im vorgesehenen Audit-Pfad |
 | Owner | Individuelle Freigabe erteilen, Ansicht neu laden, Upload-Freigabe entfernen und verbleibenden Datenbankzugriff prüfen |
 | Navigation & Filter | Zurück-Navigation, Herstellerfilter, Streckensuche und gespeicherter Hell-/Dunkelmodus prüfen |

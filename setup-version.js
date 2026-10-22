@@ -12,8 +12,9 @@ export async function enrichSetupVersions(setups, category, vehicle, env) {
 }
 
 export function readSetupVersion(form) {
-  const version = String(form.get("version") || "").trim();
-  if (!version) return { error: "Version fehlt." };
+  const value = form.get("version");
+  if (value !== null && typeof value !== "string") return { error: "Ungültige Version." };
+  const version = (value || "").trim();
   if (version.length > 40) return { error: "Version ist zu lang." };
   if(/[\u0000-\u001F\u007F]/.test(version)) return { error: "Ungültige Version." };
   return { version };
@@ -21,6 +22,7 @@ export function readSetupVersion(form) {
 
 export async function storeSetupVersion(category, vehicle, fileName, version, env) {
   if (!env.ACCESS_DB) return;
+  // Persist an empty version too, replacing metadata from a previously deleted ZIP.
   await env.ACCESS_DB.prepare(
     "INSERT INTO setup_versions (category, vehicle, file_name, version, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(category, vehicle, file_name) DO UPDATE SET version = excluded.version, updated_at = CURRENT_TIMESTAMP"
   ).bind(String(category), String(vehicle), String(fileName), String(version)).run();
