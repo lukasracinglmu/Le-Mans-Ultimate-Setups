@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T19:05:33.536Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Fuji GO [1.4 GO 6955f746bc6d].zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Fuji GO [1.4 GO 6955f746bc6d]",
+  "manufacturer": "GO",
+  "version": "1.4",
+  "result": "SUCCESS"
+}
