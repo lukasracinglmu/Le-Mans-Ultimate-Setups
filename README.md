@@ -139,9 +139,9 @@ Die Oberfläche bietet einen gespeicherten Hell-/Dunkelmodus. Übersichtsseite u
 
 | Schritt | Was passiert? |
 | :--- | :--- |
-| **01 · Version setzen** | Optional eine gemeinsame Versionsangabe eingeben. Sie füllt den anschließenden Versionsdialog vor; dieser erscheint jetzt auch bei einer einzelnen ZIP. |
+| **01 · Upload öffnen** | „Setups hochladen“ wählen. Ein zusätzliches Versionsfeld neben der Schaltfläche gibt es nicht mehr. |
 | **02 · ZIPs auswählen** | Bis zu 50 Dateien auswählen. Jede ZIP darf höchstens 25 MiB groß und nicht leer sein. |
-| **03 · Versionen zuordnen** | Bei mehreren ZIPs erscheint „Haben alle Setups die gleiche Version?“. **Ja** öffnet zunächst einen Dialog für die gemeinsame optionale Version. Erst „Hochladen“ bestätigt sie. **Nein** öffnet eine Liste mit Dateinamen und je einem optionalen Versionsfeld; anschließend „Hochladen“ wählen. |
+| **03 · Versionen zuordnen** | Bei mehreren ZIPs erscheint „Haben alle Setups die gleiche Version?“. **Ja** öffnet zunächst einen Dialog für die gemeinsame optionale Version. „Weiter“ bestätigt die Angabe. Bei einer einzelnen ZIP öffnet sich direkt das Versionsfeld im Dialog. **Nein** öffnet eine Liste mit Dateinamen und je einem optionalen Versionsfeld; anschließend „Hochladen“ wählen. |
 | **04 · Einzeln verarbeiten** | Die Oberfläche sendet jeweils eine Datei an den Worker. Er prüft unter anderem Berechtigung, Dateiendung, Größe und ZIP-Signatur. |
 | **05 · Fortschritt verfolgen** | Verarbeitete Dateien, Gesamtzahl, Prozentwert, aktuelle Datei und Einzelstatus bleiben sichtbar. |
 | **06 · Ergebnis übernehmen** | Erfolgreiche ZIPs liegen in GitHub; die zugehörige Version wird in D1 gespeichert. Die Fahrzeugliste wird nach dem Vorgang aktualisiert. |
@@ -218,6 +218,12 @@ Die Auswahl enthält ausschließlich passende vorhandene Setups desselben erkann
 Der neue Dateiinhalt muss vor der Bereinigung von GitHub bestätigt sein. Ist ein ausgewähltes altes Setup inzwischen geändert worden, wird es nicht entfernt. Ein Statusfehler nach dem Upload bleibt sichtbar und kann erneut versucht werden. ZIP-Speicherung, Versionsmetadaten, Status und Audit-Datei sind getrennte Schritte und keine gemeinsame Transaktion.
 
 `setup_lifecycle` speichert den Status zusammen mit dem genauen Git-Dateistand. Ein späterer anderer ZIP-Inhalt mit gleichem Namen übernimmt dadurch keine alte Veraltet-Markierung. Die Definition steht in `schema.sql` und muss vor dem ersten Markieren in D1 vorhanden sein.
+
+**Dateinamen und Veraltet-Anzeige:** In Liste, Upload-Auswahl und Downloads wird der ursprüngliche ZIP-Name ohne interne Versions- oder Prüfsummen-Zusätze verwendet. So erscheint zum Beispiel `Alpine Fuji Go [1.4 GO 6955f746bc6d].zip` als `Alpine Fuji Go.zip`. Die gespeicherte Version steht separat am Eintrag. Bereits vorhandene Dateien bleiben über ihren bisherigen Speicherpfad erreichbar; Bearbeiten und Löschen verwenden weiterhin den genauen Dateistand.
+
+Neue zusätzliche Kopien erhalten intern einen lesbaren Namen wie `Alpine Fuji Go (Version 1.4).zip`, ohne Hersteller-Wiederholung oder Prüfsumme. Bei einem anderen Inhalt mit gleicher Versionsangabe wird ein lesbarer Zähler ergänzt; eine Wiederholung desselben Uploads verwendet die vorhandene Kopie. Im Download bleibt der normale ZIP-Name erhalten.
+
+Veraltete Einträge haben einen grell orangefarbenen Rahmen. Das Kennzeichen „Veraltet“ und das Versionsfeld werden orange mit dunkler Schrift hervorgehoben; die bisherige abgeschwächte Darstellung wurde entfernt.
 
 Beim normalen Löschen sperrt die Oberfläche während der Anfrage die Bestätigung und den Abbruch. Sie hält Fahrzeug, Dateiname und Dateistand vom Öffnen des Dialogs fest. Vorübergehende GitHub-Konflikte und verlorene Antworten werden erneut geprüft; eine bereits entfernte Datei gilt beim erneuten Versuch als gelöscht. Ein inzwischen geänderter Dateiinhalt wird nicht gelöscht.
 

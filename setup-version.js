@@ -33,3 +33,5 @@ export function compareSetupVersions(a,b){
   const left=parse(a),right=parse(b);if(!left||!right)return null;
   for(let index=0;index<Math.max(left.length,right.length);index++){const x=left[index]||0n,y=right[index]||0n;if(x!==y)return x>y?1:-1;}return 0;
 }
+
+export function cleanSetupFileName(name){return String(name||'').replace(/\s*\[[^\]]*\s+(?:GO|HYMO|BE_?ALIEN)\s+(?:[a-f0-9]{12}|[a-f0-9]{4}\s+[a-f0-9]{4}\s+[a-f0-9]{4})\](?=\.zip$)/i,'').replace(/\s*\(Version [^)]*\)(?=\.zip$)/i,'');}

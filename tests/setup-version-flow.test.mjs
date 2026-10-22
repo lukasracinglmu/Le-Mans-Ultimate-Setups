@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {compareSetupVersions} from '../setup-version.js';
+import {compareSetupVersions,cleanSetupFileName} from '../setup-version.js';
 import {persistSetupFile,gitBlobSha} from '../upload-storage.js';
 import production from '../production-worker.js';
 const source=await readFile(new URL('../index.html',import.meta.url),'utf8');
-const client=vm.runInNewContext(source.slice(source.indexOf('function compareUploadVersions('),source.indexOf('async function uploadFileIdentity('))+';({compareUploadVersions,uploadSetupFamily})');
+const client=vm.runInNewContext(source.slice(source.indexOf('function displaySetupFileName('),source.indexOf('function esc('))+source.slice(source.indexOf('function compareUploadVersions('),source.indexOf('async function uploadFileIdentity('))+';({compareUploadVersions,uploadSetupFamily})');
 
 test('client and server compare numeric versions consistently and leave unknown formats undecided',()=>{
   for(const [a,b,expected] of [['v2','1',1],['1.10','1.9',1],['1','1.0',0],['v2.0.1','v2',1],['v1','2',-1],['','1',null],['beta','1',null],['2026.10','2026.9',1],['1.2-rc','1.2',null]]){
@@ -28,7 +28,7 @@ test('same-name preserve stores a deterministic separate ZIP and retries do not 
     return files.has(name)?Response.json({sha:files.get(name)}):Response.json({},{status:404});
   }};
   const first=await persistSetupFile(params),second=await persistSetupFile(params);
-  assert.equal(first.uploaded,true);assert.equal(second.alreadyExists,true);assert.equal(first.name,second.name);assert.match(first.name,/v2 HYMO/);assert.equal(files.get(file.name),'a'.repeat(40));assert.equal(puts,1);
+  assert.equal(first.uploaded,true);assert.equal(second.alreadyExists,true);assert.equal(first.name,second.name);assert.equal(first.name,'Spa HYMO (Version v2).zip');assert.ok(!first.name.includes(sha.slice(0,12)));assert.equal(files.get(file.name),'a'.repeat(40));assert.equal(puts,1);
 });
 
 test('same-name outdate uploads new bytes separately and marks exactly the original SHA',async()=>{
@@ -90,4 +90,22 @@ test('explicit existing-file choices work for identical bytes and equal or missi
       const retry=await production.fetch(request(),env);assert.equal(retry.status,200);assert.equal(puts,action==='replace'?0:1,'retry never writes another ZIP');
     }
   }finally{globalThis.fetch=original;}
+});
+
+test('legacy and new storage suffixes do not leak into displayed or downloaded names',()=>{
+  for(const stored of ['Alpine Fuji Go [1.4 GO 6955f746bc6d].zip','Alpine Fuji Go [1.4 Go 6955 F746 BC6D].zip','Alpine Fuji Go (Version 1.4).zip','Alpine Fuji Go (Version 1.4, 2).zip']){
+    assert.equal(cleanSetupFileName(stored),'Alpine Fuji Go.zip');
+  }
+  for(const unchanged of ['Alpine Fuji Go.zip','Alpine Fuji GO [Wet].zip','Alpine Fuji (Endurance).zip'])assert.equal(cleanSetupFileName(unchanged),unchanged);
+});
+
+test('readable storage names resolve equal-version content conflicts without overwriting or duplicates on retry',async()=>{
+  const file=new File([new Uint8Array([80,75,3,4,44])],'Spa HYMO.zip'),sha=await gitBlobSha(new Uint8Array(await file.arrayBuffer()));
+  const files=new Map([[file.name,'a'.repeat(40)],['Spa HYMO (Version v2).zip','c'.repeat(40)]]);let puts=0;
+  const params={file,name:file.name,version:'v2',preserveSha:'a'.repeat(40),category:'Hypercar',vehicle:'Alpine',branch:'main',githubRequest:async(path,options)=>{
+    const name=decodeURIComponent(path.split('?')[0].split('/').at(-1));
+    if(options.method==='PUT'){puts++;assert.equal(name,'Spa HYMO (Version v2, 2).zip');files.set(name,sha);return Response.json({content:{sha}});}
+    return files.has(name)?Response.json({sha:files.get(name)}):Response.json({},{status:404});
+  }};
+  const first=await persistSetupFile(params),retry=await persistSetupFile(params);assert.equal(first.uploaded,true);assert.equal(retry.alreadyExists,true);assert.equal(first.name,retry.name);assert.equal(puts,1);assert.equal(files.get('Spa HYMO (Version v2).zip'),'c'.repeat(40));
 });

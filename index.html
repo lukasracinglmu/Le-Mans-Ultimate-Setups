@@ -26,7 +26,7 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 .upload-version-dialog::backdrop{background:rgba(0,0,0,.6)}.upload-version-dialog h2{font-size:21px;margin:0 0 12px}.upload-version-dialog p{color:var(--muted);line-height:1.5;margin:0 0 16px;overflow-wrap:anywhere}.upload-version-files{display:grid;gap:10px;max-height:50dvh;overflow:auto}.upload-version-row{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:12px}.upload-version-row label{font-size:13px;overflow-wrap:anywhere}.upload-version-row input{width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg);color:var(--text)}.upload-version-dialog .upload-version-error{color:var(--danger);margin:12px 0 0}.upload-version-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;margin-top:20px}.upload-version-actions button:first-child{margin-right:auto}
 @media(max-width:520px){.upload-version-dialog{padding:18px}.upload-version-row{grid-template-columns:minmax(0,1fr);gap:8px}}
 
-.old-setup-choices{display:grid;gap:16px;max-height:55vh;overflow:auto}.old-setup-choice{border:1px solid var(--border);border-radius:8px;padding:14px}.old-setup-choice h3{font-size:14px;margin:0 0 10px;overflow-wrap:anywhere}.old-setup-choice select{max-width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;color:var(--text);background:var(--surface)}.old-setup-list{margin-top:10px;display:grid;gap:9px}.old-setup-list label{display:flex;gap:9px;font-size:13px;overflow-wrap:anywhere;align-items:flex-start}.old-setup-list input{flex-shrink:0}.setup.outdated{opacity:.72}.setup-outdated-tag{display:inline-block;margin-left:8px;color:var(--danger);font-size:12px;font-weight:700}.request-vehicle-options{border:1px solid var(--border);border-radius:8px;max-height:240px;overflow:auto;background:var(--surface);margin-top:4px}.request-vehicle-options button{display:block;width:100%;text-align:left;border:0;border-radius:0;padding:11px}.request-vehicle-options button:hover,.request-vehicle-options button[aria-selected="true"]{background:var(--surface2)}.request-vehicle-options p{padding:10px;margin:0;color:var(--muted)}#reqClass[readonly]{color:var(--muted)}
+.old-setup-choices{display:grid;gap:16px;max-height:55vh;overflow:auto}.old-setup-choice{border:1px solid var(--border);border-radius:8px;padding:14px}.old-setup-choice h3{font-size:14px;margin:0 0 10px;overflow-wrap:anywhere}.old-setup-choice select{max-width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;color:var(--text);background:var(--surface)}.old-setup-list{margin-top:10px;display:grid;gap:9px}.old-setup-list label{display:flex;gap:9px;font-size:13px;overflow-wrap:anywhere;align-items:flex-start}.old-setup-list input{flex-shrink:0}.setup.outdated{opacity:1;border:2px solid #ff6a00;background:color-mix(in srgb,#ff6a00 12%,var(--surface))}.setup-outdated-tag{display:inline-block;margin-left:8px;background:#ff6a00;color:#111;padding:4px 8px;border-radius:5px;font-size:12px;font-weight:800}.setup.outdated .setup-version-value{display:inline-block;background:#ff6a00;color:#111;padding:3px 7px;border-radius:4px;font-weight:800}.request-vehicle-options{border:1px solid var(--border);border-radius:8px;max-height:240px;overflow:auto;background:var(--surface);margin-top:4px}.request-vehicle-options button{display:block;width:100%;text-align:left;border:0;border-radius:0;padding:11px}.request-vehicle-options button:hover,.request-vehicle-options button[aria-selected="true"]{background:var(--surface2)}.request-vehicle-options p{padding:10px;margin:0;color:var(--muted)}#reqClass[readonly]{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -66,6 +66,7 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h3>Setup löschen?</h3><p id="deleteModalText"></p><div class="modal-actions"><button id="deleteCancel">Abbrechen</button><button id="deleteConfirm" class="danger-action">Löschen</button></div></div></div>
 <script>
 const $=id=>document.getElementById(id);let setupData={},currentUser=null,currentCar={category:"",vehicle:""},pendingDelete=null,lastUploadJobs=[],activeMfr='',activeClass='',savedScrollY=0,trackSearchVal='',uploadQueueRunning=false,uploadPreparing=false;const setupCache=new Map(),setupPending=new Map(),setupRevisions=new Map();const SETUP_CACHE_MS=30000;
+function displaySetupFileName(name){return String(name||'').replace(/\s*\[[^\]]*\s+(?:GO|HYMO|BE_?ALIEN)\s+(?:[a-f0-9]{12}|[a-f0-9]{4}\s+[a-f0-9]{4}\s+[a-f0-9]{4})\](?=\.zip$)/i,'').replace(/\s*\(Version [^)]*\)(?=\.zip$)/i,'');}
 function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function loadTheme(){const saved=localStorage.getItem("tpr-theme");const t=saved==="light"?"light":"dark";document.documentElement.dataset.theme=t;$("themeButton").textContent=t==="dark"?"Light Mode":"Dark Mode"}function toggleTheme(){const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;localStorage.setItem("tpr-theme",t);$("themeButton").textContent=t==="dark"?"Light Mode":"Dark Mode"}
 function initManufacturer(){const names=["GO","HYMO","beAlien"];let i=0;setInterval(()=>{const el=$("manufacturerName");el.style.opacity="0";setTimeout(()=>{i=(i+1)%names.length;el.textContent=names[i];el.style.opacity="1"},180)},3500)}
@@ -99,7 +100,7 @@ function renderSetups(setups){
       const name=document.createElement('div');name.className='setup-track';
       const vendor=classifyVendor(s.name);
       const tag=vendor?'<span class="vendor-tag '+vendor+'">'+vendor+'</span>':'';
-      name.innerHTML=esc(s.name)+tag;
+      name.innerHTML=esc(displaySetupFileName(s.name))+tag;
       const meta=document.createElement('div');meta.className='setup-meta';
       meta.textContent=[s.series,s.variant,'ZIP'].filter(Boolean).join(' · ');
       info.append(name,meta);
@@ -149,7 +150,7 @@ async function uploadSingleJob(job,statuses){
     await waitForUploadRetry(job,statuses);
     markUploadJob(statuses,job,"uploading","Wird hochgeladen · Versuch "+attempt+"/"+MAX_UPLOAD_ATTEMPTS);
     const result=await requestUploadJob(job);
-    if(result.success){job.error="";job.nextRetryAt=0;markUploadJob(statuses,job,"ok","Erfolgreich"+(job.storedName&&job.storedName!==file.name?" · gespeichert als "+job.storedName:"")+(job.previousSetups?.decisionNote?" · "+job.previousSetups.decisionNote:""));return true;}
+    if(result.success){job.error="";job.nextRetryAt=0;markUploadJob(statuses,job,"ok","Erfolgreich"+(job.storedName&&job.storedName!==file.name?" · gespeichert als "+displaySetupFileName(job.storedName):"")+(job.previousSetups?.decisionNote?" · "+job.previousSetups.decisionNote:""));return true;}
     job.error=result.error;
     job.nextRetryAt=result.retryable?Date.now()+Math.max(result.retryAfterMs||0,2000*2**(attempt-1))+Math.floor(Math.random()*500):0;
     if(!result.retryable||attempt===MAX_UPLOAD_ATTEMPTS)break;
@@ -218,7 +219,7 @@ function compareUploadVersions(a,b){
   for(let index=0;index<Math.max(left.length,right.length);index++){const x=left[index]||0n,y=right[index]||0n;if(x!==y)return x>y?1:-1;}return 0;
 }
 function uploadSetupFamily(name,version){
-  let key=String(name||'').replace(/\.zip$/i,'').replace(/\s*\[[^\]]*\b[a-f0-9]{12}\]$/i,'');
+  let key=displaySetupFileName(name).replace(/\.zip$/i,'');
   key=key.replace(/\bv\d+(?:[._-]\d+)*\b/gi,' ');
   const value=String(version||'').trim();
   if(value&&(value.includes('.')||/^v/i.test(value))){const escaped=value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');key=key.replace(new RegExp('(^|[^a-z0-9])'+escaped+'(?=$|[^a-z0-9])','gi'),'$1');}
@@ -238,7 +239,7 @@ async function choosePreviousSetups(files,target,versions){
     const sameName=matches.find(old=>old.name===file.name);
     const sha=matches.length?await uploadFileIdentity(file):null,duplicate=matches.find(old=>old.sha===sha);
     const candidates=matches;
-    choices.push({file,version,candidates,sameName,duplicate,decisionNote:duplicate?'Identische ZIP bereits vorhanden: '+duplicate.name:''});
+    choices.push({file,version,candidates,sameName,duplicate,decisionNote:duplicate?'Identische ZIP bereits vorhanden: '+displaySetupFileName(duplicate.name):''});
   }
   const defaultPlan=choice=>({action:'keep',targets:!choice.duplicate&&choice.sameName?[{name:choice.sameName.name,sha:choice.sameName.sha}]:[],...(choice.duplicate?{duplicateOf:{name:choice.duplicate.name,sha:choice.duplicate.sha}}:{}),decisionNote:choice.decisionNote});
   if(!choices.some(choice=>choice.candidates.length))return choices.map(defaultPlan);
@@ -250,11 +251,11 @@ async function choosePreviousSetups(files,target,versions){
       const {file,version,candidates}=choice;
       if(!candidates.length){rows.push({choice});return;}
       const row=document.createElement('section');row.className='old-setup-choice';
-      const heading=document.createElement('h3');heading.textContent=file.name+' · angegebene Version: '+(version||'nicht angegeben')+(choice.duplicate?' · identischer Inhalt':'');row.append(heading);
+      const heading=document.createElement('h3');heading.textContent=displaySetupFileName(file.name)+' · angegebene Version: '+(version||'nicht angegeben')+(choice.duplicate?' · identischer Inhalt':'');row.append(heading);
       const label=document.createElement('label');label.textContent='Alte Setups: ';const select=document.createElement('select');select.setAttribute('aria-label','Umgang mit alten Setups für '+file.name);
       for(const [value,text] of [['keep','Behalten'],['replace','Durch aktuellen Upload ersetzen'],['delete','Alte Datei nach dem Upload löschen'],['outdate','Als veraltet markieren']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}label.append(select);row.append(label);
       const list=document.createElement('div');list.className='old-setup-list hidden';const inputs=[];
-      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=true;item.append(input,document.createTextNode(old.name+' · bisherige Version: '+(old.version||'nicht angegeben')+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
+      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=true;item.append(input,document.createTextNode(displaySetupFileName(old.name)+' · bisherige Version: '+(old.version||'nicht angegeben')+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
       select.addEventListener('change',()=>list.classList.toggle('hidden',select.value==='keep'));row.append(list);container.append(row);rows.push({choice,select,inputs});
     });
     dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
@@ -273,7 +274,7 @@ $("fileInput").addEventListener("change",async function(){
   if(!files.length)return;
   if(files.length>50){status.textContent="Maximal 50 ZIP-Dateien gleichzeitig.";this.value="";return;}
   if(files.some(file=>!/\.zip$/i.test(file.name)||file.size<=0||file.size>MAX_UPLOAD_BYTES)){status.textContent="Nur ZIP-Dateien mit maximal 25 MiB pro Datei sind erlaubt.";this.value="";return;}
-  const sharedVersion=($("setupVersion")?.value||"").trim();
+  const sharedVersion="";
   const target={...currentCar};
   uploadPreparing=true;$("uploadBtn").disabled=true;$("retryFailedBtn").disabled=true;
   try{
@@ -292,7 +293,7 @@ $("fileInput").addEventListener("change",async function(){
 $("retryFailedBtn").addEventListener("click",async()=>{if(uploadQueueRunning||uploadPreparing)return;const failed=lastUploadJobs.filter(job=>job.state==="err");if(!failed.length){$("retryFailedBtn").classList.remove("show");return;}await runUploadJobs(failed,{appendRows:true});});
 
 let deleteInFlight=false;
-function openDeleteModal(name){if(deleteInFlight)return;const item=currentCarSetups.find(setup=>setup.name===name);pendingDelete={...currentCar,name,...(item?.sha?{sha:item.sha}:{})};$("deleteModalText").textContent=`Möchtest du „${name}“ wirklich löschen?`;$("deleteConfirm").textContent="Löschen";$("deleteModal").classList.add("show")}
+function openDeleteModal(name){if(deleteInFlight)return;const item=currentCarSetups.find(setup=>setup.name===name);pendingDelete={...currentCar,name,...(item?.sha?{sha:item.sha}:{})};$("deleteModalText").textContent=`Möchtest du „${displaySetupFileName(name)}“ wirklich löschen?`;$("deleteConfirm").textContent="Löschen";$("deleteModal").classList.add("show")}
 function closeDeleteModal(){if(deleteInFlight)return;pendingDelete=null;$("deleteModal").classList.remove("show")}
 $("deleteCancel").addEventListener("click",closeDeleteModal);
 $("deleteModal").addEventListener("click",e=>{if(e.target===$("deleteModal"))closeDeleteModal()});
@@ -309,7 +310,7 @@ async function requestSetupDelete(target){
 }
 $("deleteConfirm").addEventListener("click",async()=>{
   if(!pendingDelete||deleteInFlight)return;
-  const target={...pendingDelete};deleteInFlight=true;$("deleteConfirm").disabled=true;$("deleteCancel").disabled=true;$("deleteConfirm").textContent='Wird gelöscht…';$("deleteModalText").textContent='„'+target.name+'“ wird gelöscht. Bitte kurz warten.';
+  const target={...pendingDelete};deleteInFlight=true;$("deleteConfirm").disabled=true;$("deleteCancel").disabled=true;$("deleteConfirm").textContent='Wird gelöscht…';$("deleteModalText").textContent='„'+displaySetupFileName(target.name)+'“ wird gelöscht. Bitte kurz warten.';
   try{
     await requestSetupDelete(target);
     invalidateSetupCache(target.category,target.vehicle);

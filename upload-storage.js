@@ -1,3 +1,4 @@
+import { cleanSetupFileName } from "./setup-version.js";
 // Upload storage is retried by the browser; every attempt first checks Git identity.
 const MAX_BODY_BYTES = 26 * 1024 * 1024;
 
@@ -82,15 +83,16 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
   const sha = await gitBlobSha(bytes);
   if(expectedFileSha&&sha!==expectedFileSha)return {error:"ZIP-Inhalt stimmt nicht mit der erkannten Doppelung überein.",code:"INVALID_DUPLICATE",retryable:false};
   const originalName=name;
+  let preservedStem="",preservedLabel="";
   if(preserveSha){
-    const vendor=/HYMO/i.test(name)?'HYMO':/BE_?ALIEN/i.test(name)?'beAlien':'GO';
-    const label=String(version||'ohne-Version').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/\.{2,}/g,'-').slice(0,40)||'ohne-Version';
-    const suffix=` [${label} ${vendor} ${sha.slice(0,12)}].zip`;
-    name=name.replace(/\.zip$/i,'').slice(0,180-suffix.length)+suffix;
+    preservedLabel=String(version||'ohne Angabe').replace(/[^a-zA-Z0-9._ -]+/g,'-').replace(/\.{2,}/g,'-').slice(0,40)||'ohne Angabe';
+    preservedStem=cleanSetupFileName(name).replace(/\.zip$/i,'');
+    const suffix=` (Version ${preservedLabel}).zip`;
+    name=preservedStem.slice(0,180-suffix.length)+suffix;
   }
-  const path = '/contents/setups/' + [category, vehicle, name].map(encodeURIComponent).join('/');
+  const path = ()=>'/contents/setups/' + [category, vehicle, name].map(encodeURIComponent).join('/');
   const check = async () => {
-    const response = await githubRequest(path + '?ref=' + encodeURIComponent(branch), {
+    const response = await githubRequest(path() + '?ref=' + encodeURIComponent(branch), {
       headers: { Accept: 'application/vnd.github.object+json', 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(30000)
     });
     const data = await jsonOrEmpty(response);
@@ -98,7 +100,7 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
       if (typeof data.sha !== 'string') return { error: 'Ungültige GitHub-Antwort.', retryable: true };
       if (data.sha === sha) return { uploaded: true, alreadyExists: true, sha, name };
       if (replaceSha && data.sha === replaceSha) return null;
-      return conflict();
+      return preserveSha?{nextName:true}:conflict();
     }
     return response.status === 404 ? null : githubFailure(response, data);
   };
@@ -111,16 +113,23 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
       if(original.ok&&meta.sha!==preserveSha)return conflict();
       if(!original.ok&&original.status!==404)return githubFailure(original,meta);
     }
-    const existing = await check();
+    let existing;
+    for(let number=1;number<=100;number++){
+      if(preserveSha&&number>1){const suffix=` (Version ${preservedLabel}, ${number}).zip`;name=preservedStem.slice(0,180-suffix.length)+suffix;}
+      existing=await check();
+      if(!existing?.nextName)break;
+    }
+    if(existing?.nextName)return {error:'Zu viele gleichnamige Versionen. Bitte die ZIP umbenennen.',code:'FILE_CONFLICT',retryable:false};
     if (existing) return existing;
     const prefix = JSON.stringify({ message: `${replaceSha ? "Replace" : "Add"} setup: ${vehicle} - ${name}`, branch, ...(replaceSha ? {sha:replaceSha} : {}) }).slice(0, -1) + ',"content":"';
     // Keep the large base64 value out of JSON.stringify and avoid rebuilding FormData.
     const body = new Blob([prefix, ...base64Parts(bytes), '"}'], { type: 'application/json' });
-    const response = await githubRequest(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(60000) });
+    const response = await githubRequest(path(), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(60000) });
     const data = await jsonOrEmpty(response);
     if (response.ok && data.content?.sha === sha) return { uploaded: true, sha, alreadyExists: false, name };
     if (response.ok || response.status === 409 || response.status === 422) {
       const verified = await check();
+      if(verified?.nextName)return {error:'Dateiname wurde gleichzeitig belegt. Erneuter Versuch folgt.',retryable:true};
       if (verified) return verified;
       if (response.ok || response.status === 409 || /sha|already exists|does not match/i.test(String(data.message))) {
         return { error: 'GitHub-Speicherung noch nicht bestätigt. Erneuter Versuch folgt.', retryable: true };
