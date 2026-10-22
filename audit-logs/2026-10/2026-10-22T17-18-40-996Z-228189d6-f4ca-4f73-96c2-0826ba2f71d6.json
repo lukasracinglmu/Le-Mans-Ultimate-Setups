@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:18:40.996Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "GO V1.4.2 A424 HYP LMS.zip",
+  "vehicle": "Alpine A424",
+  "track": "GO V1.4.2 A424 HYP LMS",
+  "manufacturer": "GO",
+  "result": "SUCCESS"
+}
