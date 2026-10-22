@@ -6,6 +6,10 @@ Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie u
 
 ## 2026-10-22 – Nachtrag
 
+### Weitere Setup-Aktivitäten
+
+- Seit dem vorherigen dokumentierten Stand wurden 14 ZIP-Uploads und 12 ZIP-Löschungen in der GitHub-Historie erfasst. Dazu kamen 25 Audit-Commits, davon 1 zur Versionsänderung. Dies beschreibt die zwischenzeitliche Nutzung der Website, nicht Testlöschungen dieser Änderung. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc...8b8a84b985bb18d59dd396d05cdf007c5e81d298).
+
 ### Session Upload Progress
 
 - Zusätzliche Fortschrittsanzeige direkt im bestehenden Upload-Bereich ergänzt.
@@ -30,6 +34,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Ergänzt
 
+- Vor dem Upload vorhandene Dateien desselben Herstellers und Fahrzeugs auswählen: behalten, als veraltet markieren oder nach bestätigtem Upload ersetzen. SHA-Prüfungen schützen inzwischen geänderte Dateien; die Veraltet-Markierung bleibt an den gespeicherten Dateiinhalt gebunden. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
+
+- Fahrzeugvorschläge ab drei eingegebenen Buchstaben mit automatischer und serverseitig geprüfter Klasse für Website-Setup-Requests ergänzt; die Strecke bleibt freie Texteingabe. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
+
 - Persönliche Owner-ID und Owner-Rolle getrennt konfigurierbar gemacht; vollständigen Zugriff des persönlichen Owners erhalten. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
 - Automatische Changelog-Erstellung: 4 Dateien hinzugefügt. Betroffen: `.github/changelog/README.md`, `.github/changelog/changelog.yml.example`, `.github/changelog/test_update_changelog.py`, `.github/changelog/update_changelog.py`. ([Commit 6367e97](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/6367e9761f636763828506f44d26fad7ce65f097))
@@ -43,6 +51,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Bis zu fünf Upload-Versuche je Datei mit steigenden Pausen, Berücksichtigung von GitHub-Limits und sichtbaren Fehlerursachen ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Geändert
+
+- Die Auswahl „Ja“ bei gleicher Setup-Version öffnet jetzt zunächst ein gemeinsames optionales Versionsfeld. Erst die Bestätigung setzt den Upload fort. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
 
 - Teamrolle für lesenden Zugriff, Setup Supply für Setup-Änderungen und Owner-Rolle für externe Datenbankfreigaben auf dem angegebenen Discord-Server eingerichtet. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
@@ -102,6 +112,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- Löschvorgänge gegen gleichzeitige GitHub-Änderungen und verlorene Antworten abgesichert. Der Dialog sperrt doppelte Aktionen; die sichtbare Liste wird nach bestätigtem Löschen sofort aktualisiert. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
+
+- Für Setup-Requests die Rolle `1538601074074849330` und eine gezielte `allowed_mentions`-Freigabe eingerichtet. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
+
 - Weiterleitungsschleife auf der Startseite nach Umstellung des Repositorys auf privat beseitigt. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
 
 - Startseite, Fahrzeugkatalog, Anbieterbilder und Setup-ZIPs werden serverseitig authentifiziert gelesen. GitHub-Ausfälle verwenden verfügbare statische Website-Dateien ohne erneute Weiterleitung; Discord-Zugriffsprüfungen bleiben aktiv. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
@@ -117,6 +131,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- D1-Status-Tabelle `setup_lifecycle`, Audit-Ereignis für veraltete Setups, Regressionstests und README ergänzt. Validierung: 53 Node-Tests, 19 UI-Szenarien und 23 Changelog-Tests erfolgreich. ([Commit 44309fc](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/44309fc3ed7c618e7983df8851de9a945da56e8c))
 
 - Regressionstests für private Dateien, Weiterleitungen und Berechtigungen ergänzt; README für das private Repository aktualisiert. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
 
