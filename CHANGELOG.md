@@ -38,6 +38,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - Vor Mehrfach-Uploads die Auswahl zwischen gemeinsamer Version und optionalen Versionsfeldern je ZIP ergänzt. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
 
+- Bis zu fünf Upload-Versuche je Datei mit steigenden Pausen, Berücksichtigung von GitHub-Limits und sichtbaren Fehlerursachen ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
+
 ### Geändert
 
 - Deutsche Einträge werden aus Changelog-Abschnitten der Commit-Nachrichten oder aus festen Regeln für die geänderten Dateien erzeugt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
@@ -47,6 +49,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Changelog-Workflows starten ausschließlich bei öffentlichen Repositories auf kostenlosen Standard-Runnern. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
 
 - Uploads ohne Versionsangabe erlaubt; erneute Upload-Versuche behalten die Version jeder Datei. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
+
+- ZIP-Daten nur einmal eingelesen, größere JSON-Kopien vermieden und Upload-Audit vor der nächsten Datei abgeschlossen. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Entfernt
 
@@ -76,19 +80,31 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - README um Versionsauswahl, optionale Felder und Prüfbefehl erweitert. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
 
+- README um Wiederholungen, Inhaltsprüfung und Grenzen der Erfolgsquote erweitert. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
+
 ### Setup-Bestand / Audit-Protokoll
 
 - ZIP-Dateien: 1 hinzugefügt, 0 entfernt und 0 geändert.
 - Audit-Dateien: 3 ergänzt, geändert oder entfernt. Darin neu protokolliert: 1 Upload, 0 Löschungen, 0 Versionsspeicherungen, 2 Rechteänderungen.
 - Belege: [Commits](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/0d606c91fec0dc4f9eb11959dc43e87d46dd9787...f968a3961508f5ea7877c18b2ae6bfe90c790210).
 
+- ZIP-Dateien: 23 hinzugefügt, 363 entfernt und 0 geändert.
+- Audit-Dateien: 382 ergänzt, geändert oder entfernt. Darin neu protokolliert: 19 Uploads, 363 Löschungen, 0 Versionsspeicherungen, 0 Rechteänderungen.
+- Belege: [Commits](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/0d3afab25e3555d6bd48a1381e5dd64a2a0103b6...1f916a518ec9a1649fa090298277ede54848d5a8).
+
 ### Behoben
 
 - Fehlerhafte Rückgabe nach Abschluss eines Upload-Vorgangs korrigiert. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
 
+- Verlorene Upload-Antworten durch Prüfung der Git-Blob-Prüfsumme abgefangen; identische ZIPs werden bestätigt und andere Inhalte nicht überschrieben. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
+
+- Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
+
 ### Wartung
 
 - Tests für optionale Upload-Versionen und die getrennte Speicherung je Datei ergänzt. ([Commit 0e1d00e](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0e1d00e3eba08b3a81fd92e87311028fcb8d1266))
+
+- Tests für Netzwerkausfälle, GitHub-Konflikte, Rate-Limits und Versionsfehler sowie einen kostenlosen Prüfworkflow ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ## 2026-10-20 – Nachtrag
 
