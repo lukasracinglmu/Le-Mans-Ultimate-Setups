@@ -21,3 +21,6 @@ wrangler.jsonc
 .assetsignore
 
 setup-lifecycle.js
+
+setup-display-name.js
+bug-reports.js

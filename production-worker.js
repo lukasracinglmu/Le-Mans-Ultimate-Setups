@@ -1,3 +1,4 @@
+import { enrichDisplayNames } from "./setup-display-name.js";
 import baseWorker from "./worker.js";
 import { readPreviousSetups, applyPreviousSetups, enrichSetupLifecycle } from "./setup-lifecycle.js";
 import { readSiteFile } from "./repo-read.js";
@@ -34,7 +35,7 @@ export default {
         const category = url.searchParams.get("category") || "";
         const vehicle = url.searchParams.get("vehicle") || "";
         const setups = await enrichSetupVersions(data.setups, category, vehicle, env);
-        return json({ ...data, setups:await enrichSetupLifecycle(setups,category,vehicle,env) }, response.status);
+        return json({ ...data, setups:await enrichDisplayNames(await enrichSetupLifecycle(setups,category,vehicle,env),category,vehicle,env) }, response.status);
       }
 
       if (request.method === "POST" && path === "/api/setups/upload") {

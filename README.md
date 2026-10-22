@@ -234,13 +234,23 @@ Beim normalen Löschen sperrt die Oberfläche während der Anfrage die Bestätig
 | Eigenschaft | Verhalten |
 | :--- | :--- |
 | **Format** | Freitext, zum Beispiel `1.0`, `v2`, `2.1.3` oder `2026.10` |
-| **Länge** | Maximal 40 Zeichen; keine Steuerzeichen. Beim Upload optional, im nachträglichen Stift-Editor ist eine Angabe erforderlich |
+| **Länge** | Maximal 40 Zeichen; keine Steuerzeichen. Beim Upload und im nachträglichen Stift-Editor optional |
 | **Speicherort** | D1-Tabelle `setup_versions`, zugeordnet über Klasse, Fahrzeug und Dateiname |
 | **Bestehende Setups** | Ohne hinterlegte Version wird `—` angezeigt; auch neue ZIPs dürfen ohne Version hochgeladen werden |
 | **Nachträgliche Änderung** | Stift-Editor für Nutzer mit Upload-/Delete-Zugriff, auch bei älteren Setups |
 | **ZIP-Datei** | Bleibt bei einer reinen Versionsänderung unverändert; kein erneuter Upload erforderlich |
 
 **Version bearbeiten:** Fahrzeug öffnen, neben der gewünschten ZIP auf den Stift klicken, Versionswert eingeben und speichern. Bei Erfolg wird die sichtbare Liste angepasst. Bei einem Fehler bleibt das Formular mit der Fehlermeldung offen. „Abbrechen“ bzw. ein Klick auf den Hintergrund schließt es ohne Speichern.
+
+**Anzeigename bearbeiten:** Im selben Stift-Dialog lässt sich ein eigener Anzeigename mit maximal 160 Zeichen speichern. Er erscheint in der Übersicht und wird zusammen mit dem bisherigen Namen und dem Dateinamen durchsucht. Ein leeres Feld setzt die Anzeige auf den normalen Namen zurück. Die ZIP, ihr Speicherpfad und ihr Downloadname werden dabei nicht umbenannt. Das Feld liegt in `setup_display_names` und gilt nur für den zugehörigen Git-Dateistand (SHA); bei geändertem Dateiinhalt wird kein alter Anzeigename übernommen.
+
+### Bug melden
+
+Rechts unter der Kopfzeile, außerhalb des Balkens mit Logout und Light Mode, führt **Bug melden** auf die eigene Seite `/bug-report`. Angemeldete Nutzer können das Problem mit 10 bis 3500 Zeichen beschreiben und optional ein PNG-, JPG- oder WebP-Bild bis 5 MiB anhängen. Eine Vorschau zeigt das gewählte Bild.
+
+Der bestehende Discord-Bot schickt die Meldung mit Absenderkennung direkt an `1033453785416208564`. Dafür werden das vorhandene `DISCORD_BOT_TOKEN` und `ACCESS_DB` genutzt; ein zusätzlicher Dienst ist nicht nötig. Erst eine bestätigte Discord-Antwort zeigt Erfolg. Bei einem Versandfehler bleiben Text und Bild erhalten. Discord muss dem Bot Direktnachrichten an den Empfänger erlauben.
+
+`bug_report_limits` speichert nur Nutzer-ID, Zeitpunkt, Meldungsnummer und Versandstatus zur Begrenzung auf eine Meldung pro Minute und zur Erkennung wiederholter Anfragen. Fehlgeschlagene Meldungen können nach kurzer Wartezeit erneut gesendet werden. Beschreibung und Bild werden direkt an Discord übertragen und nicht in GitHub oder D1 abgelegt. Beide neuen Tabellen sind in `schema.sql` enthalten.
 
 Die Angabe ist eine manuell gepflegte Kennzeichnung. Das System vergleicht keine Versionsnummern, sortiert nicht nach einer SemVer-Regel und prüft nicht, ob die ZIP zu einer bestimmten LMU-Spielversion passt. Versionen wie `v2` und `2.0` werden als unterschiedliche Texte behandelt.
 
@@ -503,7 +513,8 @@ Setup-Listen und Downloads verwenden `category` und `vehicle`; eine einzelne Dat
 | `GET /api/setups/download` | Query `category`, `vehicle`, `name` | ZIP-Response mit Download-Dateiname |
 | `POST /api/setups/upload` | `FormData`: `category`, `vehicle`, optionale `version`, `files` | `success`, `uploaded` und dateibezogene `errors` |
 | `POST /api/setups/delete` | JSON: `category`, `vehicle`, `name` | `success` oder Fehlermeldung |
-| `POST /api/setups/version` | JSON: `category`, `vehicle`, `name`, `version` | Bestätigte Datei-Zuordnung und gespeicherter Versionswert |
+| `POST /api/bug-reports` | Multipart: `description`, `reportId`, optional `image`; angemeldet | Bestätigter Versand als Bot-DM |
+| `POST /api/setups/version` | JSON: `category`, `vehicle`, `name`, optional `version` und/oder `displayName` | Bestätigte Datei-Zuordnung und gespeicherter Versionswert |
 | Admin-Freigabe `POST`/`DELETE` | JSON: `userId` | `success` und betroffene User ID |
 | `POST /api/request` | JSON: `vehicle`, `track`, optional `carClass`, `message` | `success` oder Dienst-/Validierungsfehler |
 
@@ -755,7 +766,7 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | **„Nicht angemeldet.“ / `401`** | Session fehlt, ist ungültig oder abgelaufen | Erneut mit Discord anmelden; Website-Domain und sichere Cookies prüfen |
 | **„Erforderliche Discord-Rolle fehlt.“ / kein Datenbankzugang** | Rolle oder individuelle Freigabe | Zielserver, Datenbankrolle und D1-Freigabe prüfen; anschließend Rechte neu laden |
 | **Upload-Button sichtbar, aber `403` beim Upload** | Geänderte Rollen oder veralteter Website-Stand | Setup-Supply-Rolle auf dem konfigurierten Server und individuelle Upload-Freigabe prüfen; Seite neu laden |
-| **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload darf das Feld leer bleiben; im Stift-Editor ist eine Angabe erforderlich |
+| **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload und im Stift-Editor darf das Feld leer bleiben |
 | **„Ungültige ZIP-Datei.“** | Dateiendung, Inhaltssignatur, leere oder zu große Datei | Eine tatsächliche ZIP bis 25 MiB wählen; bloßes Umbenennen einer anderen Datei reicht nicht |
 | **„Unter diesem Namen liegt bereits eine andere Datei.“** | Derselbe Dateipfad enthält einen anderen ZIP-Inhalt | Datei prüfen und gegebenenfalls umbenennen; zum ausdrücklichen Ersetzen die vorhandene Datei desselben Herstellers im Upload-Dialog auswählen; andernfalls umbenennen |
 | **„Request zu groß.“ / `413`** | Upload-Größe und Verarbeitungspfad | Dateigröße und Einzelanfragen prüfen; nicht mehrere große ZIPs zu einem eigenen Sammelrequest zusammenfassen |

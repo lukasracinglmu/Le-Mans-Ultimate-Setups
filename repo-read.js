@@ -25,7 +25,7 @@ export async function readSiteFile(request, env, path) {
   try {
     // The asset binding canonicalizes /index.html to /. Fetch / directly to
     // avoid sending a redirect back through the same failing Worker route.
-    const assetPath = path === "index.html" ? "/" : "/" + path;
+    const assetPath = path === "index.html" ? "/" : "/" + (path.endsWith(".html")?path.slice(0,-5):path);
     const fallback = await env.ASSETS.fetch(new Request(new URL(assetPath, request.url)));
     if (fallback.ok) return fallback;
     await fallback.body?.cancel();

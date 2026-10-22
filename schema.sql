@@ -53,3 +53,20 @@ CREATE TABLE IF NOT EXISTS setup_lifecycle (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (category, vehicle, file_name)
 );
+
+CREATE TABLE IF NOT EXISTS setup_display_names (
+  category TEXT NOT NULL,
+  vehicle TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_sha TEXT NOT NULL,
+  display_name TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (category, vehicle, file_name)
+);
+
+CREATE TABLE IF NOT EXISTS bug_report_limits (
+  user_id TEXT PRIMARY KEY,
+  last_attempt_at INTEGER NOT NULL,
+  report_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('sending', 'sent', 'failed'))
+);

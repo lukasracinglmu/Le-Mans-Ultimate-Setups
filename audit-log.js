@@ -56,6 +56,7 @@ function discordTitle(action) {
   if (action === "SETUP_UPLOAD") return "SETUP HOCHGELADEN";
   if (action === "SETUP_OUTDATED") return "SETUP ALS VERALTET MARKIERT";
   if (action === "SETUP_DELETE") return "SETUP GELÖSCHT";
+  if (action === "SETUP_DISPLAY_NAME_UPDATE") return "SETUP-ANZEIGENAME GEÄNDERT";
   if (action === "SETUP_VERSION_UPDATE") return "SETUP-VERSION GEÄNDERT";
   if (action === "PERMISSION_GRANT") return "BERECHTIGUNG HINZUGEFÜGT";
   if (action === "PERMISSION_REVOKE") return "BERECHTIGUNG ENTFERNT";

@@ -1,3 +1,4 @@
+import { readDisplayName, displayNameStatement, readStoredDisplayName } from "./setup-display-name.js";
 import uiWorker from "./ui-hotfix.js";
 import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
@@ -61,20 +62,40 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
       const category = cleanPath(body?.category), vehicle = cleanPath(body?.vehicle), name = cleanPath(body?.name);
-      const version = String(body?.version || "").trim();
+      const hasVersion=Object.hasOwn(body,'version'),hasName=Object.hasOwn(body,'displayName');
+      if(!hasVersion&&!hasName)return json({success:false,error:"Keine Änderung angegeben."},400);
+      if(hasVersion&&typeof body.version!=='string')return json({success:false,error:"Ungültige Version."},400);
+      const version=hasVersion?body.version.trim():null;
       if (!category || !vehicle || !name || !/\.zip$/i.test(name)) return json({ success: false, error: "Ungültiges Setup." }, 400);
-      if (!version) return json({ success: false, error: "Version fehlt." }, 400);
-      if (version.length > 40) return json({ success: false, error: "Version ist zu lang." }, 400);
-      if(/[\u0000-\u001F\u007F]/.test(version)) return json({ success: false, error: "Ungültige Version." }, 400);
+      if(hasVersion&&(version.length>40||/[\u0000-\u001F\u007F]/.test(version)))return json({success:false,error:"Ungültige Version (maximal 40 Zeichen)."},400);
+      const parsedName=hasName?readDisplayName(body.displayName):null;
+      if(parsedName?.error)return json({success:false,error:parsedName.error},400);
+      if(!env.ACCESS_DB)return json({success:false,error:"Metadaten-Datenbank nicht verfügbar."},503);
       const filePath = `/${ghRepo(env)}/contents/setups/${enc(category)}/${enc(vehicle)}/${enc(name)}?ref=${enc(ghBranch(env))}`;
-      const existing = await ghReq(filePath, {}, env);
-      if (existing.status === 404) return json({ success: false, error: "Setup wurde nicht gefunden." }, 404);
-      if (!existing.ok) return json({ success: false, error: "Setup konnte nicht geprüft werden." }, 502);
-      let oldVersion = null;
-      try { oldVersion = await readStoredVersion(category, vehicle, name, env); } catch {}
-      await storeSetupVersion(category, vehicle, name, version, env);
-      runAuditTasks([safeAudit({ action:"SETUP_VERSION_UPDATE", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:name, vehicle, manufacturer:classifyManufacturer(name), track:inferTrack(name), oldValue:oldVersion, newValue:version, result:"SUCCESS" }, env)], ctx);
-      return json({ success: true, category, vehicle, name, version });
+      let existing;
+      try{existing=await ghReq(filePath,{signal:AbortSignal.timeout(15000)},env);}catch{return json({success:false,error:"Setup konnte nicht geprüft werden."},502);}
+      if(existing.status===404)return json({success:false,error:"Setup wurde nicht gefunden."},404);
+      if(!existing.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);
+      const file=await safeJson(existing);
+      if(hasName&&!/^[a-f0-9]{40}$/.test(file?.sha||''))return json({success:false,error:"Dateistand konnte nicht bestätigt werden."},502);
+      const oldVersion=await readStoredVersion(category,vehicle,name,env);
+      let oldName=null;
+      try{
+        if(hasName)oldName=await readStoredDisplayName(category,vehicle,name,file.sha,env);
+        if(hasVersion&&hasName){
+          await env.ACCESS_DB.batch([
+            env.ACCESS_DB.prepare("INSERT INTO setup_versions (category, vehicle, file_name, version, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(category, vehicle, file_name) DO UPDATE SET version = excluded.version, updated_at = CURRENT_TIMESTAMP").bind(category,vehicle,name,version),
+            displayNameStatement(env,category,vehicle,name,file.sha,parsedName.displayName)
+          ]);
+        }else if(hasName)await displayNameStatement(env,category,vehicle,name,file.sha,parsedName.displayName).run();
+        else await storeSetupVersion(category,vehicle,name,version,env);
+      }catch{return json({success:false,error:"Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen."},503);}
+      runAuditTasks([(async()=>{
+        const common={discordAccount:permission.user.username,discordUserId:permission.user.id,setup:name,vehicle,manufacturer:classifyManufacturer(name),track:inferTrack(name),result:"SUCCESS"};
+        if(hasVersion&&version!==(oldVersion||''))await safeAudit({...common,action:"SETUP_VERSION_UPDATE",oldValue:oldVersion,newValue:version},env);
+        if(hasName&&parsedName.displayName!==(oldName||''))await safeAudit({...common,action:"SETUP_DISPLAY_NAME_UPDATE",oldValue:oldName,newValue:parsedName.displayName},env);
+      })()],ctx);
+      return json({success:true,category,vehicle,name,version:hasVersion?version:oldVersion,...(hasName?{displayName:parsedName.displayName||null}:{})});
     }
 
     if (path === "/api/setups/delete" && method === "POST") {

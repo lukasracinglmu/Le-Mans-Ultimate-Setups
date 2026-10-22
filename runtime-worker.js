@@ -1,3 +1,4 @@
+import { submitBugReport } from "./bug-reports.js";
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
@@ -5,6 +6,17 @@ import { writeSetupAuditEvent } from "./audit-log.js";
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if(url.pathname==='/bug-report'&&request.method==='GET'){
+      const source=await readSiteFile(request,env,'bug-report.html');
+      const headers=new Headers(source.headers);headers.set('Content-Type',source.ok?'text/html; charset=utf-8':'text/plain; charset=utf-8');headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','same-origin');headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(source.body,{status:source.status,headers});
+    }
+    if(url.pathname==='/api/bug-reports'){
+      if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405,headers:{'Cache-Control':'no-store'}});
+      const meResponse=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);
+      const me=await meResponse.json().catch(()=>null);
+      return submitBugReport(request,me?.loggedIn?me.user:null,env);
+    }
 
     if (request.method === "GET" && url.pathname === "/setups.json") {
       const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
