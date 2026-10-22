@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T19:06:10.734Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Fuji GO (Version 1.4).zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Fuji GO (Version 1.4)",
+  "manufacturer": "GO",
+  "version": "1.4",
+  "result": "SUCCESS"
+}
