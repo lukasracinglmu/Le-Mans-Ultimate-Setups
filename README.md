@@ -227,21 +227,20 @@ Die Website bietet keinen Papierkorb und keinen Wiederherstellen-Button. Für ei
 
 ### Wer darf was?
 
-Die folgende Übersicht beschreibt die vorgesehenen Berechtigungsstufen. Bei rollenbasierten Upload-Freigaben sind zusätzlich die beiden Prüfungen im Abschnitt „Rollen und individuelle Freigaben“ zu beachten.
+Die Rollen werden auf dem Discord-Server `1464926567401652418` geprüft. Die persönliche Owner-ID behält den vollständigen Zugriff.
 
-| Funktion | Nur angemeldet | Database Access | Upload / Delete | Owner |
-| :--- | :---: | :---: | :---: | :---: |
-| Setup Request senden | Ja | Ja | Ja | Ja |
-| Fahrzeugkatalog & Setups ansehen | — | Ja | Ja | Ja |
-| ZIPs herunterladen | — | Ja | Ja | Ja |
-| ZIPs hochladen & löschen | — | — | Ja | Ja |
-| Versionen bearbeiten | — | — | Ja | Ja |
-| Individuelle Freigaben verwalten | — | — | — | Ja |
-| Discord-Befehl `/request` registrieren | — | — | — | Ja |
+| Funktion | Nur angemeldet | Team | Setup Supply | Owner-Rolle | Du (Owner-ID) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Setup Request senden | Ja | Ja | Ja | Ja | Ja |
+| Katalog, Setups und Downloads | — | Ja | Ja | Ja | Ja |
+| Setups hochladen, löschen und Versionen ändern | — | — | Ja | Nur zusätzlich mit Setup Supply | Ja |
+| Externen Datenbankzugriff verwalten | — | — | — | Ja | Ja |
+| Individuelle Upload-Freigaben verwalten | — | — | — | — | Ja |
+| Discord-Befehl `/request` registrieren | — | — | — | — | Ja |
 
-**Database Access** erlaubt das Lesen und Herunterladen. **Upload / Delete** umfasst zusätzlich die schreibenden Setup-Funktionen und enthält den Datenbankzugriff. Der **Owner** verwaltet im Admin-Panel die individuellen Freigaben.
+**Team** (`1464926567401652420`) erlaubt lesenden Zugriff. **Setup Supply** (`1538601074074849330`) erlaubt zusätzlich Setup-Änderungen. Die **Owner-Rolle** (`1464926567401652423`) darf externe Datenbankfreigaben verwalten; sie erteilt allein keine Schreibrechte an Setups. Die **persönliche Owner-ID** (`1033453785416208564`) behält sämtliche bisherigen Rechte.
 
-Die Anwendung prüft die Rechte auf dem Server. Die Sichtbarkeit eines Buttons ist zusätzlich an den angemeldeten Nutzer und dessen Freigaben gebunden.
+Externe Datenbankfreigaben erlauben standardmäßig nur das Lesen. Individuelle Upload-Freigaben bleiben möglich und werden von der persönlichen Owner-ID verwaltet. Jede schreibende Route prüft die Rechte serverseitig.
 
 <a id="admin"></a>
 
@@ -249,8 +248,8 @@ Die Anwendung prüft die Rechte auf dem Server. Die Sichtbarkeit eines Buttons i
 
 | Aufgabe | Ablauf | Wirkung |
 | :--- | :--- | :--- |
-| **Lesenden Zugriff vergeben** | Als Owner anmelden, Discord User ID eingeben, „Database freigeben“ wählen | Individuelle Datenbankfreigabe in D1 |
-| **Upload und Löschen erlauben** | User ID eingeben, „Upload/Delete freigeben“ wählen | Individuelle Upload-Freigabe und ergänzter Datenbankzugriff |
+| **Lesenden Zugriff vergeben** | Mit Owner-Rolle oder persönlicher Owner-ID anmelden, Discord User ID eingeben, „Database freigeben“ wählen | Individuelle Datenbankfreigabe in D1 |
+| **Upload und Löschen erlauben** | Mit persönlicher Owner-ID anmelden, User ID eingeben, „Upload/Delete freigeben“ wählen | Individuelle Upload-Freigabe und ergänzter Datenbankzugriff |
 | **Schreibrechte entfernen** | „Upload/Delete entfernen“ wählen | Entfernt die individuelle Upload-Freigabe; der individuelle Datenbankeintrag bleibt bestehen |
 | **Individuellen Zugang ganz entfernen** | Zuerst Upload/Delete entfernen, danach „Database entfernen“ | Entfernt beide individuellen Einträge; vorhandene Discord-Rollen bleiben wirksam |
 
@@ -258,19 +257,20 @@ Die User ID muss aus 16 bis 22 Ziffern bestehen. Anzeigename oder Nutzername ers
 
 Die Liste fasst individuelle Datenbank- und Upload-Freigaben zusammen und zeigt User ID, per Discord aufgelösten Namen und Berechtigungsart. Nutzer, die ausschließlich über eine Rolle Zugriff erhalten, sind dadurch nicht automatisch aufgelistet. Kann Discord den Namen nicht liefern, bleibt die ID mit „Unbekannt / nicht verfügbar“ erhalten.
 
-Die API liefert zusätzlich `databaseGrantedAt` und `uploadGrantedAt`; das derzeitige Panel zeigt diese Zeitstempel nicht an. Die Owner-Zuordnung ist als feste Discord-ID in `worker.js` und `access-worker.js` hinterlegt. Für eine eigene Instanz müssen diese beiden Zuordnungen zusammenpassen; eine zusätzliche Variable `OWNER_ID` wird im aktuellen Code nicht ausgewertet.
+Die API liefert zusätzlich `databaseGrantedAt` und `uploadGrantedAt`; das derzeitige Panel zeigt diese Zeitstempel nicht an. `DISCORD_OWNER_USER_ID` bestimmt die persönliche Owner-ID. `DISCORD_OWNER_ROLE_ID` bestimmt die Rolle für externe Datenbankfreigaben. Beide Angaben sind ausdrücklich voneinander getrennt.
 
 <details>
 <summary><strong>Wie Rollen und individuelle Freigaben zusammenwirken</strong></summary>
 
-- Die reguläre Datenbankrolle wird über `DISCORD_DATABASE_ROLE_ID` konfiguriert; `DISCORD_ROLE_ID` dient als Fallback. Sind beide leer, verwendet der Core eine fest hinterlegte Standardrolle. Für eine eigene Instanz die Rollen-IDs deshalb ausdrücklich zuordnen.
+- `discord-permissions.js` berechnet die Rechte für alle Worker-Schichten nach denselben Regeln.
+- `DISCORD_DATABASE_ROLE_ID` ist die Teamrolle, `DISCORD_UPLOAD_ROLE_ID` ist Setup Supply. Die alte Variable `DISCORD_ROLE_ID` dient nur dann als Ersatz, wenn die jeweilige konkrete Rollenvariable leer ist.
+- `DISCORD_OWNER_ROLE_ID` erlaubt das Verwalten externer Datenbankfreigaben und den Datenbankzugriff. Setup-Änderungen erfordern zusätzlich Setup Supply oder eine individuelle Upload-Freigabe.
+- `DISCORD_OWNER_USER_ID` behält vollständigen Zugriff, auch wenn eine Rollenabfrage vorübergehend ausfällt.
+- `DISCORD_SETUP_REQUEST_ROLE_ID` steuert ausschließlich den optionalen Ping bei Setup-Anfragen. Daraus entstehen keine Website-Rechte.
 - Individuelle Datenbankfreigaben stehen in D1 unter `database_access`, individuelle Upload-Freigaben unter `upload_access`.
-- Die äußere Access-Schicht akzeptiert für schreibende Setup-Routen den Owner, eine individuelle Upload-Freigabe oder die optionale Rolle `DISCORD_SETUP_REQUEST_ROLE_ID`.
-- Upload und Löschen durchlaufen danach außerdem den Core-Worker. Dieser akzeptiert den Owner, dieselbe individuelle Upload-Freigabe oder die Upload-Rolle aus `DISCORD_UPLOAD_ROLE_ID` mit `DISCORD_ROLE_ID` und danach der festen Standardrolle als Fallback.
-- Eine rollenbasierte Upload-/Löschfreigabe muss deshalb **beide Prüfungen** erfüllen. Nur die Request-Rolle zu vergeben reicht nicht, wenn im Core eine andere Upload-Rolle verlangt wird. Eine individuelle Upload-Freigabe wird von beiden Schichten akzeptiert.
-- Der Versions-Endpunkt wird bereits in `access-worker.js` beantwortet und durchläuft diese zweite Upload-Rollenprüfung nicht. Das sichtbare `canUpload`-Merkmal stammt ebenfalls aus der äußeren Schicht.
-- Eine individuelle Upload-Freigabe trägt zugleich den Datenbankzugriff ein. Solange diese Upload-Freigabe besteht, kann die individuelle Datenbankfreigabe nicht separat entfernt werden.
+- Eine individuelle Upload-Freigabe beinhaltet den Datenbankzugriff. Solange sie besteht, kann die individuelle Datenbankfreigabe nicht separat entfernt werden.
 - Rollenrechte und individuelle Freigaben werden gemeinsam berücksichtigt. Das Entfernen einer individuellen Freigabe entfernt keine Discord-Rolle.
+- Falls Discord nicht erreichbar ist, werden keine zusätzlichen Rollenrechte angenommen. Geschützte Anfragen ohne ausreichende bestätigte Rechte erhalten einen vorübergehenden Fehler.
 
 </details>
 
@@ -525,14 +525,25 @@ Die ZIP-Prüfung kontrolliert unter anderem Endung, Dateigröße und einen ZIP-K
 
 | Variable | Aufgabe |
 | :--- | :--- |
-| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | Discord OAuth für die Website |
-| `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN` | Server-, Rollen- und Bot-API-Zugriff |
-| `DISCORD_DATABASE_ROLE_ID`, `DISCORD_ROLE_ID` | Datenbankrolle und Fallback |
-| `DISCORD_SETUP_REQUEST_ROLE_ID` | Optionale Rolle für Request-Erwähnungen; wird in der aktuellen Access-Schicht auch für Upload/Delete ausgewertet |
-| `DISCORD_CHANNEL_ID` | Zielkanal für Setup Requests |
-| `DISCORD_AUDIT_CHANNEL_ID` | Zielkanal für Audit-Embeds |
-| `GITHUB_TOKEN` | Zugriff auf Setup-Dateien und Schreiben von Audit-Dateien |
-| `SESSION_SECRET` | Signieren und Prüfen der Website-Sessions |
+| `DISCORD_GUILD_ID` | Server für die Rollenprüfung: `1464926567401652418` |
+| `DISCORD_DATABASE_ROLE_ID` | Teamrolle für lesenden Datenbankzugriff: `1464926567401652420` |
+| `DISCORD_UPLOAD_ROLE_ID` | Setup Supply für Upload, Löschen und Versionsänderungen: `1538601074074849330` |
+| `DISCORD_OWNER_ROLE_ID` | Rolle für externe Datenbankfreigaben: `1464926567401652423` |
+| `DISCORD_OWNER_USER_ID` | Persönlicher vollständiger Zugriff: `1033453785416208564` |
+| `DISCORD_ROLE_ID` | Alte Rückfallrolle; bei ausdrücklich gesetzter Team- und Upload-Rolle nicht maßgeblich |
+| `DISCORD_CLIENT_ID` | Application ID der Discord-Anwendung für den Login |
+| `DISCORD_CLIENT_SECRET` | Geheimer OAuth-Schlüssel derselben Discord-Anwendung |
+| `DISCORD_BOT_TOKEN` | Geheimer Bot-Token für Rollenabfragen und Discord-Nachrichten |
+| `DISCORD_CHANNEL_ID` | Zielkanal für Setup Requests; muss zum vorgesehenen Server gehören |
+| `DISCORD_AUDIT_CHANNEL_ID` | Zielkanal für Upload-, Lösch-, Versions- und Freigabeprotokolle |
+| `DISCORD_SETUP_REQUEST_ROLE_ID` | Optionaler Rollen-Ping bei Setup Requests; leer bedeutet kein Rollen-Ping |
+| `SITE_URL` | Öffentliche Website-Adresse; Grundlage des Discord-Login-Rückwegs und der Herkunftsprüfung |
+| `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` | GitHub-Benutzername, Repository und verwendeter Branch |
+| `GITHUB_TOKEN` | Geheimer Zugriffsschlüssel zum Speichern von ZIPs und Audit-Dateien in GitHub |
+| `SESSION_SECRET` | Geheimer Schlüssel zum Signieren und Prüfen der Anmelde-Sitzungen |
+| `LMUPORTAL_API1`, `LMUPORTAL_API2` | Vorhandene Schlüssel für die frühere Rennkalender-Anbindung; im aktiven Worker-Code derzeit nicht verwendet |
+
+Der Discord-Bot muss Mitglied des eingetragenen Servers sein und die erforderlichen Kanäle nutzen können. Die bestehenden Kanal-IDs wurden durch die Rollenänderung nicht ersetzt. `ASSETS` liefert Website-Dateien aus, `ACCESS_DB` speichert Freigaben und Versionen. `UPLOADS_R2` und `UPLOAD_QUEUE` sind vorhandene Speicher-/Queue-Bindings; der aktuelle ZIP-Upload schreibt direkt nach GitHub.
 
 `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`, `GITHUB_TOKEN` und `SESSION_SECRET` werden als Worker-Secrets hinterlegt. Der Presence Bot erhält seinen Bot-Token separat über seine Laufzeitumgebung.
 
@@ -710,7 +721,7 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | :--- | :--- | :--- |
 | **„Nicht angemeldet.“ / `401`** | Session fehlt, ist ungültig oder abgelaufen | Erneut mit Discord anmelden; Website-Domain und sichere Cookies prüfen |
 | **„Erforderliche Discord-Rolle fehlt.“ / kein Datenbankzugang** | Rolle oder individuelle Freigabe | Zielserver, Datenbankrolle und D1-Freigabe prüfen; anschließend Rechte neu laden |
-| **Upload-Button sichtbar, aber `403` beim Upload** | Unterschiedliche äußere und Core-Rollenprüfung | Request-Rolle, Core-Upload-Rolle und individuelle Upload-Freigabe gemeinsam prüfen |
+| **Upload-Button sichtbar, aber `403` beim Upload** | Geänderte Rollen oder veralteter Website-Stand | Setup-Supply-Rolle auf dem konfigurierten Server und individuelle Upload-Freigabe prüfen; Seite neu laden |
 | **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload darf das Feld leer bleiben; im Stift-Editor ist eine Angabe erforderlich |
 | **„Ungültige ZIP-Datei.“** | Dateiendung, Inhaltssignatur, leere oder zu große Datei | Eine tatsächliche ZIP bis 25 MiB wählen; bloßes Umbenennen einer anderen Datei reicht nicht |
 | **„Unter diesem Namen liegt bereits eine andere Datei.“** | Derselbe Dateipfad enthält einen anderen ZIP-Inhalt | Datei prüfen und gegebenenfalls umbenennen; automatische Überschreibung ist ausgeschlossen |

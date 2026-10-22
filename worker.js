@@ -1,3 +1,4 @@
+import { ownerUserId, resolvePermissions } from "./discord-permissions.js";
 import { persistSetupFile, readUploadForm } from "./upload-storage.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -5,11 +6,9 @@ const DISCORD_OAUTH = "https://discord.com/oauth2";
 const SESSION_COOKIE = "lmu_session";
 const STATE_COOKIE = "lmu_oauth_state";
 const SESSION_TTL = 604800;
-const OWNER_ID = "1033453785416208564";
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
 const MAX_REQUEST_BODY_BYTES = 26 * 1024 * 1024;
-const DEFAULT_UPLOADER_ROLE_ID = "1538601074074849330";
 const GITHUB_API = "https://api.github.com";
 const REQUEST_MODAL_ID = "lmu_setup_request";
 const DISCORD_TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
@@ -126,8 +125,6 @@ async function discordCallback(request, env) {
   return new Response(html, { status: 200, headers: h });
 }
 
-function databaseRoleId(env) { return env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID || DEFAULT_UPLOADER_ROLE_ID; }
-function uploaderRoleId(env) { return env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID || DEFAULT_UPLOADER_ROLE_ID; }
 async function fetchGuildMember(userId, env) {
   if (!userId || !env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return { ok: false, status: 503, member: null };
   const r = await df(`/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } });
@@ -135,47 +132,28 @@ async function fetchGuildMember(userId, env) {
   if (!r.ok) return { ok: false, status: r.status, member: null };
   return { ok: true, status: 200, member: await r.json() };
 }
-async function hasDatabaseRole(userId, env) {
-  const result = await fetchGuildMember(userId, env);
-  if (!result.ok || !result.member) return false;
-  return Array.isArray(result.member.roles) && result.member.roles.includes(databaseRoleId(env));
-}
-async function hasUploaderRole(userId, env) {
-  const result = await fetchGuildMember(userId, env);
-  if (!result.ok || !result.member) return false;
-  return Array.isArray(result.member.roles) && result.member.roles.includes(uploaderRoleId(env));
-}
 async function requireDatabaseAccess(request, env) {
-  const s = await readSession(request, env.SESSION_SECRET);
-  if (!s) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
-  if (s.id === OWNER_ID) return { session: s };
-  const result = await fetchGuildMember(s.id, env);
-  if (!result.ok) return { error: json({ success: false, error: "Discord-Rollenprüfung nicht verfügbar." }, 503) };
-  if (!result.member || !Array.isArray(result.member.roles) || !result.member.roles.includes(databaseRoleId(env))) return { error: json({ success: false, error: "Erforderliche Discord-Rolle fehlt." }, 403) };
-  return { session: s };
+  const session=await readSession(request,env.SESSION_SECRET);
+  if (!session) return { error:json({success:false,error:"Nicht angemeldet."},401) };
+  const permission=await resolvePermissions(session.id,env);
+  if (!permission.databaseAccess) return { error:json({success:false,error:permission.rolesAvailable?"Erforderliche Discord-Rolle fehlt.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503) };
+  return { session };
 }
 
 async function currentUser(request, env) {
-  const s = await readSession(request, env.SESSION_SECRET);
-  if (!s) return json({ loggedIn: false, databaseAccess: false });
-  const isOwner = s.id === OWNER_ID;
-  const databaseAccess = isOwner || await hasDatabaseRole(s.id, env);
-  const canUpload = await canUserUpload(s, env);
-  const avatarUrl = s.avatar ? `https://cdn.discordapp.com/avatars/${s.id}/${s.avatar}.png?size=64` : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(s.id) % 6n)}.png`;
-  return json({ loggedIn: true, databaseAccess, user: { id: s.id, username: s.username, avatar: avatarUrl, canUpload, isOwner } });
+  const session=await readSession(request,env.SESSION_SECRET);
+  if (!session) return json({loggedIn:false,databaseAccess:false});
+  const permission=await resolvePermissions(session.id,env);
+  const avatar=session.avatar?`https://cdn.discordapp.com/avatars/${session.id}/${session.avatar}.png?size=64`:`https://cdn.discordapp.com/embed/avatars/${Number(BigInt(session.id)%6n)}.png`;
+  const {databaseAccess,rolesAvailable,...userPermissions}=permission;
+  return json({loggedIn:true,databaseAccess,rolesAvailable,user:{id:session.id,username:session.username,avatar,...userPermissions}});
 }
 
-async function hasIndividualUploadGrant(userId, env) {
-  if (!userId || !env.ACCESS_DB) return false;
-  try { const row = await env.ACCESS_DB.prepare("SELECT user_id FROM upload_access WHERE user_id = ? LIMIT 1").bind(userId).first(); return Boolean(row?.user_id); }
-  catch (e) { console.error("D1 upload access lookup failed", safeError(e)); return false; }
-}
-async function canUserUpload(s, env) {
-  if (!s) return false; if (s.id === OWNER_ID) return true; if (await hasIndividualUploadGrant(s.id, env)) return true; return hasUploaderRole(s.id, env);
-}
 async function requireOwner(request, env) {
-  const s = await readSession(request, env.SESSION_SECRET); if (!s) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
-  if (s.id !== OWNER_ID) return { error: json({ success: false, error: "Keine Admin-Berechtigung." }, 403) }; return { session: s };
+  const session=await readSession(request,env.SESSION_SECRET);
+  if (!session) return {error:json({success:false,error:"Nicht angemeldet."},401)};
+  if (session.id!==ownerUserId(env)) return {error:json({success:false,error:"Keine Admin-Berechtigung."},403)};
+  return {session};
 }
 
 async function listUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC").all(); return json({ success: true, grants: result.results || [] }); }
@@ -198,7 +176,8 @@ async function uploadSetups(request, env, suppliedForm) {
   if (sizeError) return sizeError;
   const session = await readSession(request, env.SESSION_SECRET);
   if (!session) return json({ success:false, error:"Nicht angemeldet." }, 401);
-  if (!await canUserUpload(session, env)) return json({ success:false, error:"Keine Upload-Berechtigung." }, 403);
+  const permission=await resolvePermissions(session.id,env);
+  if (!permission.canUpload) return json({success:false,error:permission.rolesAvailable?"Keine Upload-Berechtigung.":"Discord-Rollenprüfung nicht verfügbar.",retryable:!permission.rolesAvailable},permission.rolesAvailable?403:503);
   let form;
   try { form = suppliedForm || await readUploadForm(request); }
   catch (error) { return json({ success:false, error:error.status === 413 ? "Request zu groß." : "Ungültiger Upload.", retryable:false }, error.status === 413 ? 413 : 400); }
@@ -219,9 +198,9 @@ async function uploadSetups(request, env, suppliedForm) {
 }
 
 async function deleteSetup(request, env) {
-  const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);if(!await canUserUpload(s,env))return json({success:false,error:"Keine Löschberechtigung."},403);
+  const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);const permission=await resolvePermissions(s.id,env);if(!permission.canUpload)return json({success:false,error:permission.rolesAvailable?"Keine Löschberechtigung.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503);
   let b;try{b=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}const cat=safe(b.category),veh=safe(b.vehicle),name=safe(b.name);if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültige Datei."},400);
-  const path=`/${ghRepo(env)}/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}/${encodeURIComponent(name)}`;const cr=await ghReq(path+`?ref=${encodeURIComponent(ghBranch(env))}`,{},env);if(cr.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!cr.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);const cur=await cr.json();const dr=await ghReq(path,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Delete setup: ${veh} - ${name}`,sha:cur.sha,branch:ghBranch(env)})},env);if(!dr.ok)return json({success:false,error:"Löschen fehlgeschlagen."},502);return json({success:true});
+  const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}/${encodeURIComponent(name)}`;const cr=await ghReq(path+`?ref=${encodeURIComponent(ghBranch(env))}`,{},env);if(cr.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!cr.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);const cur=await cr.json();const dr=await ghReq(path,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Delete setup: ${veh} - ${name}`,sha:cur.sha,branch:ghBranch(env)})},env);if(!dr.ok)return json({success:false,error:"Löschen fehlgeschlagen."},502);return json({success:true});
 }
 
 async function createRequest(request, env) {

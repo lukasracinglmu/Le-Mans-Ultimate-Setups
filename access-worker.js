@@ -4,7 +4,6 @@ import { writeSetupAuditEvent } from "./audit-log.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GITHUB_API = "https://api.github.com";
-const OWNER_ID = "1033453785416208564";
 
 export default {
   async fetch(request, env, ctx) {
@@ -19,7 +18,7 @@ export default {
     if (path === "/api/admin/access" && method === "GET") return listCombinedAccess(request, env, ctx);
 
     if (path === "/api/admin/upload-access" && (method === "POST" || method === "DELETE")) {
-      const admin = await requireOwner(request, env, ctx);
+      const admin = await requireOwner(request, env, ctx, "canManageUploadAccess");
       if (admin.error) return admin.error;
       const response = await uiWorker.fetch(request, env, ctx);
       if (method === "POST" && response.ok) {
@@ -95,11 +94,8 @@ export default {
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
       const me = await getBaseMe(request, env, ctx);
       if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
-      const individualDb = await hasDatabaseGrant(me.user?.id, env);
-      const uploadDeleteAccess = await hasUploadDeleteAccess(me.user?.id, env);
-      if (!me.databaseAccess && !individualDb && !uploadDeleteAccess) return json({ success: false, error: "Kein Zugriff auf die Setup Database." }, 403);
-      if (me.databaseAccess) return uiWorker.fetch(request, env, ctx);
-      return path === "/api/setups" ? listSetupsForGrantedUser(request, env) : downloadSetupForGrantedUser(request, env);
+      if (!me.databaseAccess) return json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Kein Zugriff auf die Setup Database."},me.rolesAvailable===false?503:403);
+      return uiWorker.fetch(request, env, ctx);
     }
 
     const response = await uiWorker.fetch(request, env, ctx);
@@ -122,50 +118,26 @@ async function getBaseMe(request, env, ctx) {
 }
 
 async function augmentedMe(request, env, ctx) {
-  const meRequest = new Request(request.url, { method: "GET", headers: request.headers });
-  const response = await uiWorker.fetch(meRequest, env, ctx);
-  const me = await safeJson(response);
-  if (!me?.loggedIn || !me?.user?.id) return response;
-  const individualDb = await hasDatabaseGrant(me.user.id, env);
-  const uploadDeleteAccess = await hasUploadDeleteAccess(me.user.id, env);
-  const databaseAccess = Boolean(me.databaseAccess || individualDb || uploadDeleteAccess);
-  const isAdmin = Boolean(me.user.isOwner || me.user.isAdmin);
-  return json({ ...me, databaseAccess, user: { ...me.user, isAdmin, canUpload: uploadDeleteAccess, individualDatabaseAccess: individualDb, individualUploadAccess: await hasUploadGrant(me.user.id, env) } }, response.status);
+  return uiWorker.fetch(request, env, ctx);
 }
 
-async function requireOwner(request, env, ctx) {
-  const me = await getBaseMe(request, env, ctx);
-  if (!me?.loggedIn) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
-  if (!me?.user?.isOwner && !me?.user?.isAdmin && me?.user?.id !== OWNER_ID) return { error: json({ success: false, error: "Keine Admin-Berechtigung." }, 403) };
-  return { user: me.user };
+async function requireOwner(request, env, ctx, capability="canManageDatabaseAccess") {
+  const me=await getBaseMe(request,env,ctx);
+  if (!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
+  if (!me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
+  return {user:me.user};
 }
 
-async function hasDatabaseGrant(userId, env) {
-  if (!userId || !env.ACCESS_DB) return false;
-  try { const row = await env.ACCESS_DB.prepare("SELECT user_id FROM database_access WHERE user_id = ? LIMIT 1").bind(String(userId)).first(); return Boolean(row?.user_id); }
-  catch { return false; }
-}
 async function hasUploadGrant(userId, env) {
   if (!userId || !env.ACCESS_DB) return false;
   try { const row = await env.ACCESS_DB.prepare("SELECT user_id FROM upload_access WHERE user_id = ? LIMIT 1").bind(String(userId)).first(); return Boolean(row?.user_id); }
   catch { return false; }
 }
-async function hasSetupRequestRole(userId, env) {
-  if (!userId || !env.DISCORD_SETUP_REQUEST_ROLE_ID) return false;
-  const member = await fetchGuildMember(userId, env);
-  return Boolean(member && Array.isArray(member.roles) && member.roles.includes(String(env.DISCORD_SETUP_REQUEST_ROLE_ID)));
-}
-async function hasUploadDeleteAccess(userId, env) {
-  if (!userId) return false;
-  if (String(userId) === OWNER_ID) return true;
-  if (await hasUploadGrant(userId, env)) return true;
-  return hasSetupRequestRole(userId, env);
-}
 async function requireUploadDeleteAccess(request, env, ctx) {
-  const me = await getBaseMe(request, env, ctx);
-  if (!me?.loggedIn || !me?.user?.id) return { error: json({ success: false, error: "Nicht angemeldet." }, 401) };
-  if (!await hasUploadDeleteAccess(me.user.id, env)) return { error: json({ success: false, error: "Keine Upload/Delete-Berechtigung." }, 403) };
-  return { user: me.user };
+  const me=await getBaseMe(request,env,ctx);
+  if (!me?.loggedIn || !me.user?.id) return {error:json({success:false,error:"Nicht angemeldet."},401)};
+  if (!me.user.canUpload) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Upload/Delete-Berechtigung.",retryable:me.rolesAvailable===false},me.rolesAvailable===false?503:403)};
+  return {user:me.user};
 }
 
 function validUserId(value) { const id = String(value || "").trim(); return /^\d{16,22}$/.test(id) ? id : null; }
@@ -215,9 +187,9 @@ async function downloadSetupForGrantedUser(request, env) {
 function fixHeaderLogo(html) { return html.replace('<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">','<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">').replace('<img class="brand-logo" src="/assets/three-peaks-racing-logo.webp"','<img class="brand-logo" src="/assets/header-logo.webp"').replace("logo.src='/assets/three-peaks-racing-logo.webp'","logo.src='/assets/header-logo.webp'"); }
 function injectAdminUi(html) {
   const oldPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button onclick="grantUploadAccess()">Upload freigeben</button><button onclick="revokeUploadAccess()">Freigabe entfernen</button><button onclick="registerRequestCommand()">/request registrieren</button></div><div id="adminResult" class="request-message"></div></div>';
-  const newPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button type="button" onclick="grantDatabaseAccess()">Database freigeben</button><button type="button" onclick="revokeDatabaseAccess()">Database entfernen</button><button type="button" onclick="grantUploadAccess()">Upload/Delete freigeben</button><button type="button" onclick="revokeUploadAccess()">Upload/Delete entfernen</button></div><div id="adminResult" class="request-message"></div><div id="adminAccessList" style="margin-top:16px;display:grid;gap:10px"></div></div>';
+  const newPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button type="button" onclick="grantDatabaseAccess()">Database freigeben</button><button type="button" onclick="revokeDatabaseAccess()">Database entfernen</button><button type="button" data-upload-admin onclick="grantUploadAccess()">Upload/Delete freigeben</button><button type="button" data-upload-admin onclick="revokeUploadAccess()">Upload/Delete entfernen</button></div><div id="adminResult" class="request-message"></div><div id="adminAccessList" style="margin-top:16px;display:grid;gap:10px"></div></div>';
   html = html.replace(oldPanel, newPanel);
-  const script = `<script>(()=>{const escAdmin=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');async function loadAdminAccessList(){const panel=document.getElementById('adminPanel'),list=document.getElementById('adminAccessList');if(!panel||!list)return;try{const me=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'}).then(r=>r.json());if(!me?.user?.isAdmin){panel.classList.add('hidden');return;}panel.classList.remove('hidden');const r=await fetch('/api/admin/access',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!d.success)throw new Error(d.error||'Fehler');list.innerHTML=(d.users||[]).map(u=>'<div style="border:1px solid var(--border);border-radius:8px;padding:12px"><div><strong>User ID:</strong> '+escAdmin(u.userId)+'</div><div style="margin-top:4px"><strong>Discord-Name:</strong> '+escAdmin(u.username)+'</div><div style="margin-top:4px"><strong>Recht:</strong> '+escAdmin(u.permission||'')+'</div></div>').join('')||'<div class="empty">Noch keine individuellen Freigaben.</div>';}catch(e){list.textContent=e.message||'Freigaben konnten nicht geladen werden.';}}async function mutate(url,method,userId){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({userId})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||'Fehler.');await loadAdminAccessList();}window.adminSetDatabase=async(id,grant)=>{try{await mutate('/api/admin/database-access',grant?'POST':'DELETE',id);const out=document.getElementById('adminResult');if(out)out.textContent=grant?'Datenbank freigegeben.':'Datenbank entfernt.';}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.adminSetUpload=async(id,grant)=>{try{await mutate('/api/admin/upload-access',grant?'POST':'DELETE',id);}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.grantDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,true);};window.revokeDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,false);};window.grantUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,true);};window.revokeUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,false);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loadAdminAccessList,0),{once:true});else setTimeout(loadAdminAccessList,0);})();</script>`;
+  const script = `<script>(()=>{const escAdmin=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');async function loadAdminAccessList(){const panel=document.getElementById('adminPanel'),list=document.getElementById('adminAccessList');if(!panel||!list)return;try{const me=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'}).then(r=>r.json());if(!me?.user?.isAdmin){panel.classList.add('hidden');return;}panel.classList.remove('hidden');panel.querySelectorAll('[data-upload-admin]').forEach(button=>button.classList.toggle('hidden',!me.user.canManageUploadAccess));const r=await fetch('/api/admin/access',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!d.success)throw new Error(d.error||'Fehler');list.innerHTML=(d.users||[]).map(u=>'<div style="border:1px solid var(--border);border-radius:8px;padding:12px"><div><strong>User ID:</strong> '+escAdmin(u.userId)+'</div><div style="margin-top:4px"><strong>Discord-Name:</strong> '+escAdmin(u.username)+'</div><div style="margin-top:4px"><strong>Recht:</strong> '+escAdmin(u.permission||'')+'</div></div>').join('')||'<div class="empty">Noch keine individuellen Freigaben.</div>';}catch(e){list.textContent=e.message||'Freigaben konnten nicht geladen werden.';}}async function mutate(url,method,userId){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({userId})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||'Fehler.');await loadAdminAccessList();}window.adminSetDatabase=async(id,grant)=>{try{await mutate('/api/admin/database-access',grant?'POST':'DELETE',id);const out=document.getElementById('adminResult');if(out)out.textContent=grant?'Datenbank freigegeben.':'Datenbank entfernt.';}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.adminSetUpload=async(id,grant)=>{try{await mutate('/api/admin/upload-access',grant?'POST':'DELETE',id);}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.grantDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,true);};window.revokeDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,false);};window.grantUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,true);};window.revokeUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,false);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loadAdminAccessList,0),{once:true});else setTimeout(loadAdminAccessList,0);})();</script>`;
   return html.replace('</body>', script+'\n</body>');
 }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
