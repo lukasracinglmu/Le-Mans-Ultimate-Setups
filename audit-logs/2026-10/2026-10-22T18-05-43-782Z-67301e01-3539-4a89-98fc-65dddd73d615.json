@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T18:05:43.782Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "499P COTA HYMO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P COTA HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
