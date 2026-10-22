@@ -191,7 +191,7 @@ async function uploadSetups(request, env, suppliedForm) {
   for (const file of files) {
     const name=previous.duplicateOf?.name||normalizeName(file?.name), originalName=String(file?.name || "Unbekannt");
     if (!zipOk(file) || !name) { errors.push({ name: name || originalName, originalName, error:"Ungültige ZIP-Datei.", retryable:false }); continue; }
-    const result=await persistSetupFile({ file, name, category, vehicle, branch:ghBranch(env), replaceSha:previous.action==="replace"?previous.targets.find(target=>target.name===name)?.sha:undefined, expectedFileSha:previous.duplicateOf?.sha, preserveSha:previous.action!=="replace"?previous.targets.find(target=>target.name===name)?.sha:undefined, version:String(form.get("version")||""), githubRequest:(path,options)=>ghReq(path,options,env) });
+    const result=await persistSetupFile({ file, name, category, vehicle, branch:ghBranch(env), replaceSha:previous.action==="replace"?previous.targets.find(target=>target.name===name)?.sha:undefined, expectedFileSha:previous.duplicateOf?.sha, forcePreserve:previous.action==="outdate"||previous.action==="delete", preserveSha:previous.action!=="replace"?previous.targets.find(target=>target.name===name)?.sha:undefined, version:String(form.get("version")||""), githubRequest:(path,options)=>ghReq(path,options,env) });
     if (result.uploaded) uploaded.push({ name:result.name||name, originalName, sha:result.sha, alreadyExists:result.alreadyExists });
     else errors.push({ name, originalName, ...result });
   }

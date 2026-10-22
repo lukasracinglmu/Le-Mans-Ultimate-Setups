@@ -161,7 +161,7 @@ flowchart TB
 
 **Der Prozentwert zählt verarbeitete Dateien.** Auch ein fehlgeschlagener Versuch wird mitgezählt. Bei 100 % ist der Vorgang abgeschlossen; die getrennten Erfolgs- und Fehlerzähler zeigen das Ergebnis. Ein Retry startet einen eigenen Fortschritt für die verbliebenen Dateien.
 
-Bei gleichem Dateinamen vergleicht der Worker die Git-Blob-Prüfsumme mit dem ZIP-Inhalt. Eine identische Datei wird als bereits gespeichert bestätigt und ihre angegebene Version gespeichert. Eine andere Datei unter demselben Namen wird standardmäßig abgelehnt. Nur wenn eine sicher neuere Version angegeben und die vorhandene Datei ausdrücklich mit „Ersetzen“ ausgewählt wurde, darf der Worker sie mit dem bestätigten alten Git-Dateistand überschreiben. „Behalten“ und „Als veraltet markieren“ speichern einen unterschiedlichen neuen ZIP-Inhalt bei gleichem Namen separat mit Versionszusatz. Ein inzwischen geänderter Dateistand verhindert das Überschreiben. Das verhindert falsche Fehler nach einer verlorenen Erfolgsantwort.
+Bei gleichem Dateinamen vergleicht der Worker die Git-Blob-Prüfsumme mit dem ZIP-Inhalt. Eine identische Datei wird als bereits gespeichert bestätigt und ihre angegebene Version gespeichert. Eine andere Datei unter demselben Namen wird standardmäßig abgelehnt. Nur wenn die vorhandene Datei ausdrücklich mit „Ersetzen“ ausgewählt wurde, darf der Worker sie mit dem bestätigten alten Git-Dateistand überschreiben. „Behalten“ und „Als veraltet markieren“ speichern einen unterschiedlichen neuen ZIP-Inhalt bei gleichem Namen separat mit Versionszusatz. Ein inzwischen geänderter Dateistand verhindert das Überschreiben. Das verhindert falsche Fehler nach einer verlorenen Erfolgsantwort.
 
 #### Status, Wiederholung und Unterbrechungen
 
@@ -194,23 +194,26 @@ GitHub-Datei, D1-Version und Audit-Ereignis werden in getrennten Schritten gesch
 | Speichern klappt, Audit-Schreiben scheitert | Setup-Änderung kann erfolgreich sein, ohne dass ein Audit-Eintrag erscheint | Worker-Logs und Audit-Konfiguration prüfen |
 | Nachladen der Liste scheitert | Die Upload-Erfolge bleiben gezählt; die Anzeige kann veraltet sein | Liste erneut öffnen bzw. Seite nach Abschluss neu laden |
 
-Ein gleicher Name mit unterschiedlichem Inhalt erfordert eine ausdrückliche Ersetzen-Auswahl oder einen neuen Dateinamen. Bei unbekanntem Hersteller bleibt das Überschreiben ausgeschlossen. Eine 100-prozentige Erfolgsquote ist bei dauerhaften Dienstausfällen, fehlenden Rechten oder ungültigen Dateien nicht garantiert; solche Fehler bleiben sichtbar.
+Bei gleichem Namen und unterschiedlichem Inhalt legt die bestätigte Auswahl fest, ob der Bestand ersetzt, erhalten, markiert oder nach dem Upload gelöscht wird. Bei unbekanntem Hersteller bleibt das Überschreiben ausgeschlossen. Eine 100-prozentige Erfolgsquote ist bei dauerhaften Dienstausfällen, fehlenden Rechten oder ungültigen Dateien nicht garantiert; solche Fehler bleiben sichtbar.
 
 ### Alte Setups beim Upload
 
 Zuerst erscheint der Versionsdialog, auch bei einer einzelnen ZIP. Bei mehreren Dateien bleibt die Auswahl zwischen gemeinsamer Version und individuellen Versionsfeldern bestehen. Danach prüft die Website passende vorhandene Setups des gewählten Fahrzeugs und Herstellers. Explizite Versionszusätze im Dateinamen werden beim Abgleich ausgeblendet; Strecke, Streckenvariante, Rennserie und EVO bleiben Teil der Zuordnung.
 
-Eine bytegleiche ZIP wird anhand ihrer Git-Dateiprüfsumme als Doppelung erkannt und auf dem Server bestätigt, ohne den vorhandenen Versionsstand herabzusetzen. Nur wenn die neue Version sicher höher als die vergleichbaren passenden Bestandsversionen ist, erscheint die Auswahl für ältere Dateien. Der Server prüft die aktuellen Versionsmetadaten vor einer Änderung erneut. Vergleichbar sind numerische Angaben wie `v2`, `1.10` oder `2.1.3`; `1.10` ist neuer als `1.9`, `1` und `1.0` sind gleich. Fehlende Angaben und Freitext wie `beta` ergeben keinen sicheren Vergleich. In diesem Fall werden alte Setups weder gelöscht noch als veraltet markiert.
+Bei einem passenden vorhandenen Setup erscheint die Auswahl immer: auch bei identischem Inhalt, gleicher, älterer, fehlender oder nicht numerisch vergleichbarer Version. Die Versionen werden zur Orientierung angezeigt. Eine höhere Versionsnummer ist keine Voraussetzung für eine ausdrückliche Ersetzen-, Lösch- oder Veraltet-Auswahl.
+
+Eine bytegleiche ZIP wird anhand ihrer Git-Dateiprüfsumme erkannt und im Dialog als identischer Inhalt angezeigt. Bei „Behalten“ bestätigt der Server die vorhandene Datei ohne eine zusätzliche Kopie und ohne die gespeicherte Version herabzusetzen. Die anderen Aktionen werden nur nach der ausdrücklichen Auswahl ausgeführt.
 
 Jede neue ZIP erhält ihre eigene Auswahl:
 
 | Auswahl | Verhalten nach bestätigtem Upload |
 | :--- | :--- |
-| **Behalten** | Bestehende Dateien bleiben unverändert; dies ist die Voreinstellung. Bei gleichem Dateinamen wird die neue ZIP unter einem eindeutigen Versionsnamen gespeichert. |
-| **Als veraltet markieren** | Die ausgewählten alten ZIPs bleiben herunterladbar und erhalten die sichtbare Kennzeichnung „Veraltet“. Auch eine gleichnamige alte ZIP kann ausgewählt werden; die neue ZIP bekommt einen eindeutigen Versionsnamen und bleibt aktuell. |
-| **Ersetzen** | Nur die ausdrücklich ausgewählten alten Dateien werden entfernt. Bei gleichem Dateinamen ersetzt ein Upload mit Prüfung des alten Git-Dateistands die ZIP direkt. |
+| **Behalten** | Bestehende Dateien bleiben unverändert; dies ist die Voreinstellung. Bei gleichem Dateinamen und anderem Inhalt wird die neue ZIP unter einem eindeutigen Versionsnamen gespeichert. |
+| **Als veraltet markieren** | Die ausgewählten alten ZIPs bleiben herunterladbar und erhalten die sichtbare Kennzeichnung „Veraltet“. Auch eine gleichnamige oder inhaltlich identische alte ZIP kann ausgewählt werden; die neue ZIP bekommt einen eindeutigen Versionsnamen und bleibt aktuell. |
+| **Ersetzen** | Der aktuelle Upload ersetzt die ausgewählten vorhandenen Setups. Bei gleichem Namen wird die Datei mit Prüfung des ausgewählten Git-Dateistands direkt aktualisiert. Andere ausgewählte alte Dateien werden erst nach bestätigtem Upload entfernt. |
+| **Alte Datei nach dem Upload löschen** | Die neue ZIP wird zuerst gespeichert. Bei gleichem Namen bekommt sie einen eindeutigen Versionszusatz. Erst danach wird die ausgewählte alte ZIP gelöscht. Auch bei identischem Inhalt bleiben neuer Upload und alte Datei dabei getrennt. |
 
-Die Auswahl enthält ausschließlich passende ältere Setups desselben erkannten Herstellers (GO, HYMO oder beAlien) im selben Fahrzeugordner. Dateien anderer Hersteller werden zusätzlich auf dem Server abgelehnt. Die passenden älteren Dateien sind vorausgewählt und können abgewählt werden. Ein Spa-Setup zeigt beispielsweise kein Monza-Setup zur Bereinigung an. Andere neue ZIPs derselben Upload-Auswahl können nicht als alte Dateien ausgewählt werden. Ohne erkannten Hersteller findet keine automatische Bereinigung statt.
+Die Auswahl enthält ausschließlich passende vorhandene Setups desselben erkannten Herstellers (GO, HYMO oder beAlien) im selben Fahrzeugordner. Dateien anderer Hersteller werden zusätzlich auf dem Server abgelehnt. Die passenden vorhandenen Dateien sind vorausgewählt und können abgewählt werden. Ein Spa-Setup zeigt beispielsweise kein Monza-Setup zur Bereinigung an. Andere neue ZIPs derselben Upload-Auswahl können nicht als alte Dateien ausgewählt werden. Ohne erkannten Hersteller findet keine automatische Bereinigung statt.
 
 Der neue Dateiinhalt muss vor der Bereinigung von GitHub bestätigt sein. Ist ein ausgewähltes altes Setup inzwischen geändert worden, wird es nicht entfernt. Ein Statusfehler nach dem Upload bleibt sichtbar und kann erneut versucht werden. ZIP-Speicherung, Versionsmetadaten, Status und Audit-Datei sind getrennte Schritte und keine gemeinsame Transaktion.
 

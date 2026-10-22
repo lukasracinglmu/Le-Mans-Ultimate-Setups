@@ -13,7 +13,7 @@ export function readPreviousSetups(form, names) {
   if(raw===null||raw==='')return {action:'keep',targets:[]};
   if(typeof raw!=='string'||raw.length>40000)return {error:'Ungültige Auswahl alter Setups.'};
   let plan;try{plan=JSON.parse(raw);}catch{return {error:'Ungültige Auswahl alter Setups.'};}
-  if(!['keep','outdate','replace'].includes(plan?.action)||!Array.isArray(plan.targets)||plan.targets.length>100)return {error:'Ungültige Auswahl alter Setups.'};
+  if(!['keep','outdate','replace','delete'].includes(plan?.action)||!Array.isArray(plan.targets)||plan.targets.length>100)return {error:'Ungültige Auswahl alter Setups.'};
   if(plan.duplicateOf){
     const target=plan.duplicateOf;
     if(plan.action!=='keep'||names.length!==1||!validName(target.name)||!/^[a-f0-9]{40}$/.test(target.sha||'')||!setupManufacturer(names[0])||setupManufacturer(target.name)!==setupManufacturer(names[0]))return {error:'Ungültige identische Bestandsdatei.'};
@@ -84,7 +84,7 @@ export async function applyPreviousSetups({plan,category,vehicle,replacement,env
     }
     const retired=[];
     for(const target of present){
-      if(plan.action==='replace'){
+      if(plan.action==='replace'||plan.action==='delete'){
         const result=await deleteGithubSetup({category,vehicle,name:target.name,expectedSha:target.sha,branch,githubRequest});
         if(!result.success)return result;
         retired.push({...target,action:'delete'});

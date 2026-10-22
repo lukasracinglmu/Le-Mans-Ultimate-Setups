@@ -237,25 +237,24 @@ async function choosePreviousSetups(files,target,versions){
     const matches=(data.setups||[]).filter(old=>vendor&&classifyVendor(old.name)===vendor&&(!incoming.has(old.name)||old.name===file.name)&&/^[a-f0-9]{40}$/.test(old.sha||'')&&uploadSetupFamily(old.name,old.version)===family);
     const sameName=matches.find(old=>old.name===file.name);
     const sha=matches.length?await uploadFileIdentity(file):null,duplicate=matches.find(old=>old.sha===sha);
-    const known=matches.filter(old=>compareUploadVersions(version,old.version)!==null),newer=known.length>0&&known.every(old=>compareUploadVersions(version,old.version)>0);
-    const candidates=duplicate?[]:newer?known:[];
-    choices.push({file,version,candidates,sameName,duplicate,decisionNote:duplicate?'Identische ZIP bereits vorhanden: '+duplicate.name:matches.length&&!newer?'Keine sicher neuere Version erkannt; vorhandene Setups bleiben erhalten.':''});
+    const candidates=matches;
+    choices.push({file,version,candidates,sameName,duplicate,decisionNote:duplicate?'Identische ZIP bereits vorhanden: '+duplicate.name:''});
   }
   const defaultPlan=choice=>({action:'keep',targets:!choice.duplicate&&choice.sameName?[{name:choice.sameName.name,sha:choice.sameName.sha}]:[],...(choice.duplicate?{duplicateOf:{name:choice.duplicate.name,sha:choice.duplicate.sha}}:{}),decisionNote:choice.decisionNote});
   if(!choices.some(choice=>choice.candidates.length))return choices.map(defaultPlan);
   return new Promise(resolve=>{
     const dialog=document.createElement('dialog');dialog.className='upload-version-dialog';dialog.setAttribute('aria-labelledby','oldSetupsTitle');
-    dialog.innerHTML='<h2 id="oldSetupsTitle">Neuere Setup-Version gefunden</h2><p>Wähle, was mit den passenden älteren Setups desselben Herstellers passieren soll. Bei gleichem Dateinamen bleibt die alte ZIP beim Behalten oder Veraltet-Markieren erhalten; die neue wird mit Versionszusatz gespeichert.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
+    dialog.innerHTML='<h2 id="oldSetupsTitle">Setup bereits vorhanden</h2><p>Wähle, was mit den vorhandenen passenden Setups desselben Herstellers passieren soll. Die Entscheidung gilt auch bei gleicher oder fehlender Version. Ersetzen aktualisiert eine gleichnamige Datei. Löschen entfernt die alte Datei erst, nachdem die neue separat gespeichert ist. Veraltet markieren behält die alte ZIP und kennzeichnet sie.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
     let plans=null;const rows=[],container=dialog.querySelector('.old-setup-choices'),error=dialog.querySelector('[role="alert"]');
     choices.forEach(choice=>{
       const {file,version,candidates}=choice;
       if(!candidates.length){rows.push({choice});return;}
       const row=document.createElement('section');row.className='old-setup-choice';
-      const heading=document.createElement('h3');heading.textContent=file.name+' · neue Version: '+version;row.append(heading);
+      const heading=document.createElement('h3');heading.textContent=file.name+' · angegebene Version: '+(version||'nicht angegeben')+(choice.duplicate?' · identischer Inhalt':'');row.append(heading);
       const label=document.createElement('label');label.textContent='Alte Setups: ';const select=document.createElement('select');select.setAttribute('aria-label','Umgang mit alten Setups für '+file.name);
-      for(const [value,text] of [['keep','Behalten'],['outdate','Als veraltet markieren'],['replace','Ersetzen (ausgewählte alte Dateien löschen)']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}label.append(select);row.append(label);
+      for(const [value,text] of [['keep','Behalten'],['replace','Durch aktuellen Upload ersetzen'],['delete','Alte Datei nach dem Upload löschen'],['outdate','Als veraltet markieren']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}label.append(select);row.append(label);
       const list=document.createElement('div');list.className='old-setup-list hidden';const inputs=[];
-      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=true;item.append(input,document.createTextNode(old.name+' · bisherige Version: '+old.version+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
+      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=true;item.append(input,document.createTextNode(old.name+' · bisherige Version: '+(old.version||'nicht angegeben')+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
       select.addEventListener('change',()=>list.classList.toggle('hidden',select.value==='keep'));row.append(list);container.append(row);rows.push({choice,select,inputs});
     });
     dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());

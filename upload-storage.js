@@ -73,7 +73,7 @@ export function githubFailure(response, data = {}, now = Date.now()) {
 const conflict = () => ({ error: 'Unter diesem Namen liegt bereits eine andere Datei. Bitte die ZIP umbenennen.', code: 'FILE_CONFLICT', retryable: false });
 async function jsonOrEmpty(response) { try { return await response.json(); } catch { return {}; } }
 
-export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest, replaceSha, preserveSha, version, expectedFileSha }) {
+export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest, replaceSha, preserveSha, version, expectedFileSha, forcePreserve }) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b ||
     !((bytes[2] === 3 && bytes[3] === 4) || (bytes[2] === 5 && bytes[3] === 6) || (bytes[2] === 7 && bytes[3] === 8))) {
@@ -107,7 +107,7 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
       const originalPath='/contents/setups/'+[category,vehicle,originalName].map(encodeURIComponent).join('/')+'?ref='+encodeURIComponent(branch);
       const original=await githubRequest(originalPath,{headers:{Accept:'application/vnd.github.object+json','Cache-Control':'no-cache'},signal:AbortSignal.timeout(30000)});
       const meta=await jsonOrEmpty(original);
-      if(original.ok&&meta.sha===sha)return {uploaded:true,alreadyExists:true,sha,name:originalName};
+      if(!forcePreserve&&original.ok&&meta.sha===sha)return {uploaded:true,alreadyExists:true,sha,name:originalName};
       if(original.ok&&meta.sha!==preserveSha)return conflict();
       if(!original.ok&&original.status!==404)return githubFailure(original,meta);
     }
