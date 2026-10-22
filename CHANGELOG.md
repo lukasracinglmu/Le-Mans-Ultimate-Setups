@@ -60,6 +60,20 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - Kompakteres 3P-Banner, nummerierte Abschnittsgrafiken und eine Übersicht der Upload-Grenzen ergänzt. ([Commit 0692344](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/069234419c7260d575f1a47ccdc9002b552b8bdc))
 
+- README um Einrichtungsschritte, D1-Beispielschema, API-Datenformate, Admin-Abläufe und den vollständigen Fahrzeugkatalog ergänzt. ([Commit 15dd511](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/15dd511893b7b6510f87138363c5357396e90641))
+
+- Upload-Teilerfolge, Rollenprüfungen, Dateinamenserkennung, Audit-Zustellung und Schutzgrenzen genauer beschrieben. ([Commit 15dd511](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/15dd511893b7b6510f87138363c5357396e90641))
+
+- Fehlersuche, Betriebsprüfungen, Sicherung und Wiederherstellung mit einem eigenen Diagnosebereich ergänzt. ([Commit 15dd511](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/15dd511893b7b6510f87138363c5357396e90641))
+
+- Presence-Beschreibung an die erlaubten Discord-Bot-Aktivitätsfelder angepasst. ([Commit 15dd511](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/15dd511893b7b6510f87138363c5357396e90641))
+
+### Setup-Bestand / Audit-Protokoll
+
+- ZIP-Dateien: 1 hinzugefügt, 0 entfernt und 0 geändert.
+- Audit-Dateien: 3 ergänzt, geändert oder entfernt. Darin neu protokolliert: 1 Upload, 0 Löschungen, 0 Versionsspeicherungen, 2 Rechteänderungen.
+- Belege: [Commits](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/0d606c91fec0dc4f9eb11959dc43e87d46dd9787...f968a3961508f5ea7877c18b2ae6bfe90c790210).
+
 ## 2026-10-20 – Nachtrag
 
 ### LMU Portal / Upcoming Races entfernt
