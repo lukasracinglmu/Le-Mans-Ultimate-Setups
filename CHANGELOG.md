@@ -8,6 +8,8 @@ Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie u
 
 ### Weitere Setup-Aktivitäten
 
+- Zwischenzeitliche Nutzung nachgetragen: 1 ZIP-Upload-Commits, 0 ZIP-Löschungen und 12 Audit-Commits. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/287fcc5bae0095a28e7e2633fce38b2c6dac12be...13b5531576ac7d87517983692fd946a4fb0e51c0).
+
 - Zwischen den letzten beiden Funktionsänderungen 4 ZIP-Löschungen und 7 Audit-Commits zur tatsächlichen Website-Nutzung nachgetragen. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/44309fc3ed7c618e7983df8851de9a945da56e8c...8863b650177f08224d757acd483e733bb8ad23a8).
 
 - Seit dem vorherigen dokumentierten Stand wurden 14 ZIP-Uploads und 12 ZIP-Löschungen in der GitHub-Historie erfasst. Dazu kamen 25 Audit-Commits, davon 1 zur Versionsänderung. Dies beschreibt die zwischenzeitliche Nutzung der Website, nicht Testlöschungen dieser Änderung. [Änderungsverlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc...8b8a84b985bb18d59dd396d05cdf007c5e81d298).
@@ -53,6 +55,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Bis zu fünf Upload-Versuche je Datei mit steigenden Pausen, Berücksichtigung von GitHub-Limits und sichtbaren Fehlerursachen ergänzt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Geändert
+
+- Versionsfeld neben „Setups hochladen“ entfernt. Die Version wird ausschließlich im Dialog nach der Dateiauswahl abgefragt. ([Commit 0acb9d8](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0acb9d84141ee119cd617a2de22944e5921c7219))
+
+- Veraltete Einträge grell orange markieren: Rahmen, Veraltet-Kennzeichnung und Versionsfeld bleiben deutlich sichtbar, statt den Eintrag abzuschwächen. ([Commit 0acb9d8](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0acb9d84141ee119cd617a2de22944e5921c7219))
 
 - Nach Datei- und Versionseingabe die Entscheidung bei jedem passenden vorhandenen Setup anzeigen. Gleiche, ältere, fehlende oder nicht numerisch vergleichbare Versionen sowie identische ZIP-Inhalte blenden den Dialog nicht mehr aus. Damit ersetzt dieser Ablauf die vorherige Beschränkung auf sicher neuere Versionen. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
 
@@ -120,6 +126,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- Interne Versions- und Prüfsummen-Zusätze aus sichtbaren Dateinamen und Download-Dateinamen entfernen. Bereits gespeicherte Namen wie `Alpine Fuji Go [1.4 GO 6955f746bc6d].zip` erscheinen und laden wieder als `Alpine Fuji Go.zip`; die genaue Version steht separat am Eintrag. Die Speicherpfade bestehender Dateien bleiben zur zuverlässigen Zuordnung erhalten. ([Commit 0acb9d8](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0acb9d84141ee119cd617a2de22944e5921c7219))
+
+- Neue zusätzliche ZIP-Kopien ohne Prüfsummen-Zeichenfolge lesbar benennen. Namenskonflikte bei gleicher Version mit einem Zähler lösen; Wiederholungen verwenden die bestätigte vorhandene Datei. ([Commit 0acb9d8](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0acb9d84141ee119cd617a2de22944e5921c7219))
+
 - Auch bei identischen gleichnamigen ZIPs für „Veraltet markieren“ und „Alte Datei löschen“ zuerst eine separate neue Datei speichern. Danach ausschließlich den ausgewählten alten Dateistand markieren oder löschen; Wiederholungen erzeugen keine weitere Kopie. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
 
 - Gleichnamige alte ZIPs lassen sich beim Veraltet-Markieren auswählen. Die neue ZIP wird unter einem eindeutigen Versionsnamen gespeichert; alter Inhalt und alte Version bleiben erhalten und nur der alte Dateistand wird als veraltet markiert. ([Commit 2745929](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2745929fa5d19828edaedd5e7c0a24ad58dd41c9))
@@ -147,6 +157,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- README und Regressionstests für bereinigte Namen, Namenskonflikte und den Upload ohne zusätzliches Versionsfeld aktualisiert. 62 Node-Tests, 28 UI-Szenarien und 23 Changelog-Tests erfolgreich. ([Commit 0acb9d8](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/0acb9d84141ee119cd617a2de22944e5921c7219))
 
 - README und Regressionstests auf den bestätigten Bestandsdatei-Ablauf angepasst. 60 Node-Tests, 27 UI-Szenarien und 23 Changelog-Tests erfolgreich. ([Commit 287fcc5](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/287fcc5bae0095a28e7e2633fce38b2c6dac12be))
 
