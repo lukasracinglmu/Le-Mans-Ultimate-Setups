@@ -52,6 +52,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - ZIP-Daten nur einmal eingelesen, größere JSON-Kopien vermieden und Upload-Audit vor der nächsten Datei abgeschlossen. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
+- Cloudflare-Neubuilds bei reinen Setup-, Audit-, Changelog- und README-Änderungen abgeschaltet; ZIP-Dateien bleiben direkt aus GitHub verfügbar. ([Commit 2dade51](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2dade518ba24c3bc255466a81b1d00c73854e554))
+
 ### Entfernt
 
 - Auf Wunsch des Repository-Inhabers alle 363 Setup-ZIPs aus dem aktiven Bestand entfernt. Die Einzellöschungen sind im Audit-Protokoll erfasst; die zugehörigen Versionsdaten werden ebenfalls bereinigt.
