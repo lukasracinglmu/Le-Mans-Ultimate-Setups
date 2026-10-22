@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T18:05:12.077Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "499P Sebring HYMO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P Sebring HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
