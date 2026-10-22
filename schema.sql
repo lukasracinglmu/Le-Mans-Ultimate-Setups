@@ -43,3 +43,13 @@ CREATE TABLE IF NOT EXISTS upload_jobs (
 
 CREATE INDEX IF NOT EXISTS idx_upload_jobs_session ON upload_jobs(session_id);
 CREATE INDEX IF NOT EXISTS idx_upload_jobs_status ON upload_jobs(status);
+
+CREATE TABLE IF NOT EXISTS setup_lifecycle (
+  category TEXT NOT NULL,
+  vehicle TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_sha TEXT NOT NULL,
+  outdated INTEGER NOT NULL DEFAULT 0 CHECK (outdated IN (0, 1)),
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (category, vehicle, file_name)
+);

@@ -1,4 +1,5 @@
 import baseWorker from "./worker.js";
+import { readPreviousSetups, applyPreviousSetups, enrichSetupLifecycle } from "./setup-lifecycle.js";
 import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
@@ -33,13 +34,15 @@ export default {
         const category = url.searchParams.get("category") || "";
         const vehicle = url.searchParams.get("vehicle") || "";
         const setups = await enrichSetupVersions(data.setups, category, vehicle, env);
-        return json({ ...data, setups }, response.status);
+        return json({ ...data, setups:await enrichSetupLifecycle(setups,category,vehicle,env) }, response.status);
       }
 
       if (request.method === "POST" && path === "/api/setups/upload") {
         let form;
         try { form = await readUploadForm(request); }
         catch (error) { return json({ success:false, error:error.status === 413 ? "Request zu groß." : "Ungültiger Upload.", retryable:false }, error.status === 413 ? 413 : 400); }
+        const previous=readPreviousSetups(form,form.getAll("files").map(file=>String(file?.name||"")));
+        if(previous.error)return json({success:false,error:previous.error,retryable:false},400);
         const parsed = readSetupVersion(form);
         if (parsed.error) return json({ success: false, error: parsed.error }, 400);
         const category = String(form.get("category") || "").trim();
@@ -48,15 +51,19 @@ export default {
         if (!response.ok) return response;
         const data = await safeJson(response.clone());
         if (!data?.success) return response;
+        const retired=[];
         for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
           if (item?.name) {
             try { await storeSetupVersion(category, vehicle, item.name, parsed.version, env); }
             catch {
               return json({success:false,error:"ZIP gespeichert, Versionsdaten konnten noch nicht bestätigt werden. Erneuter Versuch folgt.",code:"VERSION_STORAGE",retryable:true},503);
             }
+            const cleanup=await applyPreviousSetups({plan:previous,category,vehicle,replacement:item,env});
+            if(!cleanup.success)return json({...cleanup,success:false,error:"Neue ZIP gespeichert. "+cleanup.error},cleanup.status||503);
+            retired.push(...cleanup.retired);
           }
         }
-        return json({ ...data, category, vehicle, version:parsed.version, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
+        return json({ ...data, retired, category, vehicle, version:parsed.version, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
       }
 
       return baseWorker.fetch(request, env, ctx);
@@ -84,6 +91,12 @@ async function createWebsiteRequest(request, env) {
     message: clean(body.message, 500)
   };
   if (!data.vehicle || !data.track) return json({ success: false, error: "Fahrzeug und Strecke erforderlich." }, 400);
+  const catalogResponse=await readSiteFile(request,env,"setups.json");
+  if(!catalogResponse.ok)return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);
+  let catalog;try{catalog=await catalogResponse.json();}catch{return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);}
+  const match=Object.entries(catalog).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===data.vehicle.toLowerCase());
+  if(!match)return json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400);
+  data.vehicle=match.name;data.carClass=match.carClass;
   const sent = await sendSetupRequest(data, env);
   return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
 }
@@ -109,7 +122,7 @@ async function sendSetupRequest(data, env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_CHANNEL_ID) {
     return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
   }
-  const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || null;
+  const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || env.DISCORD_UPLOAD_ROLE_ID || "1538601074074849330";
   const validRoleId = roleId && /^\d{16,22}$/.test(roleId) ? roleId : null;
   const validUserId = /^\d{16,22}$/.test(String(data.userId || "")) ? String(data.userId) : null;
   const content = buildRequestContent(data, validRoleId);
@@ -146,7 +159,13 @@ async function discordInteraction(request, env) {
       message: clean(values.message, 500)
     };
     if (!data.vehicle || !data.track) return discordJson({ type: 4, data: { content: "Fahrzeug und Strecke sind erforderlich.", flags: 64 } });
-    const sent = await sendSetupRequest(data, env);
+    const catalogResponse=await readSiteFile(request,env,"setups.json");
+  if(!catalogResponse.ok)return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);
+  let catalog;try{catalog=await catalogResponse.json();}catch{return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);}
+  const match=Object.entries(catalog).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===data.vehicle.toLowerCase());
+  if(!match)return json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400);
+  data.vehicle=match.name;data.carClass=match.carClass;
+  const sent = await sendSetupRequest(data, env);
     return discordJson({ type: 4, data: { content: sent.ok ? "Setup Request wurde gesendet." : "Setup Request konnte nicht gesendet werden.", flags: 64 } });
   }
   const delegated = new Request(request.url, { method: "POST", headers: request.headers, body: rawBody });

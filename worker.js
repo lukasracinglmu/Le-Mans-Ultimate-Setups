@@ -1,4 +1,5 @@
 import { ownerUserId, resolvePermissions } from "./discord-permissions.js";
+import { readPreviousSetups, deleteGithubSetup } from "./setup-lifecycle.js";
 import { readRepoFile, readSiteFile } from "./repo-read.js";
 import { persistSetupFile, readUploadForm } from "./upload-storage.js";
 
@@ -184,11 +185,13 @@ async function uploadSetups(request, env, suppliedForm) {
   catch (error) { return json({ success:false, error:error.status === 413 ? "Request zu groß." : "Ungültiger Upload.", retryable:false }, error.status === 413 ? 413 : 400); }
   const category=safe(form.get("category")), vehicle=safe(form.get("vehicle")), files=form.getAll("files");
   if (!category || !vehicle || !files.length || files.length > MAX_FILES) return json({ success:false, error:"Ungültiger Upload.", retryable:false }, 400);
+  const previous=readPreviousSetups(form,files.map(file=>normalizeName(file?.name)));
+  if(previous.error)return json({success:false,error:previous.error,retryable:false},400);
   const uploaded=[], errors=[];
   for (const file of files) {
     const name=normalizeName(file?.name), originalName=String(file?.name || "Unbekannt");
     if (!zipOk(file) || !name) { errors.push({ name: name || originalName, originalName, error:"Ungültige ZIP-Datei.", retryable:false }); continue; }
-    const result=await persistSetupFile({ file, name, category, vehicle, branch:ghBranch(env), githubRequest:(path,options)=>ghReq(path,options,env) });
+    const result=await persistSetupFile({ file, name, category, vehicle, branch:ghBranch(env), replaceSha:previous.action==="replace"?previous.targets.find(target=>target.name===name)?.sha:undefined, githubRequest:(path,options)=>ghReq(path,options,env) });
     if (result.uploaded) uploaded.push({ name, originalName, sha:result.sha, alreadyExists:result.alreadyExists });
     else errors.push({ name, originalName, ...result });
   }
@@ -201,7 +204,9 @@ async function uploadSetups(request, env, suppliedForm) {
 async function deleteSetup(request, env) {
   const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);const permission=await resolvePermissions(s.id,env);if(!permission.canUpload)return json({success:false,error:permission.rolesAvailable?"Keine Löschberechtigung.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503);
   let b;try{b=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}const cat=safe(b.category),veh=safe(b.vehicle),name=safe(b.name);if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültige Datei."},400);
-  const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}/${encodeURIComponent(name)}`;const cr=await ghReq(path+`?ref=${encodeURIComponent(ghBranch(env))}`,{},env);if(cr.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!cr.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);const cur=await cr.json();const dr=await ghReq(path,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Delete setup: ${veh} - ${name}`,sha:cur.sha,branch:ghBranch(env)})},env);if(!dr.ok)return json({success:false,error:"Löschen fehlgeschlagen."},502);return json({success:true});
+  if(b.sha!==undefined&&!/^[a-f0-9]{40}$/.test(b.sha))return json({success:false,error:"Ungültiger Dateistand.",retryable:false},400);
+  const result=await deleteGithubSetup({category:cat,vehicle:veh,name,expectedSha:b.sha,branch:ghBranch(env),githubRequest:(path,options)=>ghReq(path,options,env)});
+  return json(result,result.success?200:result.status||502);
 }
 
 async function createRequest(request, env) {

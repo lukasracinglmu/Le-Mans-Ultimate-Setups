@@ -19,3 +19,5 @@ runtime-worker.js
 repo-read.js
 wrangler.jsonc
 .assetsignore
+
+setup-lifecycle.js

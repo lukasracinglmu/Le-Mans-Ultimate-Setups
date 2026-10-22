@@ -25,6 +25,8 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 .upload-version-dialog{width:min(680px,calc(100% - 28px));max-height:calc(100dvh - 36px);overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
 .upload-version-dialog::backdrop{background:rgba(0,0,0,.6)}.upload-version-dialog h2{font-size:21px;margin:0 0 12px}.upload-version-dialog p{color:var(--muted);line-height:1.5;margin:0 0 16px;overflow-wrap:anywhere}.upload-version-files{display:grid;gap:10px;max-height:50dvh;overflow:auto}.upload-version-row{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:12px}.upload-version-row label{font-size:13px;overflow-wrap:anywhere}.upload-version-row input{width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg);color:var(--text)}.upload-version-dialog .upload-version-error{color:var(--danger);margin:12px 0 0}.upload-version-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;margin-top:20px}.upload-version-actions button:first-child{margin-right:auto}
 @media(max-width:520px){.upload-version-dialog{padding:18px}.upload-version-row{grid-template-columns:minmax(0,1fr);gap:8px}}
+
+.old-setup-choices{display:grid;gap:16px;max-height:55vh;overflow:auto}.old-setup-choice{border:1px solid var(--border);border-radius:8px;padding:14px}.old-setup-choice h3{font-size:14px;margin:0 0 10px;overflow-wrap:anywhere}.old-setup-choice select{max-width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;color:var(--text);background:var(--surface)}.old-setup-list{margin-top:10px;display:grid;gap:9px}.old-setup-list label{display:flex;gap:9px;font-size:13px;overflow-wrap:anywhere;align-items:flex-start}.old-setup-list input{flex-shrink:0}.setup.outdated{opacity:.72}.setup-outdated-tag{display:inline-block;margin-left:8px;color:var(--danger);font-size:12px;font-weight:700}.request-vehicle-options{border:1px solid var(--border);border-radius:8px;max-height:240px;overflow:auto;background:var(--surface);margin-top:4px}.request-vehicle-options button{display:block;width:100%;text-align:left;border:0;border-radius:0;padding:11px}.request-vehicle-options button:hover,.request-vehicle-options button[aria-selected="true"]{background:var(--surface2)}.request-vehicle-options p{padding:10px;margin:0;color:var(--muted)}#reqClass[readonly]{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -51,7 +53,7 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
     <h2>Setup Request</h2>
     <div id="requestLoginRequired" class="login-required">Melde dich mit Discord an, um einen Setup Request zu senden.</div>
     <form id="requestForm" class="request-form hidden">
-      <div class="request-grid"><div><label for="reqVehicle">Fahrzeug</label><input id="reqVehicle" required></div><div><label for="reqClass">Klasse</label><input id="reqClass" placeholder="z. B. Hypercar"></div><div><label for="reqTrack">Strecke</label><input id="reqTrack" required></div><div><label for="reqEvent">Event / Rennserie</label><input id="reqEvent" placeholder="z. B. WEC"></div><div><label for="reqVariant">Setup Variante</label><input id="reqVariant" placeholder="z. B. EVO / Wet"></div></div>
+      <div class="request-grid"><div><label for="reqVehicle">Fahrzeug</label><input id="reqVehicle" required autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="requestVehicleOptions" placeholder="Mindestens 3 Buchstaben eingeben"><div id="requestVehicleOptions" class="request-vehicle-options hidden" role="listbox" aria-label="Fahrzeuge"></div></div><div><label for="reqClass">Klasse</label><input id="reqClass" readonly placeholder="Wird automatisch ausgewählt"></div><div><label for="reqTrack">Strecke</label><input id="reqTrack" required></div><div><label for="reqEvent">Event / Rennserie</label><input id="reqEvent" placeholder="z. B. WEC"></div><div><label for="reqVariant">Setup Variante</label><input id="reqVariant" placeholder="z. B. EVO / Wet"></div></div>
       <label for="reqMsg">Weitere Informationen</label><textarea id="reqMsg"></textarea>
       <button type="submit" class="discord-button">Request senden</button><div id="requestResult" class="request-message"></div>
     </form>
@@ -63,7 +65,7 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 </div>
 <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h3>Setup löschen?</h3><p id="deleteModalText"></p><div class="modal-actions"><button id="deleteCancel">Abbrechen</button><button id="deleteConfirm" class="danger-action">Löschen</button></div></div></div>
 <script>
-const $=id=>document.getElementById(id);let setupData={},currentUser=null,currentCar={category:"",vehicle:""},pendingDelete=null,lastUploadJobs=[],activeMfr='',activeClass='',savedScrollY=0,trackSearchVal='',uploadQueueRunning=false,uploadPreparing=false;const setupCache=new Map(),setupPending=new Map();const SETUP_CACHE_MS=30000;
+const $=id=>document.getElementById(id);let setupData={},currentUser=null,currentCar={category:"",vehicle:""},pendingDelete=null,lastUploadJobs=[],activeMfr='',activeClass='',savedScrollY=0,trackSearchVal='',uploadQueueRunning=false,uploadPreparing=false;const setupCache=new Map(),setupPending=new Map(),setupRevisions=new Map();const SETUP_CACHE_MS=30000;
 function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function loadTheme(){const saved=localStorage.getItem("tpr-theme");const t=saved==="light"?"light":"dark";document.documentElement.dataset.theme=t;$("themeButton").textContent=t==="dark"?"Light Mode":"Dark Mode"}function toggleTheme(){const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;localStorage.setItem("tpr-theme",t);$("themeButton").textContent=t==="dark"?"Light Mode":"Dark Mode"}
 function initManufacturer(){const names=["GO","HYMO","beAlien"];let i=0;setInterval(()=>{const el=$("manufacturerName");el.style.opacity="0";setTimeout(()=>{i=(i+1)%names.length;el.textContent=names[i];el.style.opacity="1"},180)},3500)}
@@ -72,8 +74,8 @@ async function loadData(){try{const r=await fetch("/setups.json",{cache:"force-c
 function renderCategories(filter=""){const box=$("categories");box.innerHTML="";const q=filter.trim().toLowerCase();Object.entries(setupData).forEach(([cat,vehicles])=>{if(activeClass&&cat!==activeClass)return;const list=vehicles.filter(v=>v.name.toLowerCase().includes(q));if(!list.length)return;const sec=document.createElement("section");sec.className="category";const h=document.createElement("h2");h.textContent=cat;sec.appendChild(h);const grid=document.createElement("div");grid.className="vehicle-grid";list.forEach(v=>{const card=document.createElement("div");card.className="vehicle";const n=document.createElement("div");n.className="vehicle-name";n.textContent=v.name;const c=document.createElement("div");c.className="vehicle-class";c.textContent=cat;card.append(n,c);card.addEventListener("click",()=>showCar(cat,v.name));grid.appendChild(card)});sec.appendChild(grid);box.appendChild(sec)});if(!box.children.length)box.innerHTML='<div class="empty">Kein Fahrzeug gefunden.</div>'}
 function showHome(){activeMfr='';document.querySelectorAll('#mfrFilter .mfr-btn').forEach(b=>b.classList.toggle('active',(b.dataset.mfr||'')===''));$("carPage").classList.remove("active");$("homePage").classList.add("active");const sy=savedScrollY;requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,sy)))}async function showCar(category,vehicle){savedScrollY=window.scrollY;currentCar={category,vehicle};lastUploadJobs=[];trackSearchVal='';$("retryFailedBtn").classList.remove("show");$("homePage").classList.remove("active");$("carPage").classList.add("active");window.scrollTo(0,0);$("carTitle").textContent=vehicle;$("carSubtitle").textContent=category;$("uploadStatus").textContent="";$("fileStatuses").innerHTML="";$("sessionUploadProgress").classList.add("hidden");$("uploadArea").style.display=currentUser?.canUpload?"flex":"none";const ts=$("trackSearch");if(ts){ts.value='';ts.style.display='block';}await loadCarSetups(category,vehicle)}
 function classifyVendor(name){const n=String(name||'').toUpperCase();if(n.includes('HYMO'))return'HYMO';if(n.includes('BEALIEN')||n.includes('BE_ALIEN'))return'beAlien';if(n.includes(' GO')||n.includes('_GO')||/\bGO\b/.test(n))return'GO';return null;}
-function setupCacheKey(c,v){return c+"\u0000"+v}function invalidateCurrentSetupCache(){setupCache.delete(setupCacheKey(currentCar.category,currentCar.vehicle))}
-async function getCarSetups(category,vehicle){const key=setupCacheKey(category,vehicle),hit=setupCache.get(key);if(hit&&Date.now()-hit.time<SETUP_CACHE_MS)return hit.data;if(setupPending.has(key))return setupPending.get(key);const p=(async()=>{const r=await fetch(`/api/setups?category=${encodeURIComponent(category)}&vehicle=${encodeURIComponent(vehicle)}`,{cache:"no-store",credentials:"same-origin"});const d=await r.json();if(!d.success)throw new Error(d.error||"Fehler beim Laden.");setupCache.set(key,{time:Date.now(),data:d});return d})().finally(()=>setupPending.delete(key));setupPending.set(key,p);return p}
+function setupCacheKey(c,v){return c+"\u0000"+v}function invalidateSetupCache(category,vehicle){const key=setupCacheKey(category,vehicle);setupRevisions.set(key,(setupRevisions.get(key)||0)+1);setupCache.delete(key);setupPending.delete(key)}function invalidateCurrentSetupCache(){invalidateSetupCache(currentCar.category,currentCar.vehicle)}
+async function getCarSetups(category,vehicle){const key=setupCacheKey(category,vehicle),hit=setupCache.get(key);if(hit&&Date.now()-hit.time<SETUP_CACHE_MS)return hit.data;if(setupPending.has(key))return setupPending.get(key);const generation=setupRevisions.get(key)||0;const p=(async()=>{const r=await fetch(`/api/setups?category=${encodeURIComponent(category)}&vehicle=${encodeURIComponent(vehicle)}`,{cache:"no-store",credentials:"same-origin"});const d=await r.json();if(!d.success)throw new Error(d.error||"Fehler beim Laden.");if(generation===(setupRevisions.get(key)||0))setupCache.set(key,{time:Date.now(),data:d});return d})().finally(()=>{if(setupPending.get(key)===p)setupPending.delete(key)});setupPending.set(key,p);return p}
 function groupSetups(items){const groups=new Map();for(const s of items){const parts=[];if(s.series)parts.push(s.series);if(s.variant&&s.variant!=="Standard")parts.push(s.variant);const key=parts.length?parts.join(" · "):"Standard";if(!groups.has(key))groups.set(key,[]);groups.get(key).push(s)}return groups}
 let currentCarSetups=[];
 function renderSetups(setups){
@@ -109,7 +111,7 @@ function renderSetups(setups){
     list.appendChild(wrap);
   }
 }
-async function loadCarSetups(category,vehicle){const list=$("setupList");list.innerHTML='<div class="empty">Setups werden geladen...</div>';try{const d=await getCarSetups(category,vehicle);list.innerHTML='';currentCarSetups=d.setups;renderSetups(d.setups)}catch(e){list.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
+async function loadCarSetups(category,vehicle){const list=$("setupList");list.innerHTML='<div class="empty">Setups werden geladen...</div>';try{const d=await getCarSetups(category,vehicle);if(currentCar.category!==category||currentCar.vehicle!==vehicle)return;list.innerHTML='';currentCarSetups=d.setups;renderSetups(d.setups)}catch(e){list.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
 const MAX_UPLOAD_BYTES=25*1024*1024;
 function updateSessionUploadProgress(done,total,current){const percent=total?Math.round(done/total*100):0;$("sessionUploadProgress").classList.remove("hidden");$("sessionProgressCount").textContent=`${done} / ${total} Setups verarbeitet`;$("sessionProgressPercent").textContent=`${percent} %`;$("sessionProgressBar").setAttribute("aria-valuenow",String(percent));$("sessionProgressFill").style.width=percent+"%";$("sessionProgressCurrent").textContent=current?"Aktuell: "+current:"";$("sessionProgressCurrent").classList.toggle("hidden",!current)}
 function uploadRow(statuses,name){return [...statuses.querySelectorAll(".file-status")].find(x=>x.dataset.name===name)}
@@ -127,7 +129,7 @@ async function waitForUploadRetry(job,statuses){
   }
 }
 async function requestUploadJob(job){
-  const form=new FormData();form.append("category",job.category);form.append("vehicle",job.vehicle);form.append("version",job.version);form.append("files",job.file,job.file.name);
+  const form=new FormData();form.append("category",job.category);form.append("vehicle",job.vehicle);form.append("version",job.version);form.append("previousSetups",JSON.stringify(job.previousSetups||{action:"keep",targets:[]}));form.append("files",job.file,job.file.name);
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),180000);
   try{
     const response=await fetch("/api/setups/upload",{method:"POST",body:form,credentials:"same-origin",signal:controller.signal});
@@ -155,7 +157,7 @@ async function uploadSingleJob(job,statuses){
   markUploadJob(statuses,job,"err","Fehlgeschlagen · "+job.error);return false;
 }
 
-async function refreshUploadedCarState(category,vehicle){setupCache.delete(setupCacheKey(category,vehicle));setupPending.delete(setupCacheKey(category,vehicle));const d=await getCarSetups(category,vehicle);if(currentCar.category===category&&currentCar.vehicle===vehicle){currentCarSetups=d.setups;renderSetups(d.setups)}if(typeof refreshVehicleCounts==='function')await refreshVehicleCounts();}
+async function refreshUploadedCarState(category,vehicle){invalidateSetupCache(category,vehicle);const d=await getCarSetups(category,vehicle);if(currentCar.category===category&&currentCar.vehicle===vehicle){currentCarSetups=d.setups;renderSetups(d.setups)}if(typeof refreshVehicleCounts==='function')await refreshVehicleCounts();}
 async function runUploadJobs(jobs,{appendRows=false}={}){if(uploadQueueRunning)return{ok:0,failed:jobs.length,failedJobs:jobs};uploadQueueRunning=true;const status=$("uploadStatus"),statuses=$("fileStatuses"),btn=$("uploadBtn"),retryBtn=$("retryFailedBtn"),uploadCategory=jobs[0].category,uploadVehicle=jobs[0].vehicle;if(!appendRows)statuses.innerHTML="";for(const job of jobs){let x=uploadRow(statuses,job.file.name);if(!x){x=document.createElement("div");x.className="file-status";x.dataset.name=job.file.name;statuses.appendChild(x)}x.textContent=job.file.name+" — Wartet";x.className="file-status";job.state="waiting";job.error=""}btn.disabled=true;retryBtn.disabled=true;retryBtn.classList.remove("show");let done=0,ok=0,failed=0,refreshError=false;const updateSummary=current=>{updateSessionUploadProgress(done,jobs.length,current);status.textContent=(current?`Aktuell: ${current} · `:"")+`${done}/${jobs.length} verarbeitet · ${ok} erfolgreich · ${failed} fehlgeschlagen`};updateSummary("");try{for(const job of jobs){updateSummary(job.file.name);const success=await uploadSingleJob(job,statuses);if(success)ok++;else failed++;done++;updateSummary("");if(done<jobs.length)await new Promise(resolve=>setTimeout(resolve,1100))}if(ok){try{await refreshUploadedCarState(uploadCategory,uploadVehicle)}catch{refreshError=true}}}finally{uploadQueueRunning=false;btn.disabled=false;retryBtn.disabled=false;const failedJobs=jobs.filter(job=>job.state==="err");if(failedJobs.length)retryBtn.classList.add("show");else retryBtn.classList.remove("show");status.textContent=`${ok} erfolgreich · ${failed} fehlgeschlagen`+(refreshError?" · Anzeige konnte nicht aktualisiert werden.":"")}return{ok,failed,failedJobs:jobs.filter(job=>job.state==="err"),refreshError}}
 function uploadVersionError(version){
   if(version.length>40)return "Version ist zu lang (maximal 40 Zeichen).";
@@ -172,14 +174,19 @@ function chooseUploadVersions(files,sharedVersion){
     document.body.appendChild(dialog);
     const hint=dialog.querySelector("#uploadVersionHint"),list=dialog.querySelector("#uploadVersionFiles"),error=dialog.querySelector("#uploadVersionError");
     hint.textContent=files.length+" ZIP-Dateien ausgewählt. "+(sharedVersion?'Gemeinsame Version: „'+sharedVersion+'“.':'Die Versionsangabe ist optional. Ohne Angabe wird keine Version hinterlegt.');
-    let versions=null;
+    let versions=null,mode="question";
     dialog.querySelector("#uploadVersionCancel").addEventListener("click",()=>dialog.close());
     dialog.querySelector("#uploadVersionYes").addEventListener("click",()=>{
-      error.textContent=uploadVersionError(sharedVersion);
-      if(error.textContent)return;
-      versions=files.map(()=>sharedVersion);dialog.close();
+      mode="shared";
+      dialog.querySelector("#uploadVersionTitle").textContent="Gemeinsame Version eintragen";
+      hint.textContent="Diese Version gilt für alle ausgewählten ZIPs. Die Angabe ist optional.";
+      list.innerHTML='<div class="upload-version-row"><label for="uploadSharedVersion">Version für alle Setups</label><input id="uploadSharedVersion" type="text" maxlength="40" placeholder="Version (optional)"></div>';
+      const input=list.querySelector("input");input.value=sharedVersion;
+      list.classList.remove("hidden");error.textContent="";
+      dialog.querySelector("#uploadVersionNo").classList.add("hidden");dialog.querySelector("#uploadVersionYes").classList.add("hidden");dialog.querySelector("#uploadVersionStart").classList.remove("hidden");input.focus();
     });
     dialog.querySelector("#uploadVersionNo").addEventListener("click",()=>{
+      mode="individual";
       dialog.querySelector("#uploadVersionTitle").textContent="Version je Setup eintragen";
       hint.textContent="Trage die passende Version neben jeder ZIP ein. Alle Versionsfelder sind optional und dürfen leer bleiben.";
       error.textContent="";
@@ -198,10 +205,39 @@ function chooseUploadVersions(files,sharedVersion){
       const values=inputs.map(input=>input.value.trim());
       const invalid=values.findIndex(value=>uploadVersionError(value));
       if(invalid!==-1){error.textContent=uploadVersionError(values[invalid]);inputs[invalid].focus();return;}
-      versions=values;dialog.close();
+      versions=mode==="shared"?files.map(()=>values[0]):values;dialog.close();
     });
     dialog.addEventListener("close",()=>{dialog.remove();resolve(versions);},{once:true});
     dialog.showModal();
+  });
+}
+async function choosePreviousSetups(files,target){
+  invalidateSetupCache(target.category,target.vehicle);
+  const data=await getCarSetups(target.category,target.vehicle),incoming=new Set(files.map(file=>file.name));
+  const choices=files.map(file=>({file,candidates:(data.setups||[]).filter(old=>classifyVendor(file.name)&&classifyVendor(old.name)===classifyVendor(file.name)&&(!incoming.has(old.name)||old.name===file.name)&&/^[a-f0-9]{40}$/.test(old.sha||''))}));
+  if(!choices.some(choice=>choice.candidates.length))return files.map(()=>({action:'keep',targets:[]}));
+  return new Promise(resolve=>{
+    const dialog=document.createElement('dialog');dialog.className='upload-version-dialog';dialog.setAttribute('aria-labelledby','oldSetupsTitle');
+    dialog.innerHTML='<h2 id="oldSetupsTitle">Mit vorhandenen Setups umgehen</h2><p>Wähle je neuer ZIP die alten Dateien aus. Es werden nur Setups desselben Herstellers bei diesem Fahrzeug angezeigt. Alte Dateien werden erst nach bestätigtem Upload bearbeitet.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
+    let plans=null;const rows=[],container=dialog.querySelector('.old-setup-choices'),error=dialog.querySelector('[role="alert"]');
+    choices.forEach(({file,candidates})=>{
+      const row=document.createElement('section');row.className='old-setup-choice';
+      const heading=document.createElement('h3');heading.textContent=file.name+' · '+(classifyVendor(file.name)||'Kein Hersteller erkannt');row.append(heading);
+      const label=document.createElement('label');label.textContent='Alte Setups: ';const select=document.createElement('select');select.setAttribute('aria-label','Umgang mit alten Setups für '+file.name);
+      for(const [value,text] of [['keep','Behalten'],['outdate','Als veraltet markieren'],['replace','Ersetzen (ausgewählte alte Dateien löschen)']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}label.append(select);row.append(label);
+      const list=document.createElement('div');list.className='old-setup-list hidden';const inputs=[];
+      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';item.append(input,document.createTextNode(old.name+' · Version: '+(old.version||'nicht angegeben')+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
+      if(!candidates.length){select.disabled=true;const empty=document.createElement('p');empty.textContent='Keine passenden alten Setups vorhanden.';row.append(empty);}
+      const update=()=>{list.classList.toggle('hidden',select.value==='keep');for(const {input,old} of inputs){input.disabled=select.value==='outdate'&&old.name===file.name;if(input.disabled)input.checked=false;}};
+      select.addEventListener('change',update);row.append(list);container.append(row);rows.push({file,select,inputs});
+    });
+    dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
+    dialog.querySelector('[data-start]').addEventListener('click',()=>{
+      const next=rows.map(({select,inputs})=>({action:select.value,targets:select.value==='keep'?[]:inputs.filter(x=>x.input.checked&&!x.input.disabled).map(({old})=>({name:old.name,sha:old.sha}))}));
+      if(next.some(plan=>plan.action!=='keep'&&!plan.targets.length)){error.textContent='Bitte die betroffenen alten Dateien auswählen oder „Behalten“ wählen.';return;}
+      plans=next;dialog.close();
+    });
+    dialog.addEventListener('close',()=>{dialog.remove();resolve(plans);},{once:true});document.body.append(dialog);dialog.showModal();
   });
 }
 $("uploadBtn").addEventListener("click",()=>{if(!uploadQueueRunning&&!uploadPreparing)$("fileInput").click()});
@@ -218,20 +254,68 @@ $("fileInput").addEventListener("change",async function(){
     if(!versions)return;
     const error=versions.map(uploadVersionError).find(Boolean);
     if(error){status.textContent=error;return;}
-    lastUploadJobs=files.map((file,index)=>({file,version:versions[index],category:target.category,vehicle:target.vehicle,state:"waiting",error:""}));
+    const previous=await choosePreviousSetups(files,target);
+    if(!previous)return;
+    lastUploadJobs=files.map((file,index)=>({file,previousSetups:previous[index],version:versions[index],category:target.category,vehicle:target.vehicle,state:"waiting",error:""}));
     await runUploadJobs(lastUploadJobs);
-  }finally{
+  }catch(error){status.textContent=error.message||"Vorhandene Setups konnten nicht geprüft werden. Bitte erneut versuchen.";}finally{
     uploadPreparing=false;$("uploadBtn").disabled=false;$("retryFailedBtn").disabled=false;this.value="";
   }
 });
 $("retryFailedBtn").addEventListener("click",async()=>{if(uploadQueueRunning||uploadPreparing)return;const failed=lastUploadJobs.filter(job=>job.state==="err");if(!failed.length){$("retryFailedBtn").classList.remove("show");return;}await runUploadJobs(failed,{appendRows:true});});
 
-function openDeleteModal(name){pendingDelete=name;$("deleteModalText").textContent=`Möchtest du „${name}“ wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`;$("deleteModal").classList.add("show")}function closeDeleteModal(){pendingDelete=null;$("deleteModal").classList.remove("show")}$("deleteCancel").addEventListener("click",closeDeleteModal);$("deleteModal").addEventListener("click",e=>{if(e.target===$("deleteModal"))closeDeleteModal()});$("deleteConfirm").addEventListener("click",async()=>{if(!pendingDelete)return;$("deleteConfirm").disabled=true;try{const r=await fetch("/api/setups/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:currentCar.category,vehicle:currentCar.vehicle,name:pendingDelete})});const d=await r.json();if(!d.success)throw new Error(d.error||"Löschen fehlgeschlagen.");closeDeleteModal();invalidateCurrentSetupCache();await loadCarSetups(currentCar.category,currentCar.vehicle)}catch(e){$("deleteModalText").textContent=e.message}finally{$("deleteConfirm").disabled=false}})
+let deleteInFlight=false;
+function openDeleteModal(name){if(deleteInFlight)return;const item=currentCarSetups.find(setup=>setup.name===name);pendingDelete={...currentCar,name,...(item?.sha?{sha:item.sha}:{})};$("deleteModalText").textContent=`Möchtest du „${name}“ wirklich löschen?`;$("deleteConfirm").textContent="Löschen";$("deleteModal").classList.add("show")}
+function closeDeleteModal(){if(deleteInFlight)return;pendingDelete=null;$("deleteModal").classList.remove("show")}
+$("deleteCancel").addEventListener("click",closeDeleteModal);
+$("deleteModal").addEventListener("click",e=>{if(e.target===$("deleteModal"))closeDeleteModal()});
+async function requestSetupDelete(target){
+  for(let attempt=0;attempt<3;attempt++){
+    let response,data;
+    try{response=await fetch('/api/setups/delete',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(target),signal:AbortSignal.timeout(45000)});data=await response.json();}
+    catch{if(attempt===2)throw new Error('Verbindung unterbrochen. Bitte erneut versuchen; der Löschstand wird dabei geprüft.');await new Promise(resolve=>setTimeout(resolve,1000*(attempt+1)));continue;}
+    if(response.ok&&data.success)return data;
+    if(!(data.retryable??(response.status>=500||response.status===429))||attempt===2)throw new Error(data.error||'Löschen fehlgeschlagen.');
+    $("deleteModalText").textContent='GitHub ist gerade beschäftigt. Löschstand wird erneut geprüft…';
+    await new Promise(resolve=>setTimeout(resolve,Math.max(1000*(attempt+1),uploadRetryDelay(response,data))));
+  }
+}
+$("deleteConfirm").addEventListener("click",async()=>{
+  if(!pendingDelete||deleteInFlight)return;
+  const target={...pendingDelete};deleteInFlight=true;$("deleteConfirm").disabled=true;$("deleteCancel").disabled=true;$("deleteConfirm").textContent='Wird gelöscht…';$("deleteModalText").textContent='„'+target.name+'“ wird gelöscht. Bitte kurz warten.';
+  try{
+    await requestSetupDelete(target);
+    invalidateSetupCache(target.category,target.vehicle);
+    if(currentCar.category===target.category&&currentCar.vehicle===target.vehicle){currentCarSetups=currentCarSetups.filter(setup=>setup.name!==target.name);renderSetups(currentCarSetups);}
+    deleteInFlight=false;closeDeleteModal();
+    if(typeof refreshVehicleCounts==='function')void refreshVehicleCounts().catch(()=>{});
+  }catch(error){$("deleteModalText").textContent=error.message;}
+  finally{deleteInFlight=false;$("deleteConfirm").disabled=false;$("deleteCancel").disabled=false;$("deleteConfirm").textContent='Löschen';}
+});
 $("search").addEventListener("input",e=>renderCategories(e.target.value));
 document.querySelectorAll('#classFilter .mfr-btn').forEach(btn=>btn.addEventListener('click',()=>{activeClass=btn.dataset.class||'';document.querySelectorAll('#classFilter .mfr-btn').forEach(b=>b.classList.toggle('active',b===btn));renderCategories($("search").value)}));
 $("trackSearch").addEventListener("input",e=>{trackSearchVal=e.target.value;renderSetups(currentCarSetups)});
 document.querySelectorAll('#mfrFilter .mfr-btn').forEach(btn=>btn.addEventListener('click',()=>{activeMfr=btn.dataset.mfr||'';document.querySelectorAll('#mfrFilter .mfr-btn').forEach(b=>b.classList.toggle('active',b===btn));if($("carPage").classList.contains('active'))renderSetups(currentCarSetups)}));
-$("requestForm").addEventListener("submit",async e=>{e.preventDefault();const out=$("requestResult");out.textContent="Wird gesendet...";try{const r=await fetch("/api/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vehicle:$("reqVehicle").value.trim(),carClass:$("reqClass").value.trim(),track:$("reqTrack").value.trim(),message:$("reqMsg").value.trim()})});const d=await r.json();out.textContent=d.success?"Setup Request wurde gesendet.":d.error||"Request fehlgeschlagen.";if(d.success)e.target.reset()}catch{out.textContent="Request fehlgeschlagen."}})
+let selectedRequestVehicle=null,requestVehicleIndex=-1;
+function requestVehicleMatches(){const q=$("reqVehicle").value.trim().toLocaleLowerCase();return q.length<3?[]:Object.entries(setupData).flatMap(([category,vehicles])=>vehicles.map(vehicle=>({name:vehicle.name,category}))).filter(vehicle=>vehicle.name.toLocaleLowerCase().includes(q));}
+function selectRequestVehicle(vehicle){selectedRequestVehicle=vehicle;$("reqVehicle").value=vehicle.name;$("reqClass").value=vehicle.category;$("reqVehicle").setCustomValidity('');$("requestVehicleOptions").classList.add('hidden');$("reqVehicle").setAttribute('aria-expanded','false');$("reqVehicle").removeAttribute('aria-activedescendant');}
+function renderRequestVehicleOptions(){
+  const input=$("reqVehicle"),list=$("requestVehicleOptions"),matches=requestVehicleMatches();selectedRequestVehicle=null;$("reqClass").value='';input.setCustomValidity('');input.removeAttribute('aria-activedescendant');requestVehicleIndex=-1;list.replaceChildren();
+  const exact=matches.find(vehicle=>vehicle.name.toLocaleLowerCase()===input.value.trim().toLocaleLowerCase());if(exact){selectRequestVehicle(exact);return;}
+  if(!matches.length){if(input.value.trim().length>=3){const text=document.createElement('p');text.textContent='Kein Fahrzeug gefunden.';list.append(text);}else{list.classList.add('hidden');input.setAttribute('aria-expanded','false');return;}}
+  matches.forEach((vehicle,index)=>{const option=document.createElement('button');option.type='button';option.role='option';option.id='requestVehicleOption'+index;option.textContent=vehicle.name+' · '+vehicle.category;option.setAttribute('aria-selected','false');option.addEventListener('mousedown',event=>event.preventDefault());option.addEventListener('click',()=>{selectRequestVehicle(vehicle);input.focus();});list.append(option);});
+  list.classList.remove('hidden');input.setAttribute('aria-expanded','true');
+}
+$("reqVehicle").addEventListener('input',renderRequestVehicleOptions);
+$("reqVehicle").addEventListener('keydown',event=>{
+  const list=$("requestVehicleOptions"),options=[...list.querySelectorAll('button')];
+  if(event.key==='Escape'){list.classList.add('hidden');event.currentTarget.setAttribute('aria-expanded','false');return;}
+  if(list.classList.contains('hidden')||!options.length)return;
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();requestVehicleIndex=(requestVehicleIndex+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===requestVehicleIndex)));event.currentTarget.setAttribute('aria-activedescendant',options[requestVehicleIndex].id);}
+  if(event.key==='Enter'&&requestVehicleIndex>=0){event.preventDefault();options[requestVehicleIndex].click();}
+});
+$("reqVehicle").addEventListener('blur',()=>{setTimeout(()=>{$("requestVehicleOptions").classList.add('hidden');$("reqVehicle").setAttribute('aria-expanded','false');},150);});
+$("requestForm").addEventListener("submit",async e=>{e.preventDefault();const out=$("requestResult");if(!selectedRequestVehicle||selectedRequestVehicle.name!==$("reqVehicle").value.trim()){out.textContent="Bitte ein Fahrzeug aus den Vorschlägen auswählen.";$("reqVehicle").focus();return;}out.textContent="Wird gesendet...";try{const r=await fetch("/api/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vehicle:$("reqVehicle").value.trim(),carClass:$("reqClass").value.trim(),track:$("reqTrack").value.trim(),message:$("reqMsg").value.trim()})});const d=await r.json();out.textContent=d.success?"Setup Request wurde gesendet.":d.error||"Request fehlgeschlagen.";if(d.success){e.target.reset();selectedRequestVehicle=null;$("requestVehicleOptions").classList.add("hidden")}}catch{out.textContent="Request fehlgeschlagen."}})
 async function grantUploadAccess(){await adminAccess("POST")}async function revokeUploadAccess(){await adminAccess("DELETE")}async function adminAccess(method){const id=$("adminUserId").value.trim(),out=$("adminResult");if(!id){out.textContent="Discord User ID fehlt.";return}try{const r=await fetch("/api/admin/upload-access",{method,headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})});const d=await r.json();out.textContent=d.success?(method==="POST"?"Upload freigegeben.":"Freigabe entfernt."):d.error||"Fehler."}catch{out.textContent="Fehler."}}async function registerRequestCommand(){const out=$("adminResult");out.textContent="Wird registriert...";try{const r=await fetch("/api/admin/discord/register-request",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});const d=await r.json();out.textContent=d.success?"/request registriert.":d.error||"Fehler."}catch{out.textContent="Fehler."}}
 loadTheme();initManufacturer();checkLogin();loadData();
 </script>

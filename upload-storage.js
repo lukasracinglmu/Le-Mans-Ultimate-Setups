@@ -73,7 +73,7 @@ export function githubFailure(response, data = {}, now = Date.now()) {
 const conflict = () => ({ error: 'Unter diesem Namen liegt bereits eine andere Datei. Bitte die ZIP umbenennen.', code: 'FILE_CONFLICT', retryable: false });
 async function jsonOrEmpty(response) { try { return await response.json(); } catch { return {}; } }
 
-export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest }) {
+export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest, replaceSha }) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b ||
     !((bytes[2] === 3 && bytes[3] === 4) || (bytes[2] === 5 && bytes[3] === 6) || (bytes[2] === 7 && bytes[3] === 8))) {
@@ -88,14 +88,16 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
     const data = await jsonOrEmpty(response);
     if (response.ok) {
       if (typeof data.sha !== 'string') return { error: 'Ungültige GitHub-Antwort.', retryable: true };
-      return data.sha === sha ? { uploaded: true, alreadyExists: true, sha } : conflict();
+      if (data.sha === sha) return { uploaded: true, alreadyExists: true, sha };
+      if (replaceSha && data.sha === replaceSha) return null;
+      return conflict();
     }
     return response.status === 404 ? null : githubFailure(response, data);
   };
   try {
     const existing = await check();
     if (existing) return existing;
-    const prefix = JSON.stringify({ message: `Add setup: ${vehicle} - ${name}`, branch }).slice(0, -1) + ',"content":"';
+    const prefix = JSON.stringify({ message: `${replaceSha ? "Replace" : "Add"} setup: ${vehicle} - ${name}`, branch, ...(replaceSha ? {sha:replaceSha} : {}) }).slice(0, -1) + ',"content":"';
     // Keep the large base64 value out of JSON.stringify and avoid rebuilding FormData.
     const body = new Blob([prefix, ...base64Parts(bytes), '"}'], { type: 'application/json' });
     const response = await githubRequest(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(60000) });

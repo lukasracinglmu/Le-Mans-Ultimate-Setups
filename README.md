@@ -141,7 +141,7 @@ Die Oberfläche bietet einen gespeicherten Hell-/Dunkelmodus. Übersichtsseite u
 | :--- | :--- |
 | **01 · Version setzen** | Optional eine gemeinsame Versionsangabe eingeben. Sie wird bei Einzel-Uploads und bei der Auswahl „Ja“ verwendet. |
 | **02 · ZIPs auswählen** | Bis zu 50 Dateien auswählen. Jede ZIP darf höchstens 25 MiB groß und nicht leer sein. |
-| **03 · Versionen zuordnen** | Bei mehreren ZIPs erscheint „Haben alle Setups die gleiche Version?“. **Ja** startet den Upload mit der gemeinsamen Version. **Nein** öffnet eine Liste mit Dateinamen und je einem optionalen Versionsfeld; anschließend „Hochladen“ wählen. |
+| **03 · Versionen zuordnen** | Bei mehreren ZIPs erscheint „Haben alle Setups die gleiche Version?“. **Ja** öffnet zunächst einen Dialog für die gemeinsame optionale Version. Erst „Hochladen“ bestätigt sie. **Nein** öffnet eine Liste mit Dateinamen und je einem optionalen Versionsfeld; anschließend „Hochladen“ wählen. |
 | **04 · Einzeln verarbeiten** | Die Oberfläche sendet jeweils eine Datei an den Worker. Er prüft unter anderem Berechtigung, Dateiendung, Größe und ZIP-Signatur. |
 | **05 · Fortschritt verfolgen** | Verarbeitete Dateien, Gesamtzahl, Prozentwert, aktuelle Datei und Einzelstatus bleiben sichtbar. |
 | **06 · Ergebnis übernehmen** | Erfolgreiche ZIPs liegen in GitHub; die zugehörige Version wird in D1 gespeichert. Die Fahrzeugliste wird nach dem Vorgang aktualisiert. |
@@ -161,7 +161,7 @@ flowchart TB
 
 **Der Prozentwert zählt verarbeitete Dateien.** Auch ein fehlgeschlagener Versuch wird mitgezählt. Bei 100 % ist der Vorgang abgeschlossen; die getrennten Erfolgs- und Fehlerzähler zeigen das Ergebnis. Ein Retry startet einen eigenen Fortschritt für die verbliebenen Dateien.
 
-Bei gleichem Dateinamen vergleicht der Worker die Git-Blob-Prüfsumme mit dem ZIP-Inhalt. Eine identische Datei wird als bereits gespeichert bestätigt und ihre angegebene Version gespeichert. Eine andere Datei unter demselben Namen wird abgelehnt und niemals automatisch überschrieben. Das verhindert falsche Fehler nach einer verlorenen Erfolgsantwort.
+Bei gleichem Dateinamen vergleicht der Worker die Git-Blob-Prüfsumme mit dem ZIP-Inhalt. Eine identische Datei wird als bereits gespeichert bestätigt und ihre angegebene Version gespeichert. Eine andere Datei unter demselben Namen wird standardmäßig abgelehnt. Nur wenn die vorhandene Datei im neuen Auswahldialog ausdrücklich mit „Ersetzen“ ausgewählt wurde, darf der Worker sie mit dem bestätigten alten Git-Dateistand überschreiben. Ein inzwischen geänderter Dateistand verhindert das Überschreiben. Das verhindert falsche Fehler nach einer verlorenen Erfolgsantwort.
 
 #### Status, Wiederholung und Unterbrechungen
 
@@ -194,7 +194,25 @@ GitHub-Datei, D1-Version und Audit-Ereignis werden in getrennten Schritten gesch
 | Speichern klappt, Audit-Schreiben scheitert | Setup-Änderung kann erfolgreich sein, ohne dass ein Audit-Eintrag erscheint | Worker-Logs und Audit-Konfiguration prüfen |
 | Nachladen der Liste scheitert | Die Upload-Erfolge bleiben gezählt; die Anzeige kann veraltet sein | Liste erneut öffnen bzw. Seite nach Abschluss neu laden |
 
-Ein gleicher Name mit unterschiedlichem Inhalt bleibt ein echter Konflikt. Die ZIP in diesem Fall prüfen und bei Bedarf umbenennen. Eine 100-prozentige Erfolgsquote ist bei dauerhaften Dienstausfällen, fehlenden Rechten oder ungültigen Dateien nicht garantiert; solche Fehler bleiben sichtbar.
+Ein gleicher Name mit unterschiedlichem Inhalt erfordert eine ausdrückliche Ersetzen-Auswahl oder einen neuen Dateinamen. Bei unbekanntem Hersteller bleibt das Überschreiben ausgeschlossen. Eine 100-prozentige Erfolgsquote ist bei dauerhaften Dienstausfällen, fehlenden Rechten oder ungültigen Dateien nicht garantiert; solche Fehler bleiben sichtbar.
+
+### Alte Setups beim Upload
+
+Nach der Versionsauswahl prüft die Website die vorhandenen Dateien des gewählten Fahrzeugs. Gibt es passende Dateien, erscheint ein weiterer Dialog mit der neuen ZIP, dem Hersteller und den vorhandenen Dateinamen samt Version. Jede neue ZIP erhält ihre eigene Auswahl:
+
+| Auswahl | Verhalten nach bestätigtem Upload |
+| :--- | :--- |
+| **Behalten** | Bestehende Dateien bleiben unverändert; dies ist die Voreinstellung. |
+| **Als veraltet markieren** | Die ausgewählten alten ZIPs bleiben herunterladbar und erhalten die sichtbare Kennzeichnung „Veraltet“. |
+| **Ersetzen** | Nur die ausdrücklich ausgewählten alten Dateien werden entfernt. Bei gleichem Dateinamen ersetzt ein Upload mit Prüfung des alten Git-Dateistands die ZIP direkt. |
+
+Die Auswahl enthält ausschließlich denselben erkannten Hersteller (GO, HYMO oder beAlien) im selben Fahrzeugordner. Dateien anderer Hersteller werden zusätzlich auf dem Server abgelehnt. Die betroffenen Dateien werden manuell ausgewählt, damit beispielsweise ein Spa-Setup nicht versehentlich ein Monza-Setup entfernt. Andere neue ZIPs derselben Upload-Auswahl können nicht als alte Dateien ausgewählt werden. Ohne erkannten Hersteller findet keine automatische Bereinigung statt.
+
+Der neue Dateiinhalt muss vor der Bereinigung von GitHub bestätigt sein. Ist ein ausgewähltes altes Setup inzwischen geändert worden, wird es nicht entfernt. Ein Statusfehler nach dem Upload bleibt sichtbar und kann erneut versucht werden. ZIP-Speicherung, Versionsmetadaten, Status und Audit-Datei sind getrennte Schritte und keine gemeinsame Transaktion.
+
+`setup_lifecycle` speichert den Status zusammen mit dem genauen Git-Dateistand. Ein späterer anderer ZIP-Inhalt mit gleichem Namen übernimmt dadurch keine alte Veraltet-Markierung. Die Definition steht in `schema.sql` und muss vor dem ersten Markieren in D1 vorhanden sein.
+
+Beim normalen Löschen sperrt die Oberfläche während der Anfrage die Bestätigung und den Abbruch. Sie hält Fahrzeug, Dateiname und Dateistand vom Öffnen des Dialogs fest. Vorübergehende GitHub-Konflikte und verlorene Antworten werden erneut geprüft; eine bereits entfernte Datei gilt beim erneuten Versuch als gelöscht. Ein inzwischen geänderter Dateiinhalt wird nicht gelöscht.
 
 <a id="versionen"></a>
 
@@ -282,8 +300,8 @@ Die API liefert zusätzlich `databaseGrantedAt` und `uploadGrantedAt`; das derze
   <tr>
     <td width="50%" valign="top">
       <h3>Login & Setup Requests</h3>
-      <p>Discord OAuth übernimmt die Anmeldung. Ein Setup Request enthält Fahrzeug, Strecke, optional die Klasse und weitere Informationen.</p>
-      <p>Der Worker sendet den Request in den konfigurierten Discord-Kanal. Der anfragende Nutzer kann erwähnt werden; eine zusätzliche Request-Rolle ist optional.</p>
+      <p>Discord OAuth übernimmt die Anmeldung. Ein Website-Setup-Request enthält das ausgewählte Fahrzeug, die automatisch zugeordnete Klasse, die frei eingegebene Strecke und weitere Informationen. Ab drei Buchstaben erscheinen Fahrzeugvorschläge aus dem aktuellen Katalog; die Klasse wird serverseitig erneut geprüft.</p>
+      <p>Der Worker sendet den Request in den konfigurierten Discord-Kanal. Der anfragende Nutzer und die Setup-Supply-Rolle <code>1538601074074849330</code> werden gezielt erwähnt. Andere Erwähnungen im Freitext werden nicht aktiviert.</p>
       <p>Der registrierbare Befehl <code>/request</code> öffnet ein Formular direkt in Discord. Dafür muss der Interaction-Endpunkt eingerichtet sein.</p>
     </td>
     <td width="50%" valign="top">
@@ -538,18 +556,18 @@ Die ZIP-Prüfung kontrolliert unter anderem Endung, Dateigröße und einen ZIP-K
 | `DISCORD_BOT_TOKEN` | Geheimer Bot-Token für Rollenabfragen und Discord-Nachrichten |
 | `DISCORD_CHANNEL_ID` | Zielkanal für Setup Requests; muss zum vorgesehenen Server gehören |
 | `DISCORD_AUDIT_CHANNEL_ID` | Zielkanal für Upload-, Lösch-, Versions- und Freigabeprotokolle |
-| `DISCORD_SETUP_REQUEST_ROLE_ID` | Optionaler Rollen-Ping bei Setup Requests; leer bedeutet kein Rollen-Ping |
+| `DISCORD_SETUP_REQUEST_ROLE_ID` | Ping bei Setup Requests: `1538601074074849330`; bei leerem Wert wird die Setup-Supply-Rolle verwendet |
 | `SITE_URL` | Öffentliche Website-Adresse; Grundlage des Discord-Login-Rückwegs und der Herkunftsprüfung |
 | `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` | GitHub-Benutzername, Repository und verwendeter Branch |
 | `GITHUB_TOKEN` | Geheimer Zugriffsschlüssel zum Lesen privater Website-Dateien und ZIPs sowie zum Speichern von ZIPs und Audit-Dateien in GitHub |
 | `SESSION_SECRET` | Geheimer Schlüssel zum Signieren und Prüfen der Anmelde-Sitzungen |
 | `LMUPORTAL_API1`, `LMUPORTAL_API2` | Vorhandene Schlüssel für die frühere Rennkalender-Anbindung; im aktiven Worker-Code derzeit nicht verwendet |
 
-Der Discord-Bot muss Mitglied des eingetragenen Servers sein und die erforderlichen Kanäle nutzen können. Die bestehenden Kanal-IDs wurden durch die Rollenänderung nicht ersetzt. `ASSETS` liefert Website-Dateien aus, `ACCESS_DB` speichert Freigaben und Versionen. `UPLOADS_R2` und `UPLOAD_QUEUE` sind vorhandene Speicher-/Queue-Bindings; der aktuelle ZIP-Upload schreibt direkt nach GitHub.
+Der Discord-Bot muss Mitglied des eingetragenen Servers sein und die erforderlichen Kanäle nutzen können. Die bestehenden Kanal-IDs wurden durch die Rollenänderung nicht ersetzt. `ASSETS` liefert Website-Dateien aus, `ACCESS_DB` speichert Freigaben, Versionen und den Veraltet-Status. `UPLOADS_R2` und `UPLOAD_QUEUE` sind vorhandene Speicher-/Queue-Bindings; der aktuelle ZIP-Upload schreibt direkt nach GitHub.
 
 `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`, `GITHUB_TOKEN` und `SESSION_SECRET` werden als Worker-Secrets hinterlegt. Der Presence Bot erhält seinen Bot-Token separat über seine Laufzeitumgebung.
 
-Für die aktuellen Rechte- und Versionsfunktionen müssen in D1 `database_access`, `upload_access` und `setup_versions` vorhanden sein. [`schema.sql`](schema.sql) enthält derzeit `upload_access` sowie zusätzliche Cache- und Upload-Tabellen; es ist kein vollständiges Installationsschema für alle heutigen Funktionen. Bei einer neuen D1-Datenbank müssen die fehlenden Rechte- und Versionstabellen zusätzlich eingerichtet werden.
+Für die aktuellen Rechte- und Versionsfunktionen müssen in D1 `database_access`, `upload_access`, `setup_versions` und `setup_lifecycle` vorhanden sein. [`schema.sql`](schema.sql) enthält derzeit `upload_access` sowie `setup_lifecycle` und zusätzliche Cache- und Upload-Tabellen; es ist kein vollständiges Installationsschema für alle heutigen Funktionen. Bei einer neuen D1-Datenbank müssen die fehlenden Rechte- und Versionstabellen zusätzlich eingerichtet werden.
 
 </details>
 
@@ -726,7 +744,7 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | **Upload-Button sichtbar, aber `403` beim Upload** | Geänderte Rollen oder veralteter Website-Stand | Setup-Supply-Rolle auf dem konfigurierten Server und individuelle Upload-Freigabe prüfen; Seite neu laden |
 | **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload darf das Feld leer bleiben; im Stift-Editor ist eine Angabe erforderlich |
 | **„Ungültige ZIP-Datei.“** | Dateiendung, Inhaltssignatur, leere oder zu große Datei | Eine tatsächliche ZIP bis 25 MiB wählen; bloßes Umbenennen einer anderen Datei reicht nicht |
-| **„Unter diesem Namen liegt bereits eine andere Datei.“** | Derselbe Dateipfad enthält einen anderen ZIP-Inhalt | Datei prüfen und gegebenenfalls umbenennen; automatische Überschreibung ist ausgeschlossen |
+| **„Unter diesem Namen liegt bereits eine andere Datei.“** | Derselbe Dateipfad enthält einen anderen ZIP-Inhalt | Datei prüfen und gegebenenfalls umbenennen; zum ausdrücklichen Ersetzen die vorhandene Datei desselben Herstellers im Upload-Dialog auswählen; andernfalls umbenennen |
 | **„Request zu groß.“ / `413`** | Upload-Größe und Verarbeitungspfad | Dateigröße und Einzelanfragen prüfen; nicht mehrere große ZIPs zu einem eigenen Sammelrequest zusammenfassen |
 | **„Ungültige Server-Antwort“ / Netzwerkfehler** | Antwortformat oder unterbrochener Request | Automatische Versuche abwarten; danach genaue Ursache am Dateistatus prüfen |
 | **Datei vorhanden, aber Version `—`** | Ohne Version hochgeladen, fehlende D1-Metadaten oder fehlgeschlagener Versionsabruf | `ACCESS_DB`, Tabelle und Zuordnung aus Klasse/Fahrzeug/Dateiname prüfen; Version gegebenenfalls nachtragen |

@@ -54,6 +54,7 @@ async function gh(path, opts, env) {
 }
 function discordTitle(action) {
   if (action === "SETUP_UPLOAD") return "SETUP HOCHGELADEN";
+  if (action === "SETUP_OUTDATED") return "SETUP ALS VERALTET MARKIERT";
   if (action === "SETUP_DELETE") return "SETUP GELÖSCHT";
   if (action === "SETUP_VERSION_UPDATE") return "SETUP-VERSION GEÄNDERT";
   if (action === "PERMISSION_GRANT") return "BERECHTIGUNG HINZUGEFÜGT";

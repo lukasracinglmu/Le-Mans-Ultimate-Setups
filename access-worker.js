@@ -46,6 +46,10 @@ export default {
             await new Promise(resolve=>setTimeout(resolve,1100));
             await safeAudit({ action:"SETUP_UPLOAD", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:item.name, vehicle, manufacturer:classifyManufacturer(item.name), track:inferTrack(item.name), version, result:"SUCCESS" }, env);
           }
+          for(const old of data.retired||[]){
+            await new Promise(resolve=>setTimeout(resolve,1100));
+            await safeAudit({action:old.action==="delete"?"SETUP_DELETE":"SETUP_OUTDATED",discordAccount:permission.user.username,discordUserId:permission.user.id,setup:old.name,vehicle,manufacturer:classifyManufacturer(old.name),track:inferTrack(old.name),newValue:old.action==="delete"?"Ersetzt":"Veraltet",result:"SUCCESS"},env);
+          }
         }
       }
       return response;
@@ -86,7 +90,7 @@ export default {
       const response = await uiWorker.fetch(request, env, ctx);
       if (response.ok) {
         const data = await safeJson(response.clone());
-        if (data?.success && meta.name) runAuditTasks([safeAudit({ action:"SETUP_DELETE", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:meta.name, vehicle:meta.vehicle, manufacturer:classifyManufacturer(meta.name), track:inferTrack(meta.name), version:meta.version, result:"SUCCESS" }, env)], ctx);
+        if (data?.success && data.deleted !== false && meta.name) runAuditTasks([safeAudit({ action:"SETUP_DELETE", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:meta.name, vehicle:meta.vehicle, manufacturer:classifyManufacturer(meta.name), track:inferTrack(meta.name), version:meta.version, result:"SUCCESS" }, env)], ctx);
       }
       return response;
     }
