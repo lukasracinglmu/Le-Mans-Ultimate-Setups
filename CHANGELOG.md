@@ -4,6 +4,24 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-22 – Anzeigenamen und Bugmeldungen
+
+### Ergänzt
+
+- Im Stift-Editor sind Version und ein eigener Anzeigename bearbeitbar. Der Anzeigename erscheint in der Übersicht und Suche; ein leeres Feld setzt ihn zurück. ZIP-Dateiname, Speicherpfad und Downloadname bleiben unverändert. Anzeigenamen sind an den jeweiligen Dateiinhalt gebunden. [Änderung](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/c8759e279bf6f71c8308038b574ec5316fb1cef7).
+- „Bug melden“ steht rechts unter der Kopfzeile und führt auf eine eigene Seite. Angemeldete Nutzer können eine Beschreibung und optional ein PNG-, JPG- oder WebP-Bild bis 5 MiB senden. Der bestehende Bot verschickt die Meldung als DM an den hinterlegten Betreiber.
+- D1-Tabellen für Anzeigenamen und Versandbegrenzung ergänzt. Meldungsinhalte werden nicht in GitHub oder D1 gespeichert; Versandstatus und Meldungsnummer verhindern versehentliche Mehrfachmeldungen.
+
+### Geändert
+
+- Versionen sind auch im Bearbeitungsdialog optional. Suche findet sowohl Anzeigenamen als auch bisherige Namen und Dateinamen.
+- Erfolg beim Bugreport erscheint erst nach bestätigter Discord-Antwort. Bei Fehlern bleiben Eingaben erhalten; Wiederholungen sind begrenzt und verwenden eine feste Meldungsnummer.
+
+### Wartung
+
+- README um Bearbeitung, Bugmeldungen, Bildgrenzen und benötigte Tabellen ergänzt. 79 Codeprüfungen, 33 Formular-/Oberflächenszenarien und 23 Changelog-Prüfungen erfolgreich; Worker-Bundle erstellt. Discord-Versand mit simulierten Antworten geprüft, keine echte Test-DM gesendet.
+- Zwischenzeitliche Nutzung seit dem letzten dokumentierten Funktionsstand: ein ZIP-Upload, eine ZIP-Löschung und drei Audit-Commits. [Verlauf](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/0acb9d84141ee119cd617a2de22944e5921c7219...14667197c1eb59a4fe1f66154d83ca389db14e41).
+
 ## 2026-10-22 – Nachtrag
 
 ### Weitere Setup-Aktivitäten
