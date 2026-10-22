@@ -14,7 +14,12 @@ export function readPreviousSetups(form, names) {
   if(typeof raw!=='string'||raw.length>40000)return {error:'Ungültige Auswahl alter Setups.'};
   let plan;try{plan=JSON.parse(raw);}catch{return {error:'Ungültige Auswahl alter Setups.'};}
   if(!['keep','outdate','replace'].includes(plan?.action)||!Array.isArray(plan.targets)||plan.targets.length>100)return {error:'Ungültige Auswahl alter Setups.'};
-  if(plan.action==='keep')return {action:'keep',targets:[]};
+  if(plan.duplicateOf){
+    const target=plan.duplicateOf;
+    if(plan.action!=='keep'||names.length!==1||!validName(target.name)||!/^[a-f0-9]{40}$/.test(target.sha||'')||!setupManufacturer(names[0])||setupManufacturer(target.name)!==setupManufacturer(names[0]))return {error:'Ungültige identische Bestandsdatei.'};
+    return {action:'keep',targets:[],duplicateOf:{name:target.name,sha:target.sha}};
+  }
+  if(plan.action==='keep'&&!plan.targets.length)return {action:'keep',targets:[]};
   // Each browser job contains exactly one new ZIP. Never accept cross-vendor cleanup.
   if(names.length!==1||!validName(names[0]))return {error:'Alte Setups bitte je neuer ZIP auswählen.'};
   const vendor=setupManufacturer(names[0]);
@@ -22,7 +27,7 @@ export function readPreviousSetups(form, names) {
   const seen=new Set();
   for(const target of plan.targets){
     if(!validName(target?.name)||!/^[a-f0-9]{40}$/.test(target?.sha||'')||seen.has(target.name)||setupManufacturer(target.name)!==vendor)return {error:'Nur ausgewählte Setups desselben Herstellers sind erlaubt.'};
-    if(plan.action==='outdate'&&target.name===names[0])return {error:'Gleicher Dateiname: Zum Überschreiben bitte „Ersetzen“ wählen oder die neue ZIP umbenennen.'};
+    if(plan.action==='keep'&&target.name!==names[0])return {error:'Beim Behalten ist nur die gleichnamige bestehende Datei als Namenskonflikt erlaubt.'};
     seen.add(target.name);
   }
   return {action:plan.action,targets:plan.targets.map(({name,sha})=>({name,sha}))};

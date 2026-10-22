@@ -41,7 +41,7 @@ export default {
         if (data?.success) {
           const vehicle=cleanPath(data.vehicle), version=String(data.version || "");
           for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
-            if (!item?.name) continue;
+            if (!item?.name || (data.duplicate&&item.alreadyExists)) continue;
             // Finish this audit before the browser writes the next ZIP to the same branch.
             await new Promise(resolve=>setTimeout(resolve,1100));
             await safeAudit({ action:"SETUP_UPLOAD", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:item.name, vehicle, manufacturer:classifyManufacturer(item.name), track:inferTrack(item.name), version, result:"SUCCESS" }, env);

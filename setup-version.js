@@ -27,3 +27,22 @@ export async function storeSetupVersion(category, vehicle, fileName, version, en
     "INSERT INTO setup_versions (category, vehicle, file_name, version, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(category, vehicle, file_name) DO UPDATE SET version = excluded.version, updated_at = CURRENT_TIMESTAMP"
   ).bind(String(category), String(vehicle), String(fileName), String(version)).run();
 }
+
+export function compareSetupVersions(a,b){
+  const parse=value=>{const match=/^v?(\d+(?:[.,_-]\d+)*)$/i.exec(String(value||'').trim());return match?match[1].split(/[.,_-]/).map(part=>BigInt(part)):null;};
+  const left=parse(a),right=parse(b);if(!left||!right)return null;
+  for(let index=0;index<Math.max(left.length,right.length);index++){const x=left[index]||0n,y=right[index]||0n;if(x!==y)return x>y?1:-1;}return 0;
+}
+
+export async function validatePreviousSetupVersions(plan,category,vehicle,version,env){
+  if(plan.action==='keep')return {success:true};
+  if(!env.ACCESS_DB)return {success:false,status:503,error:'Versionsdatenbank nicht verfügbar.',retryable:true};
+  try{
+    for(const target of plan.targets){
+      const old=await env.ACCESS_DB.prepare('SELECT version FROM setup_versions WHERE category = ? AND vehicle = ? AND file_name = ?').bind(category,vehicle,target.name).first();
+      const comparison=compareSetupVersions(version,old?.version);
+      if(comparison!==1)return {versionConflict:{name:target.name,comparison},success:false,status:409,error:'Die neue Version muss sicher neuer als die ausgewählten alten Setups sein. Bitte Versionen und Auswahl erneut prüfen.',retryable:false};
+    }
+    return {success:true};
+  }catch{return {success:false,status:503,error:'Versionsdaten konnten nicht geprüft werden. Bitte erneut versuchen.',retryable:true};}
+}

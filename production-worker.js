@@ -1,9 +1,9 @@
 import baseWorker from "./worker.js";
-import { readPreviousSetups, applyPreviousSetups, enrichSetupLifecycle } from "./setup-lifecycle.js";
+import { readPreviousSetups, applyPreviousSetups, enrichSetupLifecycle, repoJsonRequest } from "./setup-lifecycle.js";
 import { readSiteFile } from "./repo-read.js";
-import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
+import { enrichSetupVersions, readSetupVersion, storeSetupVersion, validatePreviousSetupVersions } from "./setup-version.js";
 
-import { readUploadForm } from "./upload-storage.js";
+import { readUploadForm, gitBlobSha } from "./upload-storage.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
@@ -47,6 +47,17 @@ export default {
         if (parsed.error) return json({ success: false, error: parsed.error }, 400);
         const category = String(form.get("category") || "").trim();
         const vehicle = String(form.get("vehicle") || "").trim();
+        let versionCheck=await validatePreviousSetupVersions(previous,category,vehicle,parsed.version,env);
+        const sameNameTarget=previous.action==='replace'?previous.targets.find(target=>target.name===form.getAll('files')[0]?.name):null;
+        if(!versionCheck.success&&versionCheck.versionConflict?.comparison===0&&sameNameTarget&&versionCheck.versionConflict.name===sameNameTarget.name){
+          // A retry after a lost success response may already have the new version.
+          // Only verified identical new bytes can bypass that same-name version check.
+          const file=form.getAll('files')[0],sha=await gitBlobSha(new Uint8Array(await file.arrayBuffer()));
+          const path='/contents/setups/'+[category,vehicle,sameNameTarget.name].map(encodeURIComponent).join('/')+'?ref='+encodeURIComponent(env.GITHUB_BRANCH||'main');
+          const existing=await repoJsonRequest(env,path),meta=await existing.json().catch(()=>({}));
+          if(existing.ok&&meta.sha===sha)versionCheck=await validatePreviousSetupVersions({...previous,targets:previous.targets.filter(target=>target.name!==sameNameTarget.name)},category,vehicle,parsed.version,env);
+        }
+        if(!versionCheck.success)return json(versionCheck,versionCheck.status);
         const response = await baseWorker.fetch(request, env, ctx, form);
         if (!response.ok) return response;
         const data = await safeJson(response.clone());
@@ -54,7 +65,7 @@ export default {
         const retired=[];
         for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
           if (item?.name) {
-            try { await storeSetupVersion(category, vehicle, item.name, parsed.version, env); }
+            try { if(!previous.duplicateOf||!item.alreadyExists)await storeSetupVersion(category, vehicle, item.name, parsed.version, env); }
             catch {
               return json({success:false,error:"ZIP gespeichert, Versionsdaten konnten noch nicht bestätigt werden. Erneuter Versuch folgt.",code:"VERSION_STORAGE",retryable:true},503);
             }
@@ -63,7 +74,7 @@ export default {
             retired.push(...cleanup.retired);
           }
         }
-        return json({ ...data, retired, category, vehicle, version:parsed.version, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
+        return json({ ...data, duplicate:!!previous.duplicateOf, retired, category, vehicle, version:parsed.version, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
       }
 
       return baseWorker.fetch(request, env, ctx);

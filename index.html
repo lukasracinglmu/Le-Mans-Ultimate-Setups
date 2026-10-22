@@ -135,7 +135,7 @@ async function requestUploadJob(job){
     const response=await fetch("/api/setups/upload",{method:"POST",body:form,credentials:"same-origin",signal:controller.signal});
     let data={};
     try{data=await response.json();}catch{return {error:"Ungültige Server-Antwort (HTTP "+response.status+")",retryable:response.status>=500||response.ok||response.status===429,retryAfterMs:uploadRetryDelay(response,{})};}
-    if(response.ok&&(data.uploaded||[]).some(item=>item.originalName===job.file.name||item.name===job.file.name))return {success:true};
+    const stored=(data.uploaded||[]).find(item=>item.originalName===job.file.name||item.name===job.file.name);if(response.ok&&stored){job.storedName=stored.name;return {success:true};}
     const fileError=(data.errors||[]).find(item=>item.originalName===job.file.name||item.name===job.file.name);
     const retryable=fileError?.retryable??data.retryable??([408,409,425,429].includes(response.status)||response.status>=500);
     return {error:fileError?.error||data.error||("Upload fehlgeschlagen (HTTP "+response.status+")"),retryable,retryAfterMs:uploadRetryDelay(response,data,fileError)};
@@ -149,7 +149,7 @@ async function uploadSingleJob(job,statuses){
     await waitForUploadRetry(job,statuses);
     markUploadJob(statuses,job,"uploading","Wird hochgeladen · Versuch "+attempt+"/"+MAX_UPLOAD_ATTEMPTS);
     const result=await requestUploadJob(job);
-    if(result.success){job.error="";job.nextRetryAt=0;markUploadJob(statuses,job,"ok","Erfolgreich");return true;}
+    if(result.success){job.error="";job.nextRetryAt=0;markUploadJob(statuses,job,"ok","Erfolgreich"+(job.storedName&&job.storedName!==file.name?" · gespeichert als "+job.storedName:"")+(job.previousSetups?.decisionNote?" · "+job.previousSetups.decisionNote:""));return true;}
     job.error=result.error;
     job.nextRetryAt=result.retryable?Date.now()+Math.max(result.retryAfterMs||0,2000*2**(attempt-1))+Math.floor(Math.random()*500):0;
     if(!result.retryable||attempt===MAX_UPLOAD_ATTEMPTS)break;
@@ -178,12 +178,12 @@ function chooseUploadVersions(files,sharedVersion){
     dialog.querySelector("#uploadVersionCancel").addEventListener("click",()=>dialog.close());
     dialog.querySelector("#uploadVersionYes").addEventListener("click",()=>{
       mode="shared";
-      dialog.querySelector("#uploadVersionTitle").textContent="Gemeinsame Version eintragen";
+      dialog.querySelector("#uploadVersionTitle").textContent=files.length===1?"Version eintragen":"Gemeinsame Version eintragen";
       hint.textContent="Diese Version gilt für alle ausgewählten ZIPs. Die Angabe ist optional.";
       list.innerHTML='<div class="upload-version-row"><label for="uploadSharedVersion">Version für alle Setups</label><input id="uploadSharedVersion" type="text" maxlength="40" placeholder="Version (optional)"></div>';
       const input=list.querySelector("input");input.value=sharedVersion;
       list.classList.remove("hidden");error.textContent="";
-      dialog.querySelector("#uploadVersionNo").classList.add("hidden");dialog.querySelector("#uploadVersionYes").classList.add("hidden");dialog.querySelector("#uploadVersionStart").classList.remove("hidden");input.focus();
+      dialog.querySelector("#uploadVersionNo").classList.add("hidden");dialog.querySelector("#uploadVersionYes").classList.add("hidden");dialog.querySelector("#uploadVersionStart").classList.remove("hidden");dialog.querySelector("#uploadVersionStart").textContent="Weiter";input.focus();
     });
     dialog.querySelector("#uploadVersionNo").addEventListener("click",()=>{
       mode="individual";
@@ -209,31 +209,58 @@ function chooseUploadVersions(files,sharedVersion){
     });
     dialog.addEventListener("close",()=>{dialog.remove();resolve(versions);},{once:true});
     dialog.showModal();
+    if(files.length===1)dialog.querySelector("#uploadVersionYes").click();
   });
 }
-async function choosePreviousSetups(files,target){
+function compareUploadVersions(a,b){
+  const parse=value=>{const match=/^v?(\d+(?:[.,_-]\d+)*)$/i.exec(String(value||'').trim());return match?match[1].split(/[.,_-]/).map(part=>BigInt(part)):null;};
+  const left=parse(a),right=parse(b);if(!left||!right)return null;
+  for(let index=0;index<Math.max(left.length,right.length);index++){const x=left[index]||0n,y=right[index]||0n;if(x!==y)return x>y?1:-1;}return 0;
+}
+function uploadSetupFamily(name,version){
+  let key=String(name||'').replace(/\.zip$/i,'').replace(/\s*\[[^\]]*\b[a-f0-9]{12}\]$/i,'');
+  key=key.replace(/\bv\d+(?:[._-]\d+)*\b/gi,' ');
+  const value=String(version||'').trim();
+  if(value&&(value.includes('.')||/^v/i.test(value))){const escaped=value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');key=key.replace(new RegExp('(^|[^a-z0-9])'+escaped+'(?=$|[^a-z0-9])','gi'),'$1');}
+  return key.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+}
+async function uploadFileIdentity(file){
+  const bytes=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(new Uint8Array(reader.result));reader.onerror=()=>reject(new Error('ZIP konnte nicht geprüft werden.'));reader.readAsArrayBuffer(file);});
+  const header=new TextEncoder().encode('blob '+bytes.length+'\0'),input=new Uint8Array(header.length+bytes.length);input.set(header);input.set(bytes,header.length);
+  return [...new Uint8Array(await crypto.subtle.digest('SHA-1',input))].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+async function choosePreviousSetups(files,target,versions){
   invalidateSetupCache(target.category,target.vehicle);
-  const data=await getCarSetups(target.category,target.vehicle),incoming=new Set(files.map(file=>file.name));
-  const choices=files.map(file=>({file,candidates:(data.setups||[]).filter(old=>classifyVendor(file.name)&&classifyVendor(old.name)===classifyVendor(file.name)&&(!incoming.has(old.name)||old.name===file.name)&&/^[a-f0-9]{40}$/.test(old.sha||''))}));
-  if(!choices.some(choice=>choice.candidates.length))return files.map(()=>({action:'keep',targets:[]}));
+  const data=await getCarSetups(target.category,target.vehicle),incoming=new Set(files.map(file=>file.name)),choices=[];
+  for(let index=0;index<files.length;index++){
+    const file=files[index],version=versions[index],vendor=classifyVendor(file.name),family=uploadSetupFamily(file.name,version);
+    const matches=(data.setups||[]).filter(old=>vendor&&classifyVendor(old.name)===vendor&&(!incoming.has(old.name)||old.name===file.name)&&/^[a-f0-9]{40}$/.test(old.sha||'')&&uploadSetupFamily(old.name,old.version)===family);
+    const sameName=matches.find(old=>old.name===file.name);
+    const sha=matches.length?await uploadFileIdentity(file):null,duplicate=matches.find(old=>old.sha===sha);
+    const known=matches.filter(old=>compareUploadVersions(version,old.version)!==null),newer=known.length>0&&known.every(old=>compareUploadVersions(version,old.version)>0);
+    const candidates=duplicate?[]:newer?known:[];
+    choices.push({file,version,candidates,sameName,duplicate,decisionNote:duplicate?'Identische ZIP bereits vorhanden: '+duplicate.name:matches.length&&!newer?'Keine sicher neuere Version erkannt; vorhandene Setups bleiben erhalten.':''});
+  }
+  const defaultPlan=choice=>({action:'keep',targets:!choice.duplicate&&choice.sameName?[{name:choice.sameName.name,sha:choice.sameName.sha}]:[],...(choice.duplicate?{duplicateOf:{name:choice.duplicate.name,sha:choice.duplicate.sha}}:{}),decisionNote:choice.decisionNote});
+  if(!choices.some(choice=>choice.candidates.length))return choices.map(defaultPlan);
   return new Promise(resolve=>{
     const dialog=document.createElement('dialog');dialog.className='upload-version-dialog';dialog.setAttribute('aria-labelledby','oldSetupsTitle');
-    dialog.innerHTML='<h2 id="oldSetupsTitle">Mit vorhandenen Setups umgehen</h2><p>Wähle je neuer ZIP die alten Dateien aus. Es werden nur Setups desselben Herstellers bei diesem Fahrzeug angezeigt. Alte Dateien werden erst nach bestätigtem Upload bearbeitet.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
+    dialog.innerHTML='<h2 id="oldSetupsTitle">Neuere Setup-Version gefunden</h2><p>Wähle, was mit den passenden älteren Setups desselben Herstellers passieren soll. Bei gleichem Dateinamen bleibt die alte ZIP beim Behalten oder Veraltet-Markieren erhalten; die neue wird mit Versionszusatz gespeichert.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
     let plans=null;const rows=[],container=dialog.querySelector('.old-setup-choices'),error=dialog.querySelector('[role="alert"]');
-    choices.forEach(({file,candidates})=>{
+    choices.forEach(choice=>{
+      const {file,version,candidates}=choice;
+      if(!candidates.length){rows.push({choice});return;}
       const row=document.createElement('section');row.className='old-setup-choice';
-      const heading=document.createElement('h3');heading.textContent=file.name+' · '+(classifyVendor(file.name)||'Kein Hersteller erkannt');row.append(heading);
+      const heading=document.createElement('h3');heading.textContent=file.name+' · neue Version: '+version;row.append(heading);
       const label=document.createElement('label');label.textContent='Alte Setups: ';const select=document.createElement('select');select.setAttribute('aria-label','Umgang mit alten Setups für '+file.name);
       for(const [value,text] of [['keep','Behalten'],['outdate','Als veraltet markieren'],['replace','Ersetzen (ausgewählte alte Dateien löschen)']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}label.append(select);row.append(label);
       const list=document.createElement('div');list.className='old-setup-list hidden';const inputs=[];
-      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';item.append(input,document.createTextNode(old.name+' · Version: '+(old.version||'nicht angegeben')+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
-      if(!candidates.length){select.disabled=true;const empty=document.createElement('p');empty.textContent='Keine passenden alten Setups vorhanden.';row.append(empty);}
-      const update=()=>{list.classList.toggle('hidden',select.value==='keep');for(const {input,old} of inputs){input.disabled=select.value==='outdate'&&old.name===file.name;if(input.disabled)input.checked=false;}};
-      select.addEventListener('change',update);row.append(list);container.append(row);rows.push({file,select,inputs});
+      for(const old of candidates){const item=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=true;item.append(input,document.createTextNode(old.name+' · bisherige Version: '+old.version+(old.outdated?' · veraltet':'')));list.append(item);inputs.push({input,old});}
+      select.addEventListener('change',()=>list.classList.toggle('hidden',select.value==='keep'));row.append(list);container.append(row);rows.push({choice,select,inputs});
     });
     dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
     dialog.querySelector('[data-start]').addEventListener('click',()=>{
-      const next=rows.map(({select,inputs})=>({action:select.value,targets:select.value==='keep'?[]:inputs.filter(x=>x.input.checked&&!x.input.disabled).map(({old})=>({name:old.name,sha:old.sha}))}));
+      const next=rows.map(({choice,select,inputs})=>!select||select.value==='keep'?defaultPlan(choice):({action:select.value,targets:inputs.filter(x=>x.input.checked).map(({old})=>({name:old.name,sha:old.sha}))}));
       if(next.some(plan=>plan.action!=='keep'&&!plan.targets.length)){error.textContent='Bitte die betroffenen alten Dateien auswählen oder „Behalten“ wählen.';return;}
       plans=next;dialog.close();
     });
@@ -246,15 +273,16 @@ $("fileInput").addEventListener("change",async function(){
   const files=[...this.files],status=$("uploadStatus");
   if(!files.length)return;
   if(files.length>50){status.textContent="Maximal 50 ZIP-Dateien gleichzeitig.";this.value="";return;}
+  if(files.some(file=>!/\.zip$/i.test(file.name)||file.size<=0||file.size>MAX_UPLOAD_BYTES)){status.textContent="Nur ZIP-Dateien mit maximal 25 MiB pro Datei sind erlaubt.";this.value="";return;}
   const sharedVersion=($("setupVersion")?.value||"").trim();
   const target={...currentCar};
   uploadPreparing=true;$("uploadBtn").disabled=true;$("retryFailedBtn").disabled=true;
   try{
-    const versions=files.length>1?await chooseUploadVersions(files,sharedVersion):[sharedVersion];
+    const versions=await chooseUploadVersions(files,sharedVersion);
     if(!versions)return;
     const error=versions.map(uploadVersionError).find(Boolean);
     if(error){status.textContent=error;return;}
-    const previous=await choosePreviousSetups(files,target);
+    const previous=await choosePreviousSetups(files,target,versions);
     if(!previous)return;
     lastUploadJobs=files.map((file,index)=>({file,previousSetups:previous[index],version:versions[index],category:target.category,vehicle:target.vehicle,state:"waiting",error:""}));
     await runUploadJobs(lastUploadJobs);

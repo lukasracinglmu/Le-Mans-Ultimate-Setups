@@ -12,7 +12,8 @@ test('old-file plan rejects other vendors, unknown vendors, duplicate files, inv
   for(const [targets,names] of [
     [[{name:'Spa GO.zip',sha:oldSha}],[newName]],[[target],['unknown.zip']],[[target,target],[newName]],[[{...target,sha:'bad'}],[newName]],[[{...target,name:'../Spa HYMO.zip'}],[newName]],[[target],[newName,'other HYMO.zip']]
   ])assert.ok(readPreviousSetups(planForm('replace',targets),names).error);
-  assert.ok(readPreviousSetups(planForm('outdate',[target]),[name]).error);
+  assert.equal(readPreviousSetups(planForm('outdate',[target]),[name]).action,'outdate');
+  assert.equal(readPreviousSetups(planForm('keep',[target]),[name]).targets[0].sha,oldSha);
 });
 
 test('explicit same-name replacement uses the selected SHA and does not overwrite a concurrent update',async()=>{
@@ -95,8 +96,8 @@ test('failed ZIP upload never applies its selected cleanup plan',async()=>{
   base.fetch=async()=>Response.json({success:false,error:'storage unavailable'},{status:503});
   globalThis.fetch=async()=>{reads++;throw Error('must not clean up');};
   try{
-    const form=planForm('replace',[{name,sha:oldSha}]);form.set('files',new File(['PK\x03\x04'],newName));form.set('category','Hypercar');form.set('vehicle','Alpine A424');
-    const response=await production.fetch(new Request('https://example.test/api/setups/upload',{method:'POST',body:form}),{});
+    const form=planForm('replace',[{name,sha:oldSha}]);form.set('files',new File(['PK\x03\x04'],newName));form.set('category','Hypercar');form.set('vehicle','Alpine A424');form.set('version','v2');
+    const response=await production.fetch(new Request('https://example.test/api/setups/upload',{method:'POST',body:form}),{ACCESS_DB:{prepare(){return{bind(){return{first:async()=>({version:'v1'})};}};}}});
     assert.equal(response.status,503);assert.equal(reads,0);
   }finally{base.fetch=originalBase;globalThis.fetch=originalFetch;}
 });

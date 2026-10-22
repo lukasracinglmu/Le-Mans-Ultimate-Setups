@@ -73,13 +73,21 @@ export function githubFailure(response, data = {}, now = Date.now()) {
 const conflict = () => ({ error: 'Unter diesem Namen liegt bereits eine andere Datei. Bitte die ZIP umbenennen.', code: 'FILE_CONFLICT', retryable: false });
 async function jsonOrEmpty(response) { try { return await response.json(); } catch { return {}; } }
 
-export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest, replaceSha }) {
+export async function persistSetupFile({ file, name, category, vehicle, branch, githubRequest, replaceSha, preserveSha, version, expectedFileSha }) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b ||
     !((bytes[2] === 3 && bytes[3] === 4) || (bytes[2] === 5 && bytes[3] === 6) || (bytes[2] === 7 && bytes[3] === 8))) {
     return { error: 'Ungültige ZIP-Datei.', code: 'INVALID_FILE', retryable: false };
   }
   const sha = await gitBlobSha(bytes);
+  if(expectedFileSha&&sha!==expectedFileSha)return {error:"ZIP-Inhalt stimmt nicht mit der erkannten Doppelung überein.",code:"INVALID_DUPLICATE",retryable:false};
+  const originalName=name;
+  if(preserveSha){
+    const vendor=/HYMO/i.test(name)?'HYMO':/BE_?ALIEN/i.test(name)?'beAlien':'GO';
+    const label=String(version||'ohne-Version').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/\.{2,}/g,'-').slice(0,40)||'ohne-Version';
+    const suffix=` [${label} ${vendor} ${sha.slice(0,12)}].zip`;
+    name=name.replace(/\.zip$/i,'').slice(0,180-suffix.length)+suffix;
+  }
   const path = '/contents/setups/' + [category, vehicle, name].map(encodeURIComponent).join('/');
   const check = async () => {
     const response = await githubRequest(path + '?ref=' + encodeURIComponent(branch), {
@@ -88,13 +96,21 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
     const data = await jsonOrEmpty(response);
     if (response.ok) {
       if (typeof data.sha !== 'string') return { error: 'Ungültige GitHub-Antwort.', retryable: true };
-      if (data.sha === sha) return { uploaded: true, alreadyExists: true, sha };
+      if (data.sha === sha) return { uploaded: true, alreadyExists: true, sha, name };
       if (replaceSha && data.sha === replaceSha) return null;
       return conflict();
     }
     return response.status === 404 ? null : githubFailure(response, data);
   };
   try {
+    if(preserveSha){
+      const originalPath='/contents/setups/'+[category,vehicle,originalName].map(encodeURIComponent).join('/')+'?ref='+encodeURIComponent(branch);
+      const original=await githubRequest(originalPath,{headers:{Accept:'application/vnd.github.object+json','Cache-Control':'no-cache'},signal:AbortSignal.timeout(30000)});
+      const meta=await jsonOrEmpty(original);
+      if(original.ok&&meta.sha===sha)return {uploaded:true,alreadyExists:true,sha,name:originalName};
+      if(original.ok&&meta.sha!==preserveSha)return conflict();
+      if(!original.ok&&original.status!==404)return githubFailure(original,meta);
+    }
     const existing = await check();
     if (existing) return existing;
     const prefix = JSON.stringify({ message: `${replaceSha ? "Replace" : "Add"} setup: ${vehicle} - ${name}`, branch, ...(replaceSha ? {sha:replaceSha} : {}) }).slice(0, -1) + ',"content":"';
@@ -102,7 +118,7 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
     const body = new Blob([prefix, ...base64Parts(bytes), '"}'], { type: 'application/json' });
     const response = await githubRequest(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(60000) });
     const data = await jsonOrEmpty(response);
-    if (response.ok && data.content?.sha === sha) return { uploaded: true, sha, alreadyExists: false };
+    if (response.ok && data.content?.sha === sha) return { uploaded: true, sha, alreadyExists: false, name };
     if (response.ok || response.status === 409 || response.status === 422) {
       const verified = await check();
       if (verified) return verified;
