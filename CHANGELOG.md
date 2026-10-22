@@ -102,6 +102,10 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Behoben
 
+- Weiterleitungsschleife auf der Startseite nach Umstellung des Repositorys auf privat beseitigt. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
+
+- Startseite, Fahrzeugkatalog, Anbieterbilder und Setup-ZIPs werden serverseitig authentifiziert gelesen. GitHub-Ausfälle verwenden verfügbare statische Website-Dateien ohne erneute Weiterleitung; Discord-Zugriffsprüfungen bleiben aktiv. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
+
 - GitHub-Zielpfad beim Löschen eines Setups korrigiert. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
 - Setup-Request-Pings von Schreibrechten getrennt und Berechtigungsprüfungen der Worker-Schichten vereinheitlicht. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
@@ -113,6 +117,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 - Versionsspeicherung nach einem Teilerfolg erneut versucht und ursprüngliche Dateinamen in der Erfolgszuordnung berücksichtigt. ([Commit 986a76a](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/986a76a969c4134693a07871bcab46ed2e517125))
 
 ### Wartung
+
+- Regressionstests für private Dateien, Weiterleitungen und Berechtigungen ergänzt; README für das private Repository aktualisiert. ([Commit f3cfa8c](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/f3cfa8cf0eb06270a70e0a891e9b80ae0138a7fc))
 
 - Rollen, externe Freigaben und verweigerte Zugriffe mit automatisierten Tests geprüft. ([Commit 83ab551](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/83ab5516a7dcd24db8d659df1dfbcdab8eb51692))
 
