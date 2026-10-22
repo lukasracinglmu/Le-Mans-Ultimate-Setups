@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   test:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && toJSON(github.event.repository.private) == 'false'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -25,7 +25,7 @@ jobs:
           sparse-checkout: |
             /.github/
           sparse-checkout-cone-mode: false
-      - name: Changelog-Logik ohne KI-Aufrufe testen
+      - name: Changelog-Logik ohne externe Dienste testen
         env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 -m unittest discover -s .github/changelog -p 'test_*.py' -v
