@@ -179,6 +179,8 @@ Die ausgewählten Dateien und Fehlerjobs liegen im Arbeitsspeicher des Browser-T
 
 Zwischen Dateien liegt eine kurze Pause. Das Upload-Audit wird vor der Antwort abgeschlossen; auch hier gibt es Abstand zum vorherigen Schreibzugriff. Andere Nutzer und externe Änderungen können weiterhin Konflikte verursachen, die erneut geprüft werden.
 
+Cloudflare startet auf `main` bei reinen Änderungen an `setups/**`, `audit-logs/**`, `CHANGELOG.md`, `.github/changelog/state.json` oder `README.md` keinen Worker-Neubuild mehr. Die Setup-Dateien und Listen werden weiterhin direkt aus GitHub gelesen. Dadurch lösen ZIP-Uploads keine unnötigen Deployments aus. Änderungen am Worker-Code und an Website-Assets bleiben vom normalen Build-Pfad erfasst.
+
 Die 50-Dateien-Grenze gilt für eine Auswahl. Die Oberfläche bündelt nicht alle ZIPs in einen einzigen großen Request, sondern sendet eine Datei nach der anderen. Pro Datei sind bis zu fünf automatische Versuche vorgesehen. Bei vorübergehenden Fehlern steigen die Pausen ab zwei Sekunden an; ein kleiner Zufallsanteil verteilt gleichzeitige Wiederholungen. `Retry-After` und GitHub-Limit-Resets haben Vorrang. Eine lange Limit-Pause kann den Vorgang entsprechend verlängern. Nach fünf Versuchen bleibt die Datei als Fehler mit genauer Ursache und manuellem Retry sichtbar. Ungültige Dateien, fehlende Berechtigung und unterschiedliche Inhalte unter demselben Namen werden nicht automatisch wiederholt. Die ausgewählte Version bleibt bei jedem Versuch erhalten.
 
 #### Wenn ein Teil schon gespeichert wurde
