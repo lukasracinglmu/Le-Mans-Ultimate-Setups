@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:19:13.166Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Portimao HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Portimao HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
