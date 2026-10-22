@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "911 Portimao HYMO.zip",
+  "category": "LMGT3",
+  "vehicle": "Porsche 911 GT3 R",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "fe2c3145bcd8bcc00a4150ca07b42e554d2e0b77"
+}

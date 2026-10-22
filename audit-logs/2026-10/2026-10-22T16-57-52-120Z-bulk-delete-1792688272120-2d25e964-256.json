@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Benz Road Atlanta HYMO.zip",
+  "category": "LMGT3",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "c9b3922d5239cad8f5f6ee993b8b858937893e63"
+}

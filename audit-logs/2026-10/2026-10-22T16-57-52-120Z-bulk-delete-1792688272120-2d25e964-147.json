@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "963 Silverstone National HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Porsche 963",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "324b3b726befa5ad8eeb88e696ff22be4207db3b"
+}

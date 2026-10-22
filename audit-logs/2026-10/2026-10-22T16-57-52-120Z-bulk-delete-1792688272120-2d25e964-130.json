@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "9X8 Evo Fuji HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Peugeot 9X8",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "543dbc965eb433dfa04f554e17b1ff37244338f2"
+}

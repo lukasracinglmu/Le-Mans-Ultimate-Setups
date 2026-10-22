@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "BMW V8 Silverstone National HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "BMW M Hybrid V8",
+  "version": "1.4.2",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "d37449cddd3606b17a0b24827df64aa192590569"
+}

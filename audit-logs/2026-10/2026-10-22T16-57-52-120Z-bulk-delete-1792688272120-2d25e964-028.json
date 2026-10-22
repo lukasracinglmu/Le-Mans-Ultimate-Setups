@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Valkyrie Long Beach HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Aston Martin Valkyrie AMR LMH",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "9f39011e7af5bf4a38c0ce39a7af6ad999c8c05d"
+}

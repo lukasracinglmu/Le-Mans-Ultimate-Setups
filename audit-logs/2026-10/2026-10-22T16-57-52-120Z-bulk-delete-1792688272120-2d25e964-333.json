@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Duqueine Long Beach HYMO.zip",
+  "category": "LMP3",
+  "vehicle": "Duqueine D09",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "62a242ab2556d06d4cf3aa0ec9d518a733b7b8b8"
+}

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Peugeot Evo Paul Ricard 1A_V2 HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Peugeot 9X8",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "c654fc34c3e0324805d55b42aa2b2ebf09c677e9"
+}

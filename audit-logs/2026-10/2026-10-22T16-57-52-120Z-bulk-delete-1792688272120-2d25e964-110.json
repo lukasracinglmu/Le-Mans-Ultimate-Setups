@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Isotta Paul Ricard 1A_V2 HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Isotta Fraschini Tipo6-C",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "3832006b4985106fed2d7ca26ed72bd9f31e7618"
+}

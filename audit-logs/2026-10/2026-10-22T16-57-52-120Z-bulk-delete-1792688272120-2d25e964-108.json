@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Isotta Long Beach HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Isotta Fraschini Tipo6-C",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "d74622655248ce95b89f7f5e291609c143773358"
+}

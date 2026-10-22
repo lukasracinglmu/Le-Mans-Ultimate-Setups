@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Ginetta Paul Ricard HYMO.zip",
+  "category": "LMP3",
+  "vehicle": "Ginetta G61-LT-P325",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "bcb60c27562dc610c5d138b056f5cce2adbcc5c4"
+}

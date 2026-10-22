@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "296 Long Beach HYMO.zip",
+  "category": "LMGT3",
+  "vehicle": "Ferrari 296 LMGT3",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "913b18e6fd1f0b0b6528ff0709965c1941eb023a"
+}

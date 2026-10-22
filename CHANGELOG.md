@@ -50,6 +50,8 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 ### Entfernt
 
+- Auf Wunsch des Repository-Inhabers alle 363 Setup-ZIPs aus dem aktiven Bestand entfernt. Die Einzellöschungen sind im Audit-Protokoll erfasst; die zugehörigen Versionsdaten werden ebenfalls bereinigt.
+
 - Die vorbereitete kostenpflichtige KI-Anbindung und ihre inaktive Workflow-Vorlage entfernt. ([Commit 59246ad](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/59246ade9778d878bb22cc27fa70e3e8f16df504))
 
 ### Dokumentation

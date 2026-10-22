@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Alpine COTA HYMO.zip",
+  "category": "Hypercar",
+  "vehicle": "Alpine A424",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "229f88e50408d4c6573cd134342c8185cc8877a0"
+}

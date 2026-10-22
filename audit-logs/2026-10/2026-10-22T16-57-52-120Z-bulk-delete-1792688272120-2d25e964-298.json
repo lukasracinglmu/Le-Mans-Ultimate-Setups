@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T16:57:52.120Z",
+  "action": "SETUP_DELETE",
+  "setup": "Oreca 07 WEC Imola HYMO.zip",
+  "category": "LMP2",
+  "vehicle": "Oreca 07 Gibson",
+  "result": "SUCCESS",
+  "source": "ChatGPT",
+  "request": "Alle Setups auf Anweisung des Repository-Inhabers entfernt.",
+  "bulkOperationId": "bulk-delete-1792688272120-2d25e964",
+  "previousBlobSha": "77b7acb2c41292851440ba090a6d66a5552aacd7"
+}
