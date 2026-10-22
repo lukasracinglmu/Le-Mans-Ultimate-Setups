@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T21:31:48.353Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Genesis Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Genesis Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.2",
+  "result": "SUCCESS"
+}
