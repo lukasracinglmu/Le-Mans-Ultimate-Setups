@@ -54,6 +54,12 @@ Belege: [Session Progress und Favicon](https://github.com/lukasracinglmu/Le-Mans
 
 - Architektur, Zugangsrechte und Upload-Ablauf übersichtlich dokumentiert und den kostenlosen automatischen Changelog verlinkt. ([Commit 2787af6](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/2787af6025c6ed19e7d5aa417a604bceecd8d79c))
 
+- README um Fahrzeugklassen, Upload-Grenzen, Versionsregeln, Rechte, Discord-Anbindung und Audit-Ereignisse erweitert. ([Commit 0692344](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/069234419c7260d575f1a47ccdc9002b552b8bdc))
+
+- Datenhaltung, Worker-Schichten, API-Routen, Schutzmechanismen und Betrieb mit Diagrammen und Tabellen erklärt. ([Commit 0692344](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/069234419c7260d575f1a47ccdc9002b552b8bdc))
+
+- Kompakteres 3P-Banner, nummerierte Abschnittsgrafiken und eine Übersicht der Upload-Grenzen ergänzt. ([Commit 0692344](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/commit/069234419c7260d575f1a47ccdc9002b552b8bdc))
+
 ## 2026-10-20 – Nachtrag
 
 ### LMU Portal / Upcoming Races entfernt
