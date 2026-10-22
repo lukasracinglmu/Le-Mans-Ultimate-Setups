@@ -1,4 +1,5 @@
 import baseWorker from "./worker.js";
+import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
 import { readUploadForm } from "./upload-storage.js";
@@ -216,11 +217,8 @@ function hexToBytes(hex) {
 }
 
 async function serveEnhancedHome(request, env) {
-  const owner = env.GITHUB_OWNER || "lukasracinglmu";
-  const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
-  const branch = env.GITHUB_BRANCH || "main";
-  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/index.html`, { cache: "no-store" });
-  if (!response.ok) return baseWorker.fetch(request, env);
+  const response = await readSiteFile(request, env, "index.html");
+  if (!response.ok) return response;
   const html = enhanceHome(await response.text());
   return new Response(html, {
     headers: {
@@ -293,12 +291,9 @@ main{position:relative;z-index:1}
 }
 
 async function serveRepoAsset(request, env) {
-  const owner = env.GITHUB_OWNER || "lukasracinglmu";
-  const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
-  const branch = env.GITHUB_BRANCH || "main";
   const url = new URL(request.url);
-  const response = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}${url.pathname}`, { cache: "no-store" });
-  if (!response.ok) return baseWorker.fetch(request, env);
+  const response = await readSiteFile(request, env, url.pathname.slice(1));
+  if (!response.ok) return response;
   const headers = new Headers(response.headers);
   headers.set("Content-Type", "image/webp");
   headers.set("Cache-Control", "no-store");

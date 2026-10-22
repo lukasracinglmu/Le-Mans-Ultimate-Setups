@@ -503,7 +503,9 @@ Die Session ist signiert, nicht verschlüsselt. Sie enthält Nutzerkennung, Anze
 
 Die ZIP-Prüfung kontrolliert unter anderem Endung, Dateigröße und einen ZIP-Kennungsanfang. Die Anwendung entpackt den Inhalt dabei nicht und führt keinen dokumentierten Virenscan oder spielinternen LMU-Kompatibilitätstest aus. Eine vorhandene CSP enthält im Core aktuell auch `unsafe-inline`; ihre Existenz ist keine Aussage über eine vollständig auf Nonces umgestellte Oberfläche. Ein allgemeines Anwendungs-Rate-Limit ist in den gelesenen Worker-Routen nicht implementiert.
 
-**Website-Zugang und Repository-Sichtbarkeit sind getrennt.** Dieses Repository ist öffentlich. Öffentlich gespeicherte ZIPs, Quelltexte und Audit-Dateien können deshalb über GitHub unabhängig vom Website-Login gelesen werden. Die Website-Berechtigungen schützen ihre eigenen Zugriffspfade; sie machen ein öffentliches GitHub-Repository nicht zu einem privaten Dateiarchiv. Audit-Dateien können dabei Discord-IDs und Namen enthalten.
+**Website-Zugang und Repository-Sichtbarkeit sind getrennt.** Das Repository ist derzeit privat. Der Worker liest Startseite, Fahrzeugkatalog, Anbieterbilder und Setup-ZIPs serverseitig mit `GITHUB_TOKEN` über die GitHub Contents API. Der Token benötigt Lesezugriff auf Repository-Inhalte sowie Schreibzugriff für Uploads und Audit-Dateien; er wird niemals an den Browser weitergegeben. Die bestehenden Discord-Rollen und individuellen Freigaben schützen Katalog und Setup-Downloads weiterhin.
+
+**Ausfallsichere Startseite:** Falls GitHub nicht erreichbar ist oder der Token keinen Zugriff hat, nutzt die Website die zuletzt bereitgestellten statischen Dateien. Die Startseite wird dabei intern über `/` geladen: `/index.html` wird von Cloudflare auf `/` umgeleitet und darf nicht als Rückfallziel eine Weiterleitungsschleife auslösen. Auch der Fahrzeugkatalog und die Anbieterbilder können auf bereitgestellte Dateien zurückfallen. Sind beide Quellen nicht verfügbar, folgt eine Fehlerantwort ohne Weiterleitung. Setup-ZIPs bleiben im privaten Repository und werden nach der Berechtigungsprüfung direkt als Stream geladen. Neue GitHub-Inhalte sind bei einer Störung erst nach Wiederherstellung des Zugriffs sichtbar.
 
 <a id="betrieb"></a>
 
@@ -539,7 +541,7 @@ Die ZIP-Prüfung kontrolliert unter anderem Endung, Dateigröße und einen ZIP-K
 | `DISCORD_SETUP_REQUEST_ROLE_ID` | Optionaler Rollen-Ping bei Setup Requests; leer bedeutet kein Rollen-Ping |
 | `SITE_URL` | Öffentliche Website-Adresse; Grundlage des Discord-Login-Rückwegs und der Herkunftsprüfung |
 | `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` | GitHub-Benutzername, Repository und verwendeter Branch |
-| `GITHUB_TOKEN` | Geheimer Zugriffsschlüssel zum Speichern von ZIPs und Audit-Dateien in GitHub |
+| `GITHUB_TOKEN` | Geheimer Zugriffsschlüssel zum Lesen privater Website-Dateien und ZIPs sowie zum Speichern von ZIPs und Audit-Dateien in GitHub |
 | `SESSION_SECRET` | Geheimer Schlüssel zum Signieren und Prüfen der Anmelde-Sitzungen |
 | `LMUPORTAL_API1`, `LMUPORTAL_API2` | Vorhandene Schlüssel für die frühere Rennkalender-Anbindung; im aktiven Worker-Code derzeit nicht verwendet |
 

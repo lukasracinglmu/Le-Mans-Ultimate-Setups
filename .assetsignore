@@ -16,5 +16,6 @@ schema.sql
 worker.js
 production-worker.js
 runtime-worker.js
+repo-read.js
 wrangler.jsonc
 .assetsignore

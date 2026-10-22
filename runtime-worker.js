@@ -1,4 +1,5 @@
 import productionWorker from "./access-worker.js";
+import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
 
 export default {
@@ -13,10 +14,7 @@ export default {
       if (!me?.loggedIn) return new Response(JSON.stringify({ success: false, error: "Nicht angemeldet." }), { status: 401, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
       if (!me?.databaseAccess) return new Response(JSON.stringify({ success: false, error: "Erforderliche Discord-Rolle fehlt." }), { status: 403, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 
-      const owner = env.GITHUB_OWNER || "lukasracinglmu";
-      const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
-      const branch = env.GITHUB_BRANCH || "main";
-      const source = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/setups.json`, { cache: "no-store" });
+      const source = await readSiteFile(request, env, "setups.json");
       if (!source.ok) return new Response(JSON.stringify({ success: false, error: "Fahrzeugdaten konnten nicht geladen werden." }), { status: 502, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
       return new Response(source.body, { status: 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
     }
