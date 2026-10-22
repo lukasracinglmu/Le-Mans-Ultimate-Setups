@@ -1,0 +1,73 @@
+# Inaktive Vorlage. Erst nach ausdrücklicher Freigabe nach .github/workflows/changelog.yml übernehmen.
+name: Changelog automatisch ergänzen
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - CHANGELOG.md
+      - .github/changelog/state.json
+      - setups/**
+      - audit-logs/**
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: changelog-main
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Repository und Historie laden
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          sparse-checkout: |
+            /.github/
+            /CHANGELOG.md
+          sparse-checkout-cone-mode: false
+
+      - name: Changelog-Logik testen
+        run: python3 -m unittest discover -s .github/changelog -p 'test_*.py' -v
+
+      - name: Neue Einträge schreiben
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CHANGELOG_MODEL: ${{ vars.CHANGELOG_MODEL || 'gpt-5.4-mini' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            python3 .github/changelog/update_changelog.py
+            if git diff --quiet -- CHANGELOG.md .github/changelog/state.json; then
+              exit 0
+            fi
+            python3 - <<'PY'
+          import subprocess
+          allowed = {'CHANGELOG.md', '.github/changelog/state.json'}
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          if changed - allowed:
+              raise SystemExit('Unerwartete Dateien geändert; Speicherung abgebrochen.')
+          PY
+            git add -- CHANGELOG.md .github/changelog/state.json
+            git commit -m 'docs: update changelog automatically [skip ci]'
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo 'main wurde währenddessen geändert oder der Push abgelehnt. Neuer Versuch.'
+          done
+          echo '::error::Changelog konnte nach drei Versuchen nicht gespeichert werden.'
+          exit 1

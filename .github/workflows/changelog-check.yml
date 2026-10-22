@@ -1,0 +1,31 @@
+name: Changelog-Automation prüfen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/changelog/**
+      - .github/workflows/changelog-check.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Prüfdateien laden
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/
+          sparse-checkout-cone-mode: false
+      - name: Changelog-Logik ohne KI-Aufrufe testen
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s .github/changelog -p 'test_*.py' -v
