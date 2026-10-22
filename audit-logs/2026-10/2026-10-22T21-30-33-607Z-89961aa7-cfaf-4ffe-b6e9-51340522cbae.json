@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-22T21:30:33.607Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Silverstone National HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Silverstone National HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS"
+}
