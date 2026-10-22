@@ -1,3 +1,5 @@
+import { persistSetupFile, readUploadForm } from "./upload-storage.js";
+
 const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_OAUTH = "https://discord.com/oauth2";
 const SESSION_COOKIE = "lmu_session";
@@ -19,7 +21,7 @@ const PERM_ADMINISTRATOR = 8n;
 let discordVerifyKeyCache = { key: null, expiresAt: 0 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx, uploadForm) {
     try {
       if (!isHttpsRequest(request)) return json({ success: false, error: "HTTPS erforderlich." }, 400);
       const originError = enforceSameOriginForStateChange(request, env);
@@ -38,7 +40,7 @@ export default {
       if (p === "/api/me" && m === "GET") return currentUser(request, env);
       if (p === "/api/setups" && m === "GET") return listSetups(request, env);
       if (p === "/api/setups/download" && m === "GET") return downloadSetup(request, env);
-      if (p === "/api/setups/upload" && m === "POST") return uploadSetups(request, env);
+      if (p === "/api/setups/upload" && m === "POST") return uploadSetups(request, env, uploadForm);
       if (p === "/api/setups/delete" && m === "POST") return deleteSetup(request, env);
       if (p === "/api/request" && m === "POST") return createRequest(request, env);
 
@@ -191,7 +193,31 @@ function clean(v,max=1000){return String(v||"").replace(/[\u0000-\u001F\u007F]/g
 function classifySetup(name, vehicle) { const file = String(name || ""), v = String(vehicle || ""); const variant = /(^|[^a-z0-9])evo([^a-z0-9]|$)/i.test(file) ? "EVO" : "Standard"; let series = null; if (/oreca\s*0?7/i.test(v)) { if (/(^|[^a-z0-9])elms([^a-z0-9]|$)/i.test(file)) series = "ELMS"; else if (/(^|[^a-z0-9])wec([^a-z0-9]|$)/i.test(file)) series = "WEC"; else series = "Other"; } return { variant, series }; }
 async function listSetups(request, env) { const a=await requireDatabaseAccess(request,env);if(a.error)return a.error;const u=new URL(request.url),cat=safe(u.searchParams.get("category")),veh=safe(u.searchParams.get("vehicle"));if(!cat||!veh)return json({success:false,error:"Fahrzeug fehlt."},400);const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}?ref=${encodeURIComponent(ghBranch(env))}`;const r=await ghReq(path,{},env);if(r.status===404)return json({success:true,setups:[]});if(!r.ok)return json({success:false,error:"Setups konnten nicht geladen werden."},502);const items=await r.json();const setups=(Array.isArray(items)?items:[]).filter(i=>i.type==="file"&&/\.zip$/i.test(i.name)).map(i=>({name:i.name,sha:i.sha,download:`/api/setups/download?category=${encodeURIComponent(cat)}&vehicle=${encodeURIComponent(veh)}&name=${encodeURIComponent(i.name)}`,...classifySetup(i.name,veh)})).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true,sensitivity:"base"}));return json({success:true,setups}); }
 async function downloadSetup(request, env) { const a=await requireDatabaseAccess(request,env);if(a.error)return a.error;const u=new URL(request.url),cat=safe(u.searchParams.get("category")),veh=safe(u.searchParams.get("vehicle")),name=safe(u.searchParams.get("name"));if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültiger Download."},400);const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}/${encodeURIComponent(name)}?ref=${encodeURIComponent(ghBranch(env))}`;const meta=await ghReq(path,{},env);if(meta.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!meta.ok)return json({success:false,error:"Download fehlgeschlagen."},502);const m=await meta.json();const raw=await fetch(m.download_url,{headers:{"User-Agent":"lmu-setups-worker"}});if(!raw.ok)return json({success:false,error:"Download fehlgeschlagen."},502);const h=securityHeaders(new Headers(raw.headers));h.set("Content-Type","application/zip");h.set("Content-Disposition",`attachment; filename*=UTF-8''${encodeURIComponent(name)}`);h.set("Cache-Control","private, no-store");return new Response(raw.body,{status:200,headers:h}); }
-async function uploadSetups(request, env) { const size=validateRequestSize(request);if(size)return size;const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);if(!await canUserUpload(s,env))return json({success:false,error:"Keine Upload-Berechtigung."},403);let form;try{form=await request.formData()}catch{return json({success:false,error:"Ungültiger Upload."},400)}const cat=safe(form.get("category")),veh=safe(form.get("vehicle"));const files=form.getAll("files");if(!cat||!veh||!files.length||files.length>MAX_FILES)return json({success:false,error:"Ungültiger Upload."},400);const uploaded=[],errors=[];for(const f of files){const name=normalizeName(f?.name);if(!zipOk(f)||!name){errors.push({name:name||"Unbekannt",error:"Ungültige ZIP-Datei."});continue}const sig=new Uint8Array(await f.slice(0,4).arrayBuffer());if(sig.length<4||sig[0]!==0x50||sig[1]!==0x4b||![0x03,0x05,0x07].includes(sig[2])){errors.push({name,error:"Ungültige ZIP-Datei."});continue}const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}/${encodeURIComponent(name)}`;const exists=await ghReq(path+`?ref=${encodeURIComponent(ghBranch(env))}`,{},env);if(exists.ok){errors.push({name,error:"Setup existiert bereits."});continue}const bytes=new Uint8Array(await f.arrayBuffer());let binary="";for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const pr=await ghReq(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Add setup: ${veh} - ${name}`,content:btoa(binary),branch:ghBranch(env)})},env);if(!pr.ok){errors.push({name,error:"GitHub Upload fehlgeschlagen."});continue}uploaded.push({name});}return json({success:uploaded.length>0,uploaded,errors},uploaded.length?200:400); }
+async function uploadSetups(request, env, suppliedForm) {
+  const sizeError = validateRequestSize(request);
+  if (sizeError) return sizeError;
+  const session = await readSession(request, env.SESSION_SECRET);
+  if (!session) return json({ success:false, error:"Nicht angemeldet." }, 401);
+  if (!await canUserUpload(session, env)) return json({ success:false, error:"Keine Upload-Berechtigung." }, 403);
+  let form;
+  try { form = suppliedForm || await readUploadForm(request); }
+  catch (error) { return json({ success:false, error:error.status === 413 ? "Request zu groß." : "Ungültiger Upload.", retryable:false }, error.status === 413 ? 413 : 400); }
+  const category=safe(form.get("category")), vehicle=safe(form.get("vehicle")), files=form.getAll("files");
+  if (!category || !vehicle || !files.length || files.length > MAX_FILES) return json({ success:false, error:"Ungültiger Upload.", retryable:false }, 400);
+  const uploaded=[], errors=[];
+  for (const file of files) {
+    const name=normalizeName(file?.name), originalName=String(file?.name || "Unbekannt");
+    if (!zipOk(file) || !name) { errors.push({ name: name || originalName, originalName, error:"Ungültige ZIP-Datei.", retryable:false }); continue; }
+    const result=await persistSetupFile({ file, name, category, vehicle, branch:ghBranch(env), githubRequest:(path,options)=>ghReq(path,options,env) });
+    if (result.uploaded) uploaded.push({ name, originalName, sha:result.sha, alreadyExists:result.alreadyExists });
+    else errors.push({ name, originalName, ...result });
+  }
+  const retryable=errors.some(error=>error.retryable), retryAfterMs=Math.max(0,...errors.map(error=>error.retryAfterMs || 0));
+  const response=json({ success:uploaded.length>0, uploaded, errors, retryable, retryAfterMs }, uploaded.length ? 200 : retryable ? 503 : errors.some(error=>error.code==="FILE_CONFLICT") ? 409 : 400);
+  if (retryAfterMs) response.headers.set("Retry-After",String(Math.ceil(retryAfterMs/1000)));
+  return response;
+}
+
 async function deleteSetup(request, env) {
   const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);if(!await canUserUpload(s,env))return json({success:false,error:"Keine Löschberechtigung."},403);
   let b;try{b=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}const cat=safe(b.category),veh=safe(b.vehicle),name=safe(b.name);if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültige Datei."},400);

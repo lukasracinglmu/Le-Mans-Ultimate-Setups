@@ -145,7 +145,7 @@ Die Oberfläche bietet einen gespeicherten Hell-/Dunkelmodus. Übersichtsseite u
 | **04 · Einzeln verarbeiten** | Die Oberfläche sendet jeweils eine Datei an den Worker. Er prüft unter anderem Berechtigung, Dateiendung, Größe und ZIP-Signatur. |
 | **05 · Fortschritt verfolgen** | Verarbeitete Dateien, Gesamtzahl, Prozentwert, aktuelle Datei und Einzelstatus bleiben sichtbar. |
 | **06 · Ergebnis übernehmen** | Erfolgreiche ZIPs liegen in GitHub; die zugehörige Version wird in D1 gespeichert. Die Fahrzeugliste wird nach dem Vorgang aktualisiert. |
-| **07 · Fehler erneut versuchen** | Der Retry verarbeitet nur fehlgeschlagene Dateien. Bereits erfolgreiche Uploads werden dabei ausgelassen. |
+| **07 · Fehler abfangen** | Vorübergehende Fehler werden je Datei bis zu fünfmal versucht. Danach verarbeitet der manuelle Retry nur verbliebene Fehler; bestätigte Erfolge werden ausgelassen. |
 
 ```mermaid
 flowchart TB
@@ -161,14 +161,15 @@ flowchart TB
 
 **Der Prozentwert zählt verarbeitete Dateien.** Auch ein fehlgeschlagener Versuch wird mitgezählt. Bei 100 % ist der Vorgang abgeschlossen; die getrennten Erfolgs- und Fehlerzähler zeigen das Ergebnis. Ein Retry startet einen eigenen Fortschritt für die verbliebenen Dateien.
 
-Bereits vorhandene Dateinamen werden beim Upload abgelehnt. Ein Upload überschreibt vorhandene ZIPs somit nicht automatisch.
+Bei gleichem Dateinamen vergleicht der Worker die Git-Blob-Prüfsumme mit dem ZIP-Inhalt. Eine identische Datei wird als bereits gespeichert bestätigt und ihre angegebene Version gespeichert. Eine andere Datei unter demselben Namen wird abgelehnt und niemals automatisch überschrieben. Das verhindert falsche Fehler nach einer verlorenen Erfolgsantwort.
 
 #### Status, Wiederholung und Unterbrechungen
 
 | Status | Bedeutung | Nächster Schritt |
 | :--- | :--- | :--- |
 | **Wartet** | Datei ist ausgewählt und noch nicht verarbeitet | Die nächste freie Position in der sequenziellen Verarbeitung abwarten |
-| **Wird hochgeladen** | Für diese Datei läuft der Upload-Versuch | Ergebnis des Requests abwarten |
+| **Wird hochgeladen** | Für diese Datei läuft der angezeigte Versuch von maximal fünf | Ergebnis des Requests abwarten |
+| **Erneuter Versuch in … s** | Netzwerk, vorübergehender GitHub-Fehler oder ein API-Limit erfordert eine Pause | Tab geöffnet lassen; die Datei wird automatisch erneut versucht |
 | **Erfolgreich** | Der Worker hat die Datei im Feld `uploaded` bestätigt | Datei ist nicht Teil des nächsten Fehler-Retrys |
 | **Fehlgeschlagen** | Lokale Prüfung, Netzwerk oder Serverantwort haben keinen bestätigten Erfolg ergeben | Ursache prüfen und gezielt erneut versuchen |
 
@@ -176,7 +177,9 @@ Während eines Vorgangs sind Upload- und Retry-Schaltfläche gesperrt. Der Proze
 
 Die ausgewählten Dateien und Fehlerjobs liegen im Arbeitsspeicher des Browser-Tabs. Die Anwendung hat im aktuellen Upload-Pfad keine dauerhaft gespeicherte Wiederaufnahme nach Neuladen oder Schließen des Tabs. Für einen zuverlässigen Abschluss die Fahrzeugansicht und den Tab während des Vorgangs geöffnet lassen. Ein neuer Vorgang fragt bei mehreren ZIPs erneut nach der Versionszuordnung. Ein Retry behält die ursprünglich jeder Datei zugeordnete Version, auch wenn das gemeinsame Feld inzwischen geändert wurde. „Abbrechen“ oder Escape schließt die Abfrage ohne Upload; bis zur Bestätigung wird keine ZIP gesendet.
 
-Die 50-Dateien-Grenze gilt für eine Auswahl. Die Oberfläche bündelt nicht alle ZIPs in einen einzigen großen Request, sondern sendet eine Datei nach der anderen. Der Retry wird manuell gestartet; eine feste automatische Zahl von Wiederholungen pro Datei ist nicht eingebaut.
+Zwischen Dateien liegt eine kurze Pause. Das Upload-Audit wird vor der Antwort abgeschlossen; auch hier gibt es Abstand zum vorherigen Schreibzugriff. Andere Nutzer und externe Änderungen können weiterhin Konflikte verursachen, die erneut geprüft werden.
+
+Die 50-Dateien-Grenze gilt für eine Auswahl. Die Oberfläche bündelt nicht alle ZIPs in einen einzigen großen Request, sondern sendet eine Datei nach der anderen. Pro Datei sind bis zu fünf automatische Versuche vorgesehen. Bei vorübergehenden Fehlern steigen die Pausen ab zwei Sekunden an; ein kleiner Zufallsanteil verteilt gleichzeitige Wiederholungen. `Retry-After` und GitHub-Limit-Resets haben Vorrang. Eine lange Limit-Pause kann den Vorgang entsprechend verlängern. Nach fünf Versuchen bleibt die Datei als Fehler mit genauer Ursache und manuellem Retry sichtbar. Ungültige Dateien, fehlende Berechtigung und unterschiedliche Inhalte unter demselben Namen werden nicht automatisch wiederholt. Die ausgewählte Version bleibt bei jedem Versuch erhalten.
 
 #### Wenn ein Teil schon gespeichert wurde
 
@@ -184,12 +187,12 @@ GitHub-Datei, D1-Version und Audit-Ereignis werden in getrennten Schritten gesch
 
 | Fall | Möglicher Stand | Sinnvolle Kontrolle |
 | :--- | :--- | :--- |
-| GitHub akzeptiert die ZIP, danach scheitert D1 | Datei kann bereits vorhanden sein, obwohl der gesamte Versuch als Fehler erscheint | Fahrzeugliste und GitHub-Datei prüfen; Version bei Bedarf über den Stift-Editor nachtragen |
-| Antwort kommt wegen eines Netzwerkfehlers nicht an | Der Browser kann den tatsächlichen Speicherstand nicht sicher erkennen | Vor erneutem Hochladen nach derselben Datei suchen |
+| GitHub akzeptiert die ZIP, danach scheitert D1 | Worker meldet einen vorübergehenden Fehler statt eines vollständigen Erfolgs | Automatischer Retry erkennt die identische ZIP und versucht die Versionsspeicherung erneut |
+| Antwort kommt wegen eines Netzwerkfehlers nicht an | Der Speicherstand ist zunächst unklar | Erneuter Versuch prüft den Dateiinhalt und bestätigt eine bereits gespeicherte identische ZIP |
 | Speichern klappt, Audit-Schreiben scheitert | Setup-Änderung kann erfolgreich sein, ohne dass ein Audit-Eintrag erscheint | Worker-Logs und Audit-Konfiguration prüfen |
 | Nachladen der Liste scheitert | Die Upload-Erfolge bleiben gezählt; die Anzeige kann veraltet sein | Liste erneut öffnen bzw. Seite nach Abschluss neu laden |
 
-Eine ZIP kann beim erneuten Versuch deshalb mit „Setup existiert bereits.“ abgelehnt werden. Die Datei vorher prüfen, statt sie allein wegen dieser Meldung zu löschen.
+Ein gleicher Name mit unterschiedlichem Inhalt bleibt ein echter Konflikt. Die ZIP in diesem Fall prüfen und bei Bedarf umbenennen. Eine 100-prozentige Erfolgsquote ist bei dauerhaften Dienstausfällen, fehlenden Rechten oder ungültigen Dateien nicht garantiert; solche Fehler bleiben sichtbar.
 
 <a id="versionen"></a>
 
@@ -208,7 +211,7 @@ Eine ZIP kann beim erneuten Versuch deshalb mit „Setup existiert bereits.“ a
 
 Die Angabe ist eine manuell gepflegte Kennzeichnung. Das System vergleicht keine Versionsnummern, sortiert nicht nach einer SemVer-Regel und prüft nicht, ob die ZIP zu einer bestimmten LMU-Spielversion passt. Versionen wie `v2` und `2.0` werden als unterschiedliche Texte behandelt.
 
-Die Upload-Versionsprüfung und Speicherung lassen sich ohne zusätzliche Pakete mit `node --test tests/setup-upload-versions.test.mjs` prüfen (Node.js 22 oder neuer).
+Die Upload-Tests laufen bei Änderungen am Worker-Code und an den Tests über den Workflow „Upload-Logik prüfen“ auf einem kostenlosen Standard-Runner im öffentlichen Repository. Die Upload-Versionsprüfung und Speicherung lassen sich ohne zusätzliche Pakete mit `node --test tests/*.test.mjs` prüfen (Node.js 22 oder neuer).
 
 #### Löschen und Wiederherstellen
 
@@ -390,7 +393,7 @@ Anfragen starten bei `runtime-worker.js` und werden bei Bedarf an die darunterli
 | **04** | [`production-worker.js`](production-worker.js) | Website-Erweiterungen, Setup Requests, Discord-Interaktionen und Versionsspeicherung beim Upload |
 | **05** | [`worker.js`](worker.js) | Core API, OAuth, Sessions, GitHub-Dateizugriff und Discord-Integration |
 
-[`index.html`](index.html) enthält die grundlegende Oberfläche. [`setup-version.js`](setup-version.js) kapselt Versionsprüfung und D1-Zugriff; [`audit-log.js`](audit-log.js) schreibt Audit-Dateien und Discord-Meldungen.
+[`index.html`](index.html) enthält die grundlegende Oberfläche. [`setup-version.js`](setup-version.js) kapselt Versionsprüfung und D1-Zugriff; [`upload-storage.js`](upload-storage.js) begrenzt den Upload-Body, berechnet die Git-Prüfsumme, prüft vorhandene Inhalte und ordnet GitHub-Fehler für Wiederholungen ein; [`audit-log.js`](audit-log.js) schreibt Audit-Dateien und Discord-Meldungen.
 
 #### Repository und Laufzeitbestandteile
 
@@ -708,9 +711,9 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | **Upload-Button sichtbar, aber `403` beim Upload** | Unterschiedliche äußere und Core-Rollenprüfung | Request-Rolle, Core-Upload-Rolle und individuelle Upload-Freigabe gemeinsam prüfen |
 | **„Version fehlt.“ / „Version ist zu lang.“** | Versionsfeld | Höchstens 40 Zeichen verwenden. Beim Upload darf das Feld leer bleiben; im Stift-Editor ist eine Angabe erforderlich |
 | **„Ungültige ZIP-Datei.“** | Dateiendung, Inhaltssignatur, leere oder zu große Datei | Eine tatsächliche ZIP bis 25 MiB wählen; bloßes Umbenennen einer anderen Datei reicht nicht |
-| **„Setup existiert bereits.“** | Derselbe Dateipfad ist bereits belegt | Vorhandene ZIP und Version prüfen; bei einer reinen Metadatenkorrektur den Stift-Editor verwenden |
+| **„Unter diesem Namen liegt bereits eine andere Datei.“** | Derselbe Dateipfad enthält einen anderen ZIP-Inhalt | Datei prüfen und gegebenenfalls umbenennen; automatische Überschreibung ist ausgeschlossen |
 | **„Request zu groß.“ / `413`** | Upload-Größe und Verarbeitungspfad | Dateigröße und Einzelanfragen prüfen; nicht mehrere große ZIPs zu einem eigenen Sammelrequest zusammenfassen |
-| **„Ungültige Server-Antwort“ / Netzwerkfehler** | Antwortformat oder unterbrochener Request | Status und Antwort im Netzwerk-Tab prüfen; vor Retry nach bereits vorhandener Datei suchen |
+| **„Ungültige Server-Antwort“ / Netzwerkfehler** | Antwortformat oder unterbrochener Request | Automatische Versuche abwarten; danach genaue Ursache am Dateistatus prüfen |
 | **Datei vorhanden, aber Version `—`** | Ohne Version hochgeladen, fehlende D1-Metadaten oder fehlgeschlagener Versionsabruf | `ACCESS_DB`, Tabelle und Zuordnung aus Klasse/Fahrzeug/Dateiname prüfen; Version gegebenenfalls nachtragen |
 | **„Anzeige konnte nicht aktualisiert werden.“** | Upload lief, Nachladen der Liste scheiterte | Upload-Zähler und gespeicherte Dateien prüfen; Ansicht anschließend neu laden |
 | **Admin-Panel fehlt** | Aktueller Nutzer wird nicht als Owner erkannt | `/api/me` und die feste Owner-Zuordnung in beiden Worker-Dateien prüfen |

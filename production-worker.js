@@ -1,6 +1,8 @@
 import baseWorker from "./worker.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
+import { readUploadForm } from "./upload-storage.js";
+
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
 const REPO_ASSETS = new Set([
@@ -34,23 +36,26 @@ export default {
       }
 
       if (request.method === "POST" && path === "/api/setups/upload") {
-        const form = await request.formData();
+        let form;
+        try { form = await readUploadForm(request); }
+        catch (error) { return json({ success:false, error:error.status === 413 ? "Request zu groß." : "Ungültiger Upload.", retryable:false }, error.status === 413 ? 413 : 400); }
         const parsed = readSetupVersion(form);
         if (parsed.error) return json({ success: false, error: parsed.error }, 400);
         const category = String(form.get("category") || "").trim();
         const vehicle = String(form.get("vehicle") || "").trim();
-        const headers = new Headers(request.headers);
-        headers.delete("Content-Type");
-        headers.delete("Content-Length");
-        const forwarded = new Request(request.url, { method: "POST", headers, body: form });
-        const response = await baseWorker.fetch(forwarded, env, ctx);
+        const response = await baseWorker.fetch(request, env, ctx, form);
         if (!response.ok) return response;
         const data = await safeJson(response.clone());
         if (!data?.success) return response;
         for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
-          if (item?.name) await storeSetupVersion(category, vehicle, item.name, parsed.version, env);
+          if (item?.name) {
+            try { await storeSetupVersion(category, vehicle, item.name, parsed.version, env); }
+            catch {
+              return json({success:false,error:"ZIP gespeichert, Versionsdaten konnten noch nicht bestätigt werden. Erneuter Versuch folgt.",code:"VERSION_STORAGE",retryable:true},503);
+            }
+          }
         }
-        return json({ ...data, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
+        return json({ ...data, category, vehicle, version:parsed.version, uploaded: (data.uploaded || []).map(item => ({ ...item, version: parsed.version })) }, response.status);
       }
 
       return baseWorker.fetch(request, env, ctx);

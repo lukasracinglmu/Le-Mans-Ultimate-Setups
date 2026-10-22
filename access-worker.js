@@ -36,19 +36,17 @@ export default {
     if (path === "/api/setups/upload" && method === "POST") {
       const permission = await requireUploadDeleteAccess(request, env, ctx);
       if (permission.error) return permission.error;
-      const clone = request.clone();
       const response = await uiWorker.fetch(request, env, ctx);
       if (response.ok) {
         const data = await safeJson(response.clone());
         if (data?.success) {
-          let category="", vehicle="", version="";
-          try { const form = await clone.formData(); category=cleanPath(form.get("category")); vehicle=cleanPath(form.get("vehicle")); version=String(form.get("version")||"").trim(); } catch {}
-          const tasks = [];
+          const vehicle=cleanPath(data.vehicle), version=String(data.version || "");
           for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
             if (!item?.name) continue;
-            tasks.push(safeAudit({ action:"SETUP_UPLOAD", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:item.name, vehicle, manufacturer:classifyManufacturer(item.name), track:inferTrack(item.name), version, result:"SUCCESS" }, env));
+            // Finish this audit before the browser writes the next ZIP to the same branch.
+            await new Promise(resolve=>setTimeout(resolve,1100));
+            await safeAudit({ action:"SETUP_UPLOAD", discordAccount:permission.user.username, discordUserId:permission.user.id, setup:item.name, vehicle, manufacturer:classifyManufacturer(item.name), track:inferTrack(item.name), version, result:"SUCCESS" }, env);
           }
-          runAuditTasks(tasks, ctx);
         }
       }
       return response;

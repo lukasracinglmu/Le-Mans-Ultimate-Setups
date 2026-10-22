@@ -48,6 +48,7 @@ function normalizeEvent(event) {
 async function gh(path, opts, env) {
   return fetch(`${GITHUB_API}/${ghRepo(env)}${path}`, {
     ...opts,
+    signal: opts?.signal || AbortSignal.timeout(20000),
     headers: { ...ghHeaders(env), ...(opts?.headers || {}) }
   });
 }
@@ -85,6 +86,7 @@ async function writeDiscordAuditEvent(event, env) {
   const mentionUsers = [...new Set([actorId, targetId].filter(Boolean))];
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_AUDIT_CHANNEL_ID}/messages`, {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       embeds: [{ title: discordTitle(event.action), fields: discordFields(event), timestamp: event.timestamp }],

@@ -114,9 +114,49 @@ const MAX_UPLOAD_BYTES=25*1024*1024;
 function updateSessionUploadProgress(done,total,current){const percent=total?Math.round(done/total*100):0;$("sessionUploadProgress").classList.remove("hidden");$("sessionProgressCount").textContent=`${done} / ${total} Setups verarbeitet`;$("sessionProgressPercent").textContent=`${percent} %`;$("sessionProgressBar").setAttribute("aria-valuenow",String(percent));$("sessionProgressFill").style.width=percent+"%";$("sessionProgressCurrent").textContent=current?"Aktuell: "+current:"";$("sessionProgressCurrent").classList.toggle("hidden",!current)}
 function uploadRow(statuses,name){return [...statuses.querySelectorAll(".file-status")].find(x=>x.dataset.name===name)}
 function markUploadJob(statuses,job,cls,text){job.state=cls;const x=uploadRow(statuses,job.file.name);if(x){x.className="file-status "+(cls==="ok"?"ok":cls==="err"?"err":"");x.textContent=job.file.name+" — "+text}}
-async function uploadSingleJob(job,statuses){const file=job.file;if(!/\.zip$/i.test(file.name)){job.error="ungültiger Dateityp";markUploadJob(statuses,job,"err","Fehlgeschlagen");return false}if(file.size<=0||file.size>MAX_UPLOAD_BYTES){job.error="ungültige Dateigröße";markUploadJob(statuses,job,"err","Fehlgeschlagen");return false}markUploadJob(statuses,job,"uploading","Wird hochgeladen...");const form=new FormData();form.append("category",job.category);form.append("vehicle",job.vehicle);form.append("version",job.version);form.append("files",file,file.name);try{const r=await fetch("/api/setups/upload",{method:"POST",body:form,credentials:"same-origin"});let d={};try{d=await r.json()}catch{job.error="Ungültige Server-Antwort";markUploadJob(statuses,job,"err","Fehlgeschlagen");return false}const uploaded=new Set((d.uploaded||[]).map(x=>x.name));const fileError=(d.errors||[]).find(x=>x.name===file.name)?.error;if(r.ok&&uploaded.has(file.name)){job.error="";markUploadJob(statuses,job,"ok","Erfolgreich");return true}job.error=fileError||d.error||`fehlgeschlagen (HTTP ${r.status})`;markUploadJob(statuses,job,"err","Fehlgeschlagen");return false}catch{job.error="Netzwerkfehler";markUploadJob(statuses,job,"err","Fehlgeschlagen");return false}}
+const MAX_UPLOAD_ATTEMPTS=5;
+function uploadRetryDelay(response,data,fileError){
+  const header=response.headers.get("Retry-After");
+  const headerMs=header===null?0:(/^\d+(\.\d+)?$/.test(header)?Number(header)*1000:Date.parse(header)-Date.now());
+  return Math.max(0,Number.isFinite(headerMs)?headerMs:0,Number(data.retryAfterMs)||0,Number(fileError?.retryAfterMs)||0);
+}
+async function waitForUploadRetry(job,statuses){
+  while(job.nextRetryAt>Date.now()){
+    markUploadJob(statuses,job,"waiting","Erneuter Versuch in "+Math.ceil((job.nextRetryAt-Date.now())/1000)+" s · "+job.error);
+    await new Promise(resolve=>setTimeout(resolve,Math.min(1000,job.nextRetryAt-Date.now())));
+  }
+}
+async function requestUploadJob(job){
+  const form=new FormData();form.append("category",job.category);form.append("vehicle",job.vehicle);form.append("version",job.version);form.append("files",job.file,job.file.name);
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),180000);
+  try{
+    const response=await fetch("/api/setups/upload",{method:"POST",body:form,credentials:"same-origin",signal:controller.signal});
+    let data={};
+    try{data=await response.json();}catch{return {error:"Ungültige Server-Antwort (HTTP "+response.status+")",retryable:response.status>=500||response.ok||response.status===429,retryAfterMs:uploadRetryDelay(response,{})};}
+    if(response.ok&&(data.uploaded||[]).some(item=>item.originalName===job.file.name||item.name===job.file.name))return {success:true};
+    const fileError=(data.errors||[]).find(item=>item.originalName===job.file.name||item.name===job.file.name);
+    const retryable=fileError?.retryable??data.retryable??([408,409,425,429].includes(response.status)||response.status>=500);
+    return {error:fileError?.error||data.error||("Upload fehlgeschlagen (HTTP "+response.status+")"),retryable,retryAfterMs:uploadRetryDelay(response,data,fileError)};
+  }catch(error){return {error:error.name==="AbortError"?"Zeitüberschreitung. Speicherstand wird erneut geprüft.":"Netzwerkfehler",retryable:true};}
+  finally{clearTimeout(timeout);}
+}
+async function uploadSingleJob(job,statuses){
+  const file=job.file;
+  if(!/\.zip$/i.test(file.name)||file.size<=0||file.size>MAX_UPLOAD_BYTES){job.error="Ungültige ZIP-Datei oder Dateigröße (maximal 25 MiB).";markUploadJob(statuses,job,"err",job.error);return false;}
+  for(let attempt=1;attempt<=MAX_UPLOAD_ATTEMPTS;attempt++){
+    await waitForUploadRetry(job,statuses);
+    markUploadJob(statuses,job,"uploading","Wird hochgeladen · Versuch "+attempt+"/"+MAX_UPLOAD_ATTEMPTS);
+    const result=await requestUploadJob(job);
+    if(result.success){job.error="";job.nextRetryAt=0;markUploadJob(statuses,job,"ok","Erfolgreich");return true;}
+    job.error=result.error;
+    job.nextRetryAt=result.retryable?Date.now()+Math.max(result.retryAfterMs||0,2000*2**(attempt-1))+Math.floor(Math.random()*500):0;
+    if(!result.retryable||attempt===MAX_UPLOAD_ATTEMPTS)break;
+  }
+  markUploadJob(statuses,job,"err","Fehlgeschlagen · "+job.error);return false;
+}
+
 async function refreshUploadedCarState(category,vehicle){setupCache.delete(setupCacheKey(category,vehicle));setupPending.delete(setupCacheKey(category,vehicle));const d=await getCarSetups(category,vehicle);if(currentCar.category===category&&currentCar.vehicle===vehicle){currentCarSetups=d.setups;renderSetups(d.setups)}if(typeof refreshVehicleCounts==='function')await refreshVehicleCounts();}
-async function runUploadJobs(jobs,{appendRows=false}={}){if(uploadQueueRunning)return{ok:0,failed:jobs.length,failedJobs:jobs};uploadQueueRunning=true;const status=$("uploadStatus"),statuses=$("fileStatuses"),btn=$("uploadBtn"),retryBtn=$("retryFailedBtn"),uploadCategory=jobs[0].category,uploadVehicle=jobs[0].vehicle;if(!appendRows)statuses.innerHTML="";for(const job of jobs){let x=uploadRow(statuses,job.file.name);if(!x){x=document.createElement("div");x.className="file-status";x.dataset.name=job.file.name;statuses.appendChild(x)}x.textContent=job.file.name+" — Wartet";x.className="file-status";job.state="waiting";job.error=""}btn.disabled=true;retryBtn.disabled=true;retryBtn.classList.remove("show");let done=0,ok=0,failed=0,refreshError=false;const updateSummary=current=>{updateSessionUploadProgress(done,jobs.length,current);status.textContent=(current?`Aktuell: ${current} · `:"")+`${done}/${jobs.length} verarbeitet · ${ok} erfolgreich · ${failed} fehlgeschlagen`};updateSummary("");try{for(const job of jobs){updateSummary(job.file.name);const success=await uploadSingleJob(job,statuses);if(success)ok++;else failed++;done++;updateSummary("")}if(ok){try{await refreshUploadedCarState(uploadCategory,uploadVehicle)}catch{refreshError=true}}}finally{uploadQueueRunning=false;btn.disabled=false;retryBtn.disabled=false;const failedJobs=jobs.filter(job=>job.state==="err");if(failedJobs.length)retryBtn.classList.add("show");else retryBtn.classList.remove("show");status.textContent=`${ok} erfolgreich · ${failed} fehlgeschlagen`+(refreshError?" · Anzeige konnte nicht aktualisiert werden.":"")}return{ok,failed,failedJobs:jobs.filter(job=>job.state==="err"),refreshError}}
+async function runUploadJobs(jobs,{appendRows=false}={}){if(uploadQueueRunning)return{ok:0,failed:jobs.length,failedJobs:jobs};uploadQueueRunning=true;const status=$("uploadStatus"),statuses=$("fileStatuses"),btn=$("uploadBtn"),retryBtn=$("retryFailedBtn"),uploadCategory=jobs[0].category,uploadVehicle=jobs[0].vehicle;if(!appendRows)statuses.innerHTML="";for(const job of jobs){let x=uploadRow(statuses,job.file.name);if(!x){x=document.createElement("div");x.className="file-status";x.dataset.name=job.file.name;statuses.appendChild(x)}x.textContent=job.file.name+" — Wartet";x.className="file-status";job.state="waiting";job.error=""}btn.disabled=true;retryBtn.disabled=true;retryBtn.classList.remove("show");let done=0,ok=0,failed=0,refreshError=false;const updateSummary=current=>{updateSessionUploadProgress(done,jobs.length,current);status.textContent=(current?`Aktuell: ${current} · `:"")+`${done}/${jobs.length} verarbeitet · ${ok} erfolgreich · ${failed} fehlgeschlagen`};updateSummary("");try{for(const job of jobs){updateSummary(job.file.name);const success=await uploadSingleJob(job,statuses);if(success)ok++;else failed++;done++;updateSummary("");if(done<jobs.length)await new Promise(resolve=>setTimeout(resolve,1100))}if(ok){try{await refreshUploadedCarState(uploadCategory,uploadVehicle)}catch{refreshError=true}}}finally{uploadQueueRunning=false;btn.disabled=false;retryBtn.disabled=false;const failedJobs=jobs.filter(job=>job.state==="err");if(failedJobs.length)retryBtn.classList.add("show");else retryBtn.classList.remove("show");status.textContent=`${ok} erfolgreich · ${failed} fehlgeschlagen`+(refreshError?" · Anzeige konnte nicht aktualisiert werden.":"")}return{ok,failed,failedJobs:jobs.filter(job=>job.state==="err"),refreshError}}
 function uploadVersionError(version){
   if(version.length>40)return "Version ist zu lang (maximal 40 Zeichen).";
   if(/[\u0000-\u001F\u007F]/.test(version))return "Ungültige Version.";

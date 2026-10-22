@@ -1,0 +1,35 @@
+name: Upload-Logik prüfen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.js'
+      - tests/**
+      - .github/workflows/upload-tests.yml
+  pull_request:
+    paths:
+      - '*.js'
+      - tests/**
+      - .github/workflows/upload-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: toJSON(github.event.repository.private) == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Quellen laden
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /*.js
+            /tests/
+          sparse-checkout-cone-mode: false
+      - name: Upload-Versionen und Fehlerbehandlung testen
+        run: node --test tests/*.test.mjs

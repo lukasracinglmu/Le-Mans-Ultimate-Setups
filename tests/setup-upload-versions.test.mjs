@@ -33,8 +33,8 @@ test('separate uploads store their own versions, including an empty replacement'
       };
     } };
   } } };
-  baseWorker.fetch = async request => {
-    const form = await request.formData();
+  baseWorker.fetch = async (request, env, ctx, form) => {
+    assert.equal(request.bodyUsed, true, "multipart parsed once before forwarding");
     const name = form.get('files').name;
     forwarded.push({ name, category: form.get('category'), vehicle: form.get('vehicle'), version: form.get('version') });
     return Response.json({ success: true, uploaded: [{ name }] });
