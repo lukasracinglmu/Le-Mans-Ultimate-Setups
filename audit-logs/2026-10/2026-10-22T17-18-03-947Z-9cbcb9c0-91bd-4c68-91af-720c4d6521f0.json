@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:18:03.947Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Road Atlanta GO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Road Atlanta GO",
+  "manufacturer": "GO",
+  "result": "SUCCESS"
+}
