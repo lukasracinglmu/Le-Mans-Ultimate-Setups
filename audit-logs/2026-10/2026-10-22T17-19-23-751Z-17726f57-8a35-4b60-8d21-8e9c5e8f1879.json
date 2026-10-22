@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-22T17:19:23.751Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Silverstone HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Silverstone HYMO",
+  "manufacturer": "HYMO",
+  "result": "SUCCESS"
+}
