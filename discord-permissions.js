@@ -6,7 +6,7 @@ export function rolePermissions(userId, roles, env, grants = {}) {
   const hasRole = id => Boolean(id && Array.isArray(roles) && roles.includes(String(id)));
   const isOwner = String(userId) === ownerUserId(env);
   const fullAdmin = isOwner || Boolean(grants.fullAdmin);
-  const canManageDatabaseAccess = fullAdmin || hasRole(env.DISCORD_OWNER_ROLE_ID);
+  const canManageDatabaseAccess = fullAdmin || Boolean(grants.adminPanel) || hasRole(env.DISCORD_OWNER_ROLE_ID);
   const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
   const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
   const canViewAdminPanel = fullAdmin || canManageDatabaseAccess || Boolean(grants.adminPanel);
