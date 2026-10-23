@@ -35,7 +35,7 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
   if(path==='/api/admin/maintenance'){if(request.method==='GET')return json({success:true,...await maintenanceState(env)});let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}const message=String(body?.message||'').trim().slice(0,500);await env.ACCESS_DB.batch([env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(body?.enabled?'1':'0'),env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance_message',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.')]);return json({success:true,enabled:Boolean(body?.enabled),message});}
   if(request.method==='GET'){
     const r=await env.ACCESS_DB.prepare('SELECT user_id,granted_by,created_at FROM full_admin_access ORDER BY created_at DESC').all();
-    const grants=[];for(const row of r.results||[]){const profile=await discordProfile(row.user_id,env);const username=profile?.username||row.username||null;grants.push({...row,username,avatar:profile?.avatar||null});}
+    const rows=r.results||[];const profiles=await Promise.all(rows.map(row=>discordProfile(row.user_id,env)));const grants=rows.map((row,index)=>{const profile=profiles[index];return {...row,username:profile?.username||row.username||null,avatar:profile?.avatar||null};});
     return json({success:true,grants});
   }
   let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}
