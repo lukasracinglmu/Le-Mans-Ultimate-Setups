@@ -12,6 +12,7 @@ node_modules/**
 .wrangler/**
 CHANGELOG.md
 README.md
+CLOUDFLARE-VARIABLEN.md
 schema.sql
 worker.js
 production-worker.js

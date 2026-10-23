@@ -4,6 +4,14 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-23 – Cloudflare-Variablen dokumentiert
+
+### Dokumentation
+
+- Eigene Übersicht mit allen benötigten, optionalen und aktuell ungenutzten Worker-Variablen ergänzt.
+- Zweck der Bindings und Variablen erklärt, ohne geheime Werte offenzulegen.
+- README mit der neuen Variablenübersicht verlinkt.
+
 ## 2026-10-23 – README deutlich gekürzt
 
 ### Geändert

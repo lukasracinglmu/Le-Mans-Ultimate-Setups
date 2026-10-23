@@ -125,6 +125,7 @@ Bugtexte und Bilder werden direkt an Discord übertragen. Sie werden nicht in Gi
 | [`setups/`](setups) | Setup-Dateien |
 | [`schema.sql`](schema.sql) | D1-Tabellen |
 | [`wrangler.jsonc`](wrangler.jsonc) | Cloudflare-Konfiguration |
+| [`CLOUDFLARE-VARIABLEN.md`](CLOUDFLARE-VARIABLEN.md) | Variablen, Bindings und ihre Aufgaben |
 | [`audit-logs/`](audit-logs) | Änderungsprotokolle |
 | [`CHANGELOG.md`](CHANGELOG.md) | Projekthistorie |
 
