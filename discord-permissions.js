@@ -5,12 +5,13 @@ export function ownerUserId(env) { return String(env.DISCORD_OWNER_USER_ID || DE
 export function rolePermissions(userId, roles, env, grants = {}) {
   const hasRole = id => Boolean(id && Array.isArray(roles) && roles.includes(String(id)));
   const isOwner = String(userId) === ownerUserId(env);
-  const canManageDatabaseAccess = isOwner || hasRole(env.DISCORD_OWNER_ROLE_ID);
-  const canUpload = isOwner || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
+  const fullAdmin = isOwner || Boolean(grants.fullAdmin);
+  const canManageDatabaseAccess = fullAdmin || hasRole(env.DISCORD_OWNER_ROLE_ID);
+  const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
   const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
-  return { databaseAccess, canUpload, isOwner, isAdmin:canManageDatabaseAccess,
+  return { databaseAccess, canUpload, isOwner, fullAdmin, canViewTickets:fullAdmin, isAdmin:canManageDatabaseAccess,
     canManageDatabaseAccess, canManageUploadAccess:canManageDatabaseAccess,
-    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload) };
+    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:Boolean(grants.fullAdmin) };
 }
 
 export async function resolvePermissions(userId, env) {
@@ -18,7 +19,6 @@ export async function resolvePermissions(userId, env) {
   const grant = async table => {
     if (!env.ACCESS_DB) return false;
     try {
-      // Table names are fixed internally; user input is always bound.
       const row=await env.ACCESS_DB.prepare(`SELECT user_id FROM ${table} WHERE user_id = ? LIMIT 1`).bind(String(userId)).first();
       return Boolean(row?.user_id);
     } catch { return false; }
@@ -35,6 +35,6 @@ export async function resolvePermissions(userId, env) {
       return { roles:Array.isArray(data.roles)?data.roles:[], available:Array.isArray(data.roles) };
     } catch { return { roles:[], available:false }; }
   };
-  const [database,upload,result]=await Promise.all([grant('database_access'),grant('upload_access'),member()]);
-  return { ...rolePermissions(userId,result.roles,env,{ database,upload }), rolesAvailable:result.available };
+  const [database,upload,fullAdmin,result]=await Promise.all([grant('database_access'),grant('upload_access'),grant('full_admin_access'),member()]);
+  return { ...rolePermissions(userId,result.roles,env,{ database,upload,fullAdmin }), rolesAvailable:result.available };
 }
