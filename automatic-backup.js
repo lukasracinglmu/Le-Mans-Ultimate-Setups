@@ -47,7 +47,7 @@ async function createBackup(env,now=new Date(),force=false){
   const key=`${backupDate.year}-${backupDate.month}-${backupDate.day}`;
   if(env.ACCESS_DB){
     await env.ACCESS_DB.prepare('CREATE TABLE IF NOT EXISTS automatic_backups (slot TEXT PRIMARY KEY, tag TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
-    if(await env.ACCESS_DB.prepare('SELECT slot FROM automatic_backups WHERE slot=?').bind(key).first())return {skipped:true,reason:'already-created'};
+    if(!force&&await env.ACCESS_DB.prepare('SELECT slot FROM automatic_backups WHERE slot=?').bind(key).first())return {skipped:true,reason:'already-created'};
   }
   const repo=`${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
   const branch=await fetch(`${GITHUB_API}/repos/${repo}/git/ref/heads/${env.GITHUB_BRANCH||'main'}`,{headers:headers(env)});
