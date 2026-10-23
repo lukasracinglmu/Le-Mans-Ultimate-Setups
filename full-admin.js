@@ -1,4 +1,5 @@
 import { writeSetupAuditEvent } from "./audit-log.js";
+import { ownerUserId } from "./discord-permissions.js";
 import { createManualBackup } from "./automatic-backup.js";
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const validUserId=v=>/^\d{16,22}$/.test(String(v||'').trim())?String(v).trim():null;
@@ -31,7 +32,7 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
   const path=new URL(request.url).pathname;
   const auth=await ownerOnly(request,env,ctx,productionWorker);if(auth.error)return auth.error;
   try{await ensure(env);await env.ACCESS_DB.prepare(`CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)`).run()}catch{return json({success:false,error:'Rechte-Datenbank nicht verfügbar.'},503)}
-  if(path==='/api/admin/backup'){if(!auth.user?.isOwner)return json({success:false,error:'Nur der Owner darf Backups erstellen.'},403);if(request.method!=='POST')return json({success:false,error:'Methode nicht erlaubt.'},405);const backup=await createManualBackup(env);return json(backup,backup.success?200:503)}
+  if(path==='/api/admin/backup'){if(String(auth.user?.id)!==ownerUserId(env))return json({success:false,error:'Nur der Owner darf Backups erstellen.'},403);if(request.method!=='POST')return json({success:false,error:'Methode nicht erlaubt.'},405);const backup=await createManualBackup(env);return json(backup,backup.success?200:503)}
   if(path==='/api/admin/maintenance'){if(request.method==='GET')return json({success:true,...await maintenanceState(env)});let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}const message=String(body?.message||'').trim().slice(0,500);await env.ACCESS_DB.batch([env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(body?.enabled?'1':'0'),env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance_message',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.')]);return json({success:true,enabled:Boolean(body?.enabled),message});}
   if(request.method==='GET'){
     const r=await env.ACCESS_DB.prepare('SELECT user_id,granted_by,created_at FROM full_admin_access ORDER BY created_at DESC').all();
