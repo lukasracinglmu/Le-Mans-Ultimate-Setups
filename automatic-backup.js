@@ -58,7 +58,8 @@ async function createBackup(env,now=new Date(),force=false){
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
   if(!response.ok&&response.status!==422)throw Error('GitHub Backup konnte nicht erstellt werden.');
   if(env.ACCESS_DB)await env.ACCESS_DB.prepare('INSERT OR REPLACE INTO automatic_backups (slot,tag) VALUES (?,?)').bind(key,tag).run();
-  const size=await backupSize(env,sha);\n  await notifyOwner(env,tag,now,size).catch(()=>{});
+  const size=await backupSize(env,sha);
+  await notifyOwner(env,tag,now,size).catch(()=>{});
   return {success:true,tag,sha};
 }
 
