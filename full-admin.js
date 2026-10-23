@@ -1,3 +1,4 @@
+import { writeSetupAuditEvent } from "./audit-log.js";
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const validUserId=v=>/^\d{16,22}$/.test(String(v||'').trim())?String(v).trim():null;
 
@@ -28,11 +29,11 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
       env.ACCESS_DB.prepare('INSERT INTO database_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by').bind(userId,auth.user.id),
       env.ACCESS_DB.prepare('INSERT INTO upload_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by').bind(userId,auth.user.id)
     ]);
-    return json({success:true,userId,fullAdmin:true});
+    const event={action:'PERMISSION_GRANT',discordAccount:auth.user.username||null,discordUserId:auth.user.id,targetDiscordUserId:userId,permission:'FULL_ADMIN_ACCESS',oldValue:'DENIED',newValue:'GRANTED',result:'SUCCESS'};ctx?.waitUntil?.(writeSetupAuditEvent(event,env).catch(()=>{}));return json({success:true,userId,fullAdmin:true});
   }
   if(request.method==='DELETE'){
     await env.ACCESS_DB.prepare('DELETE FROM full_admin_access WHERE user_id=?').bind(userId).run();
-    return json({success:true,userId,fullAdmin:false});
+    const event={action:'PERMISSION_REVOKE',discordAccount:auth.user.username||null,discordUserId:auth.user.id,targetDiscordUserId:userId,permission:'FULL_ADMIN_ACCESS',oldValue:'GRANTED',newValue:'DENIED',result:'SUCCESS'};ctx?.waitUntil?.(writeSetupAuditEvent(event,env).catch(()=>{}));return json({success:true,userId,fullAdmin:false});
   }
   return json({success:false,error:'Methode nicht erlaubt.'},405);
 }
