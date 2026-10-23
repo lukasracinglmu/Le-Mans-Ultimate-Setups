@@ -17,6 +17,7 @@ export default {
     if (path === "/api/admin/database-access" && method === "POST") return grantDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/database-access" && method === "DELETE") return revokeDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/access" && method === "GET") return listCombinedAccess(request, env, ctx);
+    if (path === "/api/admin/admin-panel-access" && (method === "POST" || method === "DELETE")) return changeAdminPanelAccess(request, env, ctx);
 
     if ((path === "/api/admin/upload-access" || path === "/api/admin/all-access") && (method === "POST" || method === "DELETE")) {
       return changeManagedAccess(request, env, ctx, path === "/api/admin/all-access");
@@ -177,15 +178,30 @@ async function changeManagedAccess(request, env, ctx, all) {
   } catch { return json({success:false,error:"Freigaben konnten nicht gespeichert werden."},503); }
 }
 
+async function changeAdminPanelAccess(request, env, ctx) {
+  const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error;
+  if (!env.ACCESS_DB) return json({success:false,error:"Rechte-Datenbank nicht konfiguriert."},503);
+  let body; try { body = await request.json(); } catch { return json({success:false,error:"Ungültige Anfrage."},400); }
+  const userId = String(body?.userId || "").trim();
+  if (!/^\d{16,22}$/.test(userId)) return json({success:false,error:"Ungültige Discord User ID."},400);
+  await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS admin_panel_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  if (request.method === "POST") {
+    await env.ACCESS_DB.prepare("INSERT INTO admin_panel_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by,created_at=CURRENT_TIMESTAMP").bind(userId,auth.user.id).run();
+    return json({success:true,userId,adminPanel:true});
+  }
+  await env.ACCESS_DB.prepare("DELETE FROM admin_panel_access WHERE user_id=?").bind(userId).run();
+  return json({success:true,userId,adminPanel:false});
+}
 async function listCombinedAccess(request, env, ctx) {
   const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error;
   if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503);
-  const [db, upload] = await Promise.all([env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all()]);
+  const [db, upload, panel] = await Promise.all([env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM admin_panel_access").all().catch(()=>({results:[]}))]);
   const users = new Map();
   for (const row of db.results || []) users.set(row.user_id, { userId: row.user_id, databaseAccess: true, databaseGrantedAt: row.created_at, uploadAccess: false, uploadGrantedAt: null });
+  for (const row of panel.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.adminPanelAccess = true; item.adminPanelGrantedAt = row.created_at; users.set(row.user_id, item); }
   for (const row of upload.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.uploadAccess = true; item.uploadGrantedAt = row.created_at; item.databaseAccess = true; users.set(row.user_id, item); }
   const out = [];
-  for (const item of users.values()) { const member = await fetchGuildMember(item.userId, env); item.username = member?.user?.global_name || member?.user?.username || "Unbekannt / nicht verfügbar"; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen"; out.push(item); }
+  for (const item of users.values()) { const member = await fetchGuildMember(item.userId, env); item.username = member?.user?.global_name || member?.user?.username || "Unbekannt / nicht verfügbar"; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen";if(item.adminPanelAccess)item.permission += ", Admin-Panel sehen"; out.push(item); }
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
