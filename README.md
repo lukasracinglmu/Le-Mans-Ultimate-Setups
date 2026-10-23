@@ -276,12 +276,12 @@ Die Rollen werden auf dem Discord-Server `1464926567401652418` geprüft. Die per
 | Katalog, Setups und Downloads | — | Ja | Ja | Ja | Ja |
 | Setups hochladen, löschen und Versionen ändern | — | — | Ja | Nur zusätzlich mit Setup Supply | Ja |
 | Externen Datenbankzugriff verwalten | — | — | — | Ja | Ja |
-| Individuelle Upload-Freigaben verwalten | — | — | — | — | Ja |
+| Individuelle Upload-Freigaben verwalten | — | — | — | Ja | Ja |
 | Discord-Befehl `/request` registrieren | — | — | — | — | Ja |
 
-**Team** (`1464926567401652420`) erlaubt lesenden Zugriff. **Setup Supply** (`1538601074074849330`) erlaubt zusätzlich Setup-Änderungen. Die **Owner-Rolle** (`1464926567401652423`) darf externe Datenbankfreigaben verwalten; sie erteilt allein keine Schreibrechte an Setups. Die **persönliche Owner-ID** (`1033453785416208564`) behält sämtliche bisherigen Rechte.
+**Team** (`1464926567401652420`) erlaubt lesenden Zugriff. **Setup Supply** (`1538601074074849330`) erlaubt zusätzlich Setup-Änderungen. Die **Owner-Rolle** (`1464926567401652423`) sieht das Admin-Panel und darf externe Datenbank- und Upload/Delete-Freigaben verwalten; sie erteilt allein keine Schreibrechte an Setups. Die **persönliche Owner-ID** (`1033453785416208564`) behält sämtliche bisherigen Rechte.
 
-Externe Datenbankfreigaben erlauben standardmäßig nur das Lesen. Individuelle Upload-Freigaben bleiben möglich und werden von der persönlichen Owner-ID verwaltet. Jede schreibende Route prüft die Rechte serverseitig.
+Externe Datenbankfreigaben erlauben standardmäßig nur das Lesen. Individuelle Upload-Freigaben bleiben möglich und werden von der Owner-Rolle und der persönlichen Owner-ID verwaltet. Jede schreibende Route prüft die Rechte serverseitig.
 
 <a id="admin"></a>
 
@@ -290,15 +290,18 @@ Externe Datenbankfreigaben erlauben standardmäßig nur das Lesen. Individuelle 
 | Aufgabe | Ablauf | Wirkung |
 | :--- | :--- | :--- |
 | **Lesenden Zugriff vergeben** | Mit Owner-Rolle oder persönlicher Owner-ID anmelden, Discord User ID eingeben, „Database freigeben“ wählen | Individuelle Datenbankfreigabe in D1 |
-| **Upload und Löschen erlauben** | Mit persönlicher Owner-ID anmelden, User ID eingeben, „Upload/Delete freigeben“ wählen | Individuelle Upload-Freigabe und ergänzter Datenbankzugriff |
+| **Upload und Löschen erlauben** | Mit Owner-Rolle oder persönlicher Owner-ID anmelden, User ID eingeben, „Upload/Delete freigeben“ wählen | Individuelle Upload-Freigabe und ergänzter Datenbankzugriff |
+| **Beide Freigaben erteilen** | User ID eingeben und „Alles freigeben“ wählen | Datenbank und Upload/Delete werden gemeinsam gespeichert |
 | **Schreibrechte entfernen** | „Upload/Delete entfernen“ wählen | Entfernt die individuelle Upload-Freigabe; der individuelle Datenbankeintrag bleibt bestehen |
-| **Individuellen Zugang ganz entfernen** | Zuerst Upload/Delete entfernen, danach „Database entfernen“ | Entfernt beide individuellen Einträge; vorhandene Discord-Rollen bleiben wirksam |
+| **Individuellen Zugang ganz entfernen** | User ID eingeben und „Alles entfernen“ wählen | Entfernt beide individuellen Einträge; vorhandene Discord-Rollen bleiben wirksam |
+
+„Alles freigeben“ und „Alles entfernen“ gelten für die eingegebene Person und werden jeweils als gemeinsame D1-Transaktion gespeichert. Sie ändern keine Discord-Rollen. Die Liste beschreibt die persönlichen Rechte kurz als **„Datenbank nur ansehen“** oder **„Datenbank ansehen, Setups ändern“**.
 
 Die User ID muss aus 16 bis 22 Ziffern bestehen. Anzeigename oder Nutzername ersetzen die ID nicht. Nach einer Änderung wird die Freigabenliste neu geladen; die Zielperson sollte ihre Website-Rechte durch erneutes Laden prüfen.
 
 Die Liste fasst individuelle Datenbank- und Upload-Freigaben zusammen und zeigt User ID, per Discord aufgelösten Namen und Berechtigungsart. Nutzer, die ausschließlich über eine Rolle Zugriff erhalten, sind dadurch nicht automatisch aufgelistet. Kann Discord den Namen nicht liefern, bleibt die ID mit „Unbekannt / nicht verfügbar“ erhalten.
 
-Die API liefert zusätzlich `databaseGrantedAt` und `uploadGrantedAt`; das derzeitige Panel zeigt diese Zeitstempel nicht an. `DISCORD_OWNER_USER_ID` bestimmt die persönliche Owner-ID. `DISCORD_OWNER_ROLE_ID` bestimmt die Rolle für externe Datenbankfreigaben. Beide Angaben sind ausdrücklich voneinander getrennt.
+Die API liefert zusätzlich `databaseGrantedAt` und `uploadGrantedAt`; das derzeitige Panel zeigt diese Zeitstempel nicht an. `DISCORD_OWNER_USER_ID` bestimmt die persönliche Owner-ID. `DISCORD_OWNER_ROLE_ID` bestimmt die Rolle für das Admin-Panel und die Verwaltung persönlicher Freigaben. Beide Angaben sind ausdrücklich voneinander getrennt.
 
 <details>
 <summary><strong>Wie Rollen und individuelle Freigaben zusammenwirken</strong></summary>
@@ -773,7 +776,7 @@ Der Probelauf verändert keine Dateien. Ausführliche Regeln, Kategorien und Bei
 | **„Ungültige Server-Antwort“ / Netzwerkfehler** | Antwortformat oder unterbrochener Request | Automatische Versuche abwarten; danach genaue Ursache am Dateistatus prüfen |
 | **Datei vorhanden, aber Version `—`** | Ohne Version hochgeladen, fehlende D1-Metadaten oder fehlgeschlagener Versionsabruf | `ACCESS_DB`, Tabelle und Zuordnung aus Klasse/Fahrzeug/Dateiname prüfen; Version gegebenenfalls nachtragen |
 | **„Anzeige konnte nicht aktualisiert werden.“** | Upload lief, Nachladen der Liste scheiterte | Upload-Zähler und gespeicherte Dateien prüfen; Ansicht anschließend neu laden |
-| **Admin-Panel fehlt** | Aktueller Nutzer wird nicht als Owner erkannt | `/api/me` und die feste Owner-Zuordnung in beiden Worker-Dateien prüfen |
+| **Admin-Panel fehlt** | Owner-Rolle oder persönliche Owner-ID wird nicht erkannt | `/api/me` und die konfigurierte Owner-Rolle sowie Owner-ID prüfen |
 | **Freigabenliste leer oder Name unbekannt** | Nur Rollenrechte bzw. fehlende Discord-Auflösung | Individuelle Einträge in D1 von Rollenrechten unterscheiden; Bot-/Server-Zugriff prüfen |
 | **„Database Access kann nicht entfernt werden …“ / `409`** | Individuelle Upload-Freigabe besteht noch | Zuerst Upload/Delete entfernen, danach Database Access entfernen |
 | **Request kommt nicht in Discord an** | Bot-Token, `DISCORD_CHANNEL_ID`, Kanalrechte | Konfigurierte Instanz und tatsächliche Discord-Antwort des Workers prüfen |

@@ -71,13 +71,13 @@ export default {
 };
 
 function isPermissionChange(method, path) {
-  return (method === "POST" || method === "DELETE") && (path === "/api/admin/database-access" || path === "/api/admin/upload-access");
+  return (method === "POST" || method === "DELETE") && (path === "/api/admin/database-access" || path === "/api/admin/upload-access" || path === "/api/admin/all-access");
 }
 
 function permissionAuditEvent(method, path, actor, targetUserId) {
   const grant = method === "POST";
   const database = path === "/api/admin/database-access";
-  const permission = database ? "DATABASE_ACCESS" : "UPLOAD_DELETE_ACCESS";
+  const permission = path === "/api/admin/all-access" ? "DATABASE_AND_UPLOAD_DELETE_ACCESS" : database ? "DATABASE_ACCESS" : "UPLOAD_DELETE_ACCESS";
   return {
     action: grant ? "PERMISSION_GRANT" : "PERMISSION_REVOKE",
     discordAccount: actor.username || null,

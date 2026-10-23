@@ -19,7 +19,7 @@ for(const [name,roles,grants,read,write,admin] of [
 ]){
   test(name+' has precisely the configured capabilities',()=>{
     const p=rolePermissions(userId,roles,envBase,grants);
-    assert.equal(p.databaseAccess,read);assert.equal(p.canUpload,write);assert.equal(p.canManageDatabaseAccess,admin);assert.equal(p.canManageUploadAccess,false);
+    assert.equal(p.databaseAccess,read);assert.equal(p.canUpload,write);assert.equal(p.canManageDatabaseAccess,admin);assert.equal(p.canManageUploadAccess,admin);
   });
 }
 test('personal owner retains all capabilities without a Discord role',()=>{
@@ -35,7 +35,7 @@ async function cookie(id){
 }
 async function harness(roles,run,{id=userId,grants={},discordStatus=200}={}){
   const original=globalThis.fetch,github=[],writes=[],background=[];
-  const env={...envBase,ACCESS_DB:{prepare(sql){return {bind(...params){return {
+  const env={...envBase,ACCESS_DB:{async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(sql){return {bind(...params){return {
     async first(){return ((sql.includes('FROM upload_access')&&grants.upload)||(sql.includes('FROM database_access')&&grants.database))?{user_id:params[0]}:null;},
     async all(){return {results:[]};},async run(){writes.push({sql,params});return {success:true};}
   };},async all(){return {results:[]};}};}}};
@@ -66,13 +66,17 @@ test('both worker layers expose the same Team/Supply/Owner capabilities',async()
   }
 });
 
-test('Owner role can grant external database access but cannot grant upload access',async()=>{
+test('Owner role can grant database, upload and combined access',async()=>{
   await harness([envBase.DISCORD_OWNER_ROLE_ID],async({env,request,ctx,writes})=>{
     assert.equal((await accessWorker.fetch(await request('/api/admin/database-access','POST',{userId:targetId}),env,ctx)).status,200);
     assert.ok(writes.some(w=>w.sql.includes('INSERT INTO database_access')&&w.params[0]===targetId&&w.params[1]===userId));
     const count=writes.length;
-    assert.equal((await accessWorker.fetch(await request('/api/admin/upload-access','POST',{userId:targetId}),env,ctx)).status,403);
-    assert.equal(writes.length,count);
+    assert.equal((await accessWorker.fetch(await request('/api/admin/upload-access','POST',{userId:targetId}),env,ctx)).status,200);
+    assert.equal(writes.length,count+2);
+    assert.equal((await accessWorker.fetch(await request('/api/admin/all-access','DELETE',{userId:targetId}),env,ctx)).status,200);
+    assert.ok(writes.some(w=>w.sql.includes('DELETE FROM upload_access')));
+    assert.ok(writes.some(w=>w.sql.includes('DELETE FROM database_access')));
+    assert.equal((await accessWorker.fetch(await request('/api/admin/all-access','POST',{userId:targetId}),env,ctx)).status,200);
   });
 });
 
@@ -80,6 +84,8 @@ test('Team and Setup Supply cannot manage external access',async()=>{
   for(const role of [envBase.DISCORD_DATABASE_ROLE_ID,envBase.DISCORD_UPLOAD_ROLE_ID]){
     await harness([role],async({env,request,ctx,writes})=>{
       assert.equal((await accessWorker.fetch(await request('/api/admin/database-access','POST',{userId:targetId}),env,ctx)).status,403);
+      assert.equal((await accessWorker.fetch(await request('/api/admin/all-access','POST',{userId:targetId}),env,ctx)).status,403);
+      assert.equal((await accessWorker.fetch(await request('/api/admin/all-access','DELETE',{userId:targetId}),env,ctx)).status,403);
       assert.equal(writes.length,0);
     });
   }

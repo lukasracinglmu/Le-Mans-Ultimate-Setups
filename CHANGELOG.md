@@ -4,6 +4,18 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-22 – Admin-Freigaben vereinfachen
+
+### Ergänzt
+
+- Owner-Rolle `1464926567401652423` sieht das Admin-Panel und verwaltet persönliche Datenbank- sowie Upload/Delete-Freigaben.
+- „Alles freigeben“ und „Alles entfernen“ für die eingegebene Discord-ID ergänzt. Beide persönlichen Freigaben werden gemeinsam in einer D1-Transaktion geändert und als Rechteänderung protokolliert. Discord-Rollen bleiben wirksam.
+
+### Geändert
+
+- Freigabenliste nutzt kurze Beschreibungen: „Datenbank nur ansehen“ oder „Datenbank ansehen, Setups ändern“.
+- Panel wird anhand der Admin-Berechtigung angezeigt. Doppelklicks während einer laufenden Änderung sind gesperrt. README und Rollenprüfungen aktualisiert.
+
 ## 2026-10-22 – Bug-Button hervorheben
 
 ### Geändert
