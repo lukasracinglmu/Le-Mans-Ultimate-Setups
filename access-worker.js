@@ -2,6 +2,7 @@ import { readDisplayName, displayNameStatement, readStoredDisplayName } from "./
 import uiWorker from "./ui-hotfix.js";
 import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
+import { ownerUserId } from "./discord-permissions.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GITHUB_API = "https://api.github.com";
@@ -139,14 +140,14 @@ async function augmentedMe(request, env, ctx) {
 async function requireOwner(request, env, ctx, capability="canManageDatabaseAccess") {
   const me=await getBaseMe(request,env,ctx);
   if (!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
-  if (!me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
+  if (String(me.user?.id)!==ownerUserId(env) && !me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
   return {user:me.user};
 }
 
 async function requireFullAdmin(request, env, ctx) {
   const me=await getBaseMe(request,env,ctx);
   if(!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
-  if(!me.user?.fullAdmin) return {error:json({success:false,error:"Nur Full-Admins dürfen Admin-Rechte verwalten."},403)};
+  if(String(me.user?.id)!==ownerUserId(env) && !me.user?.fullAdmin) return {error:json({success:false,error:"Nur Full-Admins dürfen Admin-Rechte verwalten."},403)};
   return {user:me.user};
 }
 async function hasUploadGrant(userId, env) {
