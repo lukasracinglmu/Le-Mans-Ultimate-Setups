@@ -15,6 +15,7 @@ export default {
         return new Response('<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>*{box-sizing:border-box}body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center;overflow:hidden;background-image:url("/assets/bp-logo.webp?v=maintenance-gray-2"),url("/assets/bp-logo.webp?v=maintenance-gray-2");background-size:460px auto;background-position:70px 75px,300px 305px;background-repeat:repeat}main{position:relative;z-index:1;max-width:620px;margin:30px;padding:34px 38px;border:1px solid #343943;border-radius:18px;background:#191c22;box-shadow:0 18px 60px #0008}main h1{margin:0 0 12px}main p{margin:0;color:#a5a9b3;line-height:1.55}</style><main><h1>Wartungsarbeiten</h1><p>'+escapeHtml(state.message)+'</p></main>',{status:503,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store'}});
       }
     }
+    if(url.pathname==='/permission-test'&&request.method==='GET'){const me=await readMe(request,env,ctx);if(!me?.loggedIn)return new Response('Nicht gefunden.',{status:404});return sitePage(request,env,'permission-test.html',true)}
     if(url.pathname==='/bug-report'&&request.method==='GET'){
       const me=await readMe(request,env,ctx);
       if(!hasSiteAccess(me))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
