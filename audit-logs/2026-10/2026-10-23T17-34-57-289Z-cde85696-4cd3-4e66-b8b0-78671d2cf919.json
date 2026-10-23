@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-23T17:34:57.289Z",
+  "action": "PERMISSION_REVOKE",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "targetDiscordUserId": "705992984361041920",
+  "permission": "FULL_ADMIN_ACCESS",
+  "oldValue": "GRANTED",
+  "newValue": "DENIED",
+  "result": "SUCCESS"
+}
