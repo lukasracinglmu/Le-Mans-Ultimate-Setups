@@ -3,10 +3,71 @@ import { ticketApi, isTicketOwner } from "./bug-tickets.js";
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
-export default {async fetch(request,env,ctx){const url=new URL(request.url);if(url.pathname==='/bug-report'&&request.method==='GET')return sitePage(request,env,'bug-report.html',false);if(url.pathname==='/bug-tickets'&&request.method==='GET'){if(!await isTicketOwner(request,env,ctx,productionWorker))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});return sitePage(request,env,'bug-tickets.html',true);}if(url.pathname==='/api/bug-reports'){if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx),me=await r.json().catch(()=>null);return submitBugReport(request,me?.loggedIn?me.user:null,env);}if(url.pathname.startsWith('/api/admin/bug-tickets'))return ticketApi(request,env,ctx,productionWorker);if(request.method==='GET'&&url.pathname==='/setups.json'){const mr=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);let me=null;try{me=await mr.json()}catch{}if(!me?.loggedIn)return Response.json({success:false,error:'Nicht angemeldet.'},{status:401});if(!me?.databaseAccess)return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});const source=await readSiteFile(request,env,'setups.json');return new Response(source.body,{status:source.ok?200:502,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store'}});}const permissionChange=isPermissionChange(request.method,url.pathname);if(permissionChange){const bodyRequest=request.clone(),mr=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);let actor=null,targetUserId=null;try{actor=await mr.json()}catch{}try{targetUserId=String((await bodyRequest.json())?.userId||'').trim()||null}catch{}const response=await productionWorker.fetch(request,env,ctx);if(response.ok&&actor?.loggedIn&&actor?.user?.id&&targetUserId){let result=null;try{result=await response.clone().json()}catch{}if(result?.success){const task=writeSetupAuditEvent(permissionAuditEvent(request.method,url.pathname,actor.user,targetUserId),env).catch(()=>{});if(ctx?.waitUntil)ctx.waitUntil(task)}}return response;}const response=await productionWorker.fetch(request,env,ctx);if(request.method==='GET'&&url.pathname==='/'&&response.headers.get('content-type')?.includes('text/html')){let html=await response.text();html=injectHomeLogo(html);if(await isTicketOwner(request,env,ctx,productionWorker))html=injectTicketHeader(html);html=injectCopyDiscordId(html);const headers=new Headers(response.headers);headers.delete('Content-Length');headers.set('Cache-Control','private, no-store');return new Response(html,{status:response.status,headers});}return response;},async queue(batch,env,ctx){for(const message of batch.messages){try{message.ack?.()}catch{message.retry?.({delaySeconds:10})}}}};
+
+export default {
+  async fetch(request,env,ctx){
+    const url=new URL(request.url);
+    if(url.pathname==='/bug-report'&&request.method==='GET')return sitePage(request,env,'bug-report.html',false);
+    if(url.pathname==='/bug-tickets'&&request.method==='GET'){
+      if(!await isTicketOwner(request,env,ctx,productionWorker))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
+      return sitePage(request,env,'bug-tickets.html',true);
+    }
+    if(url.pathname==='/admin'&&request.method==='GET'){
+      const me=await readMe(request,env,ctx);
+      if(!me?.loggedIn||!me.user?.canManageDatabaseAccess)return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
+      return sitePage(request,env,'admin.html',true);
+    }
+    if(url.pathname==='/api/bug-reports'){
+      if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});
+      const me=await readMe(request,env,ctx);
+      return submitBugReport(request,me?.loggedIn?me.user:null,env);
+    }
+    if(url.pathname.startsWith('/api/admin/bug-tickets'))return ticketApi(request,env,ctx,productionWorker);
+    if(request.method==='GET'&&url.pathname==='/setups.json'){
+      const me=await readMe(request,env,ctx);
+      if(!me?.loggedIn)return Response.json({success:false,error:'Nicht angemeldet.'},{status:401});
+      if(!me?.databaseAccess)return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});
+      const source=await readSiteFile(request,env,'setups.json');
+      return new Response(source.body,{status:source.ok?200:502,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store'}});
+    }
+    const permissionChange=isPermissionChange(request.method,url.pathname);
+    if(permissionChange){
+      const bodyRequest=request.clone(),actor=await readMe(request,env,ctx);let targetUserId=null;
+      try{targetUserId=String((await bodyRequest.json())?.userId||'').trim()||null}catch{}
+      const response=await productionWorker.fetch(request,env,ctx);
+      if(response.ok&&actor?.loggedIn&&actor?.user?.id&&targetUserId){
+        let result=null;try{result=await response.clone().json()}catch{}
+        if(result?.success){const task=writeSetupAuditEvent(permissionAuditEvent(request.method,url.pathname,actor.user,targetUserId),env).catch(()=>{});if(ctx?.waitUntil)ctx.waitUntil(task)}
+      }
+      return response;
+    }
+    const response=await productionWorker.fetch(request,env,ctx);
+    if(request.method==='GET'&&url.pathname==='/'&&response.headers.get('content-type')?.includes('text/html')){
+      let html=await response.text();
+      html=injectHomeLogo(html);
+      html=injectRoleHeader(html);
+      html=hideEmbeddedAdmin(html);
+      const headers=new Headers(response.headers);headers.delete('Content-Length');headers.set('Cache-Control','private, no-store');
+      return new Response(html,{status:response.status,headers});
+    }
+    return response;
+  },
+  async queue(batch,env,ctx){for(const message of batch.messages){try{message.ack?.()}catch{message.retry?.({delaySeconds:10})}}}
+};
+
+async function readMe(request,env,ctx){const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);try{return await r.json()}catch{return null}}
+
 async function sitePage(request,env,file,privatePage){const source=await readSiteFile(request,env,file);const headers=new Headers(source.headers);headers.set('Content-Type',source.ok?'text/html; charset=utf-8':'text/plain; charset=utf-8');headers.set('Cache-Control',privatePage?'private, no-store':'no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(source.body,{status:source.status,headers});}
+
 function injectHomeLogo(html){const script=`<script>(()=>{const brand=document.querySelector('header .brand');if(!brand)return;brand.style.cursor='pointer';brand.setAttribute('role','link');brand.setAttribute('tabindex','0');brand.setAttribute('aria-label','Zur Startseite');const go=()=>{location.href='/'};brand.addEventListener('click',e=>{if(e.target.closest('a,button')&&e.target.closest('a,button')!==brand)return;go()});brand.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})})();</script>`;return html.replace('</body>',script+'</body>');}
-function injectTicketHeader(html){const css=`<style>#privateTicketButton{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-decoration:none;color:var(--text);border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:800;z-index:60}#privateTicketButton.alert{background:#b91c1c;border-color:#ef4444;color:#fff;animation:ticketAlert 1.15s ease-in-out infinite}#privateTicketCount{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;margin-left:7px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px}@keyframes ticketAlert{50%{box-shadow:0 0 0 6px rgba(239,68,68,.18);filter:brightness(1.22)}}@media(max-width:700px){#privateTicketButton{position:static;transform:none;padding:8px 9px}}</style>`;const script=`<script>(()=>{const header=document.querySelector('header');if(!header)return;const a=document.createElement('a');a.id='privateTicketButton';a.href='/bug-tickets';a.innerHTML='Tickets <span id="privateTicketCount">0</span>';header.appendChild(a);async function refresh(){try{const r=await fetch('/api/admin/bug-tickets?status=open',{credentials:'same-origin',cache:'no-store'}),d=await r.json();if(!r.ok)return;const n=(d.tickets||[]).length,c=document.getElementById('privateTicketCount');c.textContent=n;a.classList.toggle('alert',n>0)}catch{}}refresh();setInterval(refresh,30000)})();</script>`;return html.replace('</head>',css+'</head>').replace('</body>',script+'</body>');}
-function injectCopyDiscordId(html){const script=`<script>(()=>{function add(){document.querySelectorAll('#adminAccessList>div').forEach(card=>{if(card.querySelector('[data-copy-id]'))return;const first=card.querySelector('div'),m=first?.textContent.match(/(\\d{16,22})/);if(!m)return;const b=document.createElement('button');b.type='button';b.dataset.copyId='1';b.textContent='Discord ID kopieren';b.style.marginLeft='8px';b.onclick=async()=>{try{await navigator.clipboard.writeText(m[1]);b.textContent='Kopiert';setTimeout(()=>b.textContent='Discord ID kopieren',1200)}catch{}};first.appendChild(b)})}new MutationObserver(add).observe(document.documentElement,{childList:true,subtree:true});document.readyState==='loading'?document.addEventListener('DOMContentLoaded',add,{once:true}):add()})();</script>`;return html.replace('</body>',script+'</body>');}
+
+function injectRoleHeader(html){
+  const css=`<style>#roleHeaderActions{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;z-index:60}#roleHeaderActions a{text-decoration:none;color:var(--text);border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:800;white-space:nowrap}#roleHeaderActions a:hover{background:var(--surface2)}#roleHeaderActions .bug-action{border-color:#8f2c2c;color:#ff8c8c}#roleHeaderActions .ticket-action.alert{background:#b91c1c;border-color:#ef4444;color:#fff;animation:ticketAlert 1.15s ease-in-out infinite}#privateTicketCount{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;margin-left:6px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px}@keyframes ticketAlert{50%{box-shadow:0 0 0 6px rgba(239,68,68,.18);filter:brightness(1.22)}}@media(max-width:900px){#roleHeaderActions{position:static;transform:none;gap:5px}#roleHeaderActions a{padding:8px 9px;font-size:12px}}@media(max-width:650px){#roleHeaderActions a{font-size:0;padding:8px}#roleHeaderActions a:before{font-size:14px}#roleHeaderActions .ticket-action:before{content:'T'}#roleHeaderActions .admin-action:before{content:'A'}#roleHeaderActions .bug-action:before{content:'!'}#privateTicketCount{font-size:10px;margin-left:4px}}</style>`;
+  const script=`<script>(()=>{const header=document.querySelector('header');if(!header)return;const group=document.createElement('nav');group.id='roleHeaderActions';group.setAttribute('aria-label','Schnellzugriff');header.appendChild(group);const add=(label,href,cls)=>{const a=document.createElement('a');a.textContent=label;a.href=href;a.className=cls;group.appendChild(a);return a};fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(!me?.loggedIn)return;const user=me.user||{};if(user.isOwner){const t=add('Tickets','/bug-tickets','ticket-action');const count=document.createElement('span');count.id='privateTicketCount';count.textContent='0';t.appendChild(count);const refresh=async()=>{try{const r=await fetch('/api/admin/bug-tickets?status=open',{credentials:'same-origin',cache:'no-store'}),d=await r.json();if(!r.ok)return;const n=(d.tickets||[]).length;count.textContent=n;t.classList.toggle('alert',n>0)}catch{}};refresh();setInterval(refresh,30000)}if(user.canManageDatabaseAccess)add('Admin Panel','/admin','admin-action');add('Bug melden','/bug-report','bug-action')}).catch(()=>{})})();</script>`;
+  return html.replace('</head>',css+'</head>').replace('</body>',script+'</body>');
+}
+
+function hideEmbeddedAdmin(html){const script=`<script>(()=>{const hide=()=>{document.querySelectorAll('#adminPanel,[id*="adminAccess"],.admin-panel').forEach(el=>el.classList.add('hidden'))};hide();new MutationObserver(hide).observe(document.body,{childList:true,subtree:true})})();</script>`;return html.replace('</body>',script+'</body>');}
+
 function isPermissionChange(method,path){return(method==='POST'||method==='DELETE')&&(path==='/api/admin/database-access'||path==='/api/admin/upload-access'||path==='/api/admin/all-access')}
 function permissionAuditEvent(method,path,actor,targetUserId){const grant=method==='POST',database=path==='/api/admin/database-access',permission=path==='/api/admin/all-access'?'DATABASE_AND_UPLOAD_DELETE_ACCESS':database?'DATABASE_ACCESS':'UPLOAD_DELETE_ACCESS';return{action:grant?'PERMISSION_GRANT':'PERMISSION_REVOKE',discordAccount:actor.username||null,discordUserId:actor.id,targetDiscordUserId:targetUserId,permission,oldValue:grant?'DENIED':'GRANTED',newValue:grant?'GRANTED':'DENIED',result:'SUCCESS'}}
