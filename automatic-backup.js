@@ -32,11 +32,13 @@ async function notifyOwner(env,tag,now,size){
   const channel=await fetch('https://discord.com/api/v10/users/@me/channels',{method:'POST',headers,body:JSON.stringify({recipient_id:String(env.DISCORD_OWNER_USER_ID)})});
   if(!channel.ok)return;
   const data=await channel.json();
-  const link=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/archive/refs/tags/${tag}.zip`;
+  const downloadLink=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/archive/refs/tags/${tag}.zip`;
+  const viewLink=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/tree/${tag}`;
   const embed={title:'Backup wurde erfolgreich erstellt',color:0x2b9b68,fields:[
     {name:'Datum und Uhrzeit',value:formatBackupDate(now),inline:true},
     {name:'Größe',value:formatBackupSize(size),inline:true},
-    {name:'Backup',value:`[Backup herunterladen](${link})`,inline:false}
+    {name:'Backup ansehen',value:`[Dateien auf GitHub ansehen](${viewLink})`,inline:false},
+    {name:'Backup herunterladen',value:`[ZIP herunterladen](${downloadLink})`,inline:false}
   ],footer:{text:'Three Peaks Racing Setup Database'}};
   await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
