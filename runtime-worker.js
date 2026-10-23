@@ -8,7 +8,13 @@ import { writeSetupAuditEvent } from "./audit-log.js";
 export default {
   async fetch(request,env,ctx){
     const url=new URL(request.url);
-    if(url.pathname!=='/api/me'&&!url.pathname.startsWith('/api/admin')&&await isMaintenanceActive(env)){\n      const me=await readMe(request,env,ctx);\n      if(!me?.user?.fullAdmin){\n        const state=await maintenanceState(env);\n        return new Response('<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center}main{max-width:620px;padding:30px}</style><main><h1>Wartungsarbeiten</h1><p>'+escapeHtml(state.message)+'</p></main>',{status:503,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store'}});\n      }\n    }
+    if(url.pathname!=='/api/me'&&!url.pathname.startsWith('/api/admin')&&await isMaintenanceActive(env)){
+      const me=await readMe(request,env,ctx);
+      if(!me?.user?.fullAdmin){
+        const state=await maintenanceState(env);
+        return new Response('<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center}main{max-width:620px;padding:30px}</style><main><h1>Wartungsarbeiten</h1><p>'+escapeHtml(state.message)+'</p></main>',{status:503,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store'}});
+      }
+    }
     if(url.pathname==='/bug-report'&&request.method==='GET'){
       const me=await readMe(request,env,ctx);
       if(!hasSiteAccess(me))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
@@ -65,7 +71,9 @@ export default {
   async queue(batch,env,ctx){for(const message of batch.messages){try{message.ack?.()}catch{message.retry?.({delaySeconds:10})}}}
 };
 
-function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}\n\nasync function readMe(request,env,ctx){const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);try{return await r.json()}catch{return null}}
+function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function readMe(request,env,ctx){const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);try{return await r.json()}catch{return null}}
 function hasSiteAccess(me){return Boolean(me?.loggedIn&&me?.databaseAccess&&me?.user?.id)}
 async function sitePage(request,env,file,privatePage){const source=await readSiteFile(request,env,file);const headers=new Headers(source.headers);headers.set('Content-Type',source.ok?'text/html; charset=utf-8':'text/plain; charset=utf-8');headers.set('Cache-Control',privatePage?'private, no-store':'no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(source.body,{status:source.status,headers});}
 function injectHomeLogo(html){const script=`<script>(()=>{const brand=document.querySelector('header .brand');if(!brand)return;brand.style.cursor='pointer';brand.setAttribute('role','link');brand.setAttribute('tabindex','0');brand.setAttribute('aria-label','Zur Startseite');const go=()=>{location.href='/'};brand.addEventListener('click',e=>{if(e.target.closest('a,button')&&e.target.closest('a,button')!==brand)return;go()});brand.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})})();</script>`;return html.replace('</body>',script+'</body>');}
