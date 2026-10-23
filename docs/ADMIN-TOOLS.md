@@ -20,3 +20,7 @@ Der aktuelle Stand vor dieser Erweiterung wurde in folgendem Branch gesichert:
     backup/pre-admin-tools-2026-10-23
 
 Ein echtes Cloudflare-Rollback benötigt ein serverseitiges Cloudflare-API-Token. Tokens gehören nicht in HTML, JavaScript oder GitHub. Deshalb gibt es keine unsichere Frontend-Schaltfläche, die ein Token offenlegen würde.
+
+## Automatische Backups
+
+Der Worker prüft stündlich die deutsche Ortszeit. Nur montags, mittwochs und samstags um 12:00 Uhr wird ein Backup erstellt. Dabei wird der aktuelle `main`-Stand als GitHub-Tag `backup-YYYY-MM-DD` gespeichert. Die D1-Tabelle `automatic_backups` verhindert doppelte Backups am selben Tag. Dafür muss `GITHUB_TOKEN` als Cloudflare-Secret mit Repository-Schreibzugriff hinterlegt sein.
