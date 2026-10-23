@@ -4,6 +4,14 @@ Alle relevanten Änderungen an Website, Discord-Integration, Setup-Verwaltung, G
 
 Nachtrag vom 22. Oktober 2026: Die Ergänzungen wurden mit der GitHub-Historie und dem Code abgeglichen. Die Datumsabschnitte nennen den Tag der jeweiligen Änderung; frühere Einträge bleiben als historischer Stand erhalten. Grundlage für die jüngeren Änderungen ist der [Vergleich der 34 Commits seit dem letzten Changelog-Stand](https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups/compare/e0ff1e0a0f4db39c5c2eb096321a698681734e23...068e0849a0ae219c8281d5572296ea80c6ae3428).
 
+## 2026-10-23 – README deutlich gekürzt
+
+### Geändert
+
+- README von über 9.000 auf rund 1.000 Wörter gekürzt und einfacher formuliert.
+- Wiederholungen und sehr technische Detailerklärungen entfernt. Funktionen, Upload, Rechte, Admin-Panel, Einrichtung und Fehlersuche bleiben kurz erklärt.
+- Weiterführende Details direkt mit den passenden Projektdateien verlinkt.
+
 ## 2026-10-22 – Admin-Freigaben vereinfachen
 
 ### Ergänzt
