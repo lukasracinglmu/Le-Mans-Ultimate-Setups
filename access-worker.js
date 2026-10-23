@@ -143,6 +143,12 @@ async function requireOwner(request, env, ctx, capability="canManageDatabaseAcce
   return {user:me.user};
 }
 
+async function requireFullAdmin(request, env, ctx) {
+  const me=await getBaseMe(request,env,ctx);
+  if(!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
+  if(!me.user?.fullAdmin) return {error:json({success:false,error:"Nur Full-Admins dürfen Admin-Rechte verwalten."},403)};
+  return {user:me.user};
+}
 async function hasUploadGrant(userId, env) {
   if (!userId || !env.ACCESS_DB) return false;
   try { const row = await env.ACCESS_DB.prepare("SELECT user_id FROM upload_access WHERE user_id = ? LIMIT 1").bind(String(userId)).first(); return Boolean(row?.user_id); }
@@ -179,7 +185,7 @@ async function changeManagedAccess(request, env, ctx, all) {
 }
 
 async function changeAdminPanelAccess(request, env, ctx) {
-  const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error;
+  const auth = await requireFullAdmin(request, env, ctx); if (auth.error) return auth.error;
   if (!env.ACCESS_DB) return json({success:false,error:"Rechte-Datenbank nicht konfiguriert."},503);
   let body; try { body = await request.json(); } catch { return json({success:false,error:"Ungültige Anfrage."},400); }
   const userId = String(body?.userId || "").trim();
