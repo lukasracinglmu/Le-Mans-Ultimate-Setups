@@ -9,14 +9,36 @@ function localBackupSlot(now=new Date()){
   const day=['Mon','Wed','Sat'].includes(value.weekday),hour=value.hour==='12'&&value.minute==='00';
   return day&&hour?value:null;
 }
-async function notifyOwner(env,tag){
+function formatBackupSize(bytes){
+  if(!Number.isFinite(bytes)||bytes<0)return 'Nicht verfügbar';
+  if(bytes<1024)return `${bytes} B`;
+  if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(2)} MB`;
+}
+function formatBackupDate(now){
+  return new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',dateStyle:'short',timeStyle:'medium'}).format(now);
+}
+async function backupSize(env,sha){
+  try{
+    const response=await fetch(`${GITHUB_API}/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/git/trees/${sha}?recursive=1`,{headers:headers(env)});
+    if(!response.ok)return null;
+    const data=await response.json();
+    return (data.tree||[]).reduce((total,item)=>total+Number(item.type==='blob'?item.size||0:0),0);
+  }catch{return null}
+}
+async function notifyOwner(env,tag,now,size){
   if(!env.DISCORD_BOT_TOKEN||!env.DISCORD_OWNER_USER_ID)return;
   const headers={Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`,'Content-Type':'application/json'};
   const channel=await fetch('https://discord.com/api/v10/users/@me/channels',{method:'POST',headers,body:JSON.stringify({recipient_id:String(env.DISCORD_OWNER_USER_ID)})});
   if(!channel.ok)return;
   const data=await channel.json();
-  const link=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/tree/${tag}`;
-  await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({content:`✅ Backup erfolgreich erstellt.\n\n${link}`})});
+  const link=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/archive/refs/tags/${tag}.zip`;
+  const embed={title:'Backup wurde erfolgreich erstellt',color:0x2b9b68,fields:[
+    {name:'Datum und Uhrzeit',value:formatBackupDate(now),inline:true},
+    {name:'Größe',value:formatBackupSize(size),inline:true},
+    {name:'Backup',value:`[Backup herunterladen](${link})`,inline:false}
+  ],footer:{text:'Three Peaks Racing Setup Database'}};
+  await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
 async function createBackup(env,now=new Date(),force=false){
   const slot=localBackupSlot(now);
@@ -36,7 +58,7 @@ async function createBackup(env,now=new Date(),force=false){
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
   if(!response.ok&&response.status!==422)throw Error('GitHub Backup konnte nicht erstellt werden.');
   if(env.ACCESS_DB)await env.ACCESS_DB.prepare('INSERT OR REPLACE INTO automatic_backups (slot,tag) VALUES (?,?)').bind(key,tag).run();
-  await notifyOwner(env,tag).catch(()=>{});
+  const size=await backupSize(env,sha);\n  await notifyOwner(env,tag,now,size).catch(()=>{});
   return {success:true,tag,sha};
 }
 
