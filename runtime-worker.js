@@ -4,6 +4,7 @@ import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admi
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
+import { createScheduledBackup } from "./automatic-backup.js";
 
 export default {
   async fetch(request,env,ctx){
@@ -68,6 +69,7 @@ export default {
     }
     return response;
   },
+  async scheduled(event,env,ctx){try{await createScheduledBackup(env,new Date(event.scheduledTime||Date.now()))}catch(error){console.error('Automatic backup failed',error)}} ,
   async queue(batch,env,ctx){for(const message of batch.messages){try{message.ack?.()}catch{message.retry?.({delaySeconds:10})}}}
 };
 
