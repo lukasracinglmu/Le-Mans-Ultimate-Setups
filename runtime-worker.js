@@ -35,7 +35,7 @@ export default {
       if(!me?.loggedIn||!me.user?.canViewAdminPanel)return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
       return sitePage(request,env,'admin.html',true);
     }
-    if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance')return fullAdminApi(request,env,ctx,productionWorker);
+    if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance'||url.pathname==='/api/admin/backup')return fullAdminApi(request,env,ctx,productionWorker);
     if(url.pathname==='/api/bug-reports'){
       if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});
       const me=await readMe(request,env,ctx);
