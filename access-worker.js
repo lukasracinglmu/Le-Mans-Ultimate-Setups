@@ -211,7 +211,7 @@ async function listCombinedAccess(request, env, ctx) {
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
-async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !userId) return null; try { const headers={Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}; if(env.DISCORD_GUILD_ID){const r=await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{headers});if(r.ok)return await r.json();if(r.status!==404&&!r.ok)return null;} const global=await fetch(`${DISCORD_API}/users/${userId}`,{headers,signal:AbortSignal.timeout(8000)});if(!global.ok)return {missing:true};return {user:await global.json(),external:true}; } catch { return null; } }
+async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !userId) return null; try { const headers={Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}; if(env.DISCORD_GUILD_ID){const r=await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{headers,signal:AbortSignal.timeout(8000)});if(r.ok)return await r.json();if(r.status!==404&&!r.ok)return null;} const global=await fetch(`${DISCORD_API}/users/${userId}`,{headers,signal:AbortSignal.timeout(8000)});if(!global.ok)return {missing:true};return {user:await global.json(),external:true}; } catch { return null; } }
 
 function ghHeaders(env) { const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "lmu-setups-worker" }; if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`; return headers; }
 function ghRepo(env) { return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`; }
