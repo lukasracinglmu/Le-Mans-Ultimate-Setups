@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev/">
+  <a href="https://le-mans-ultimate-setups.3peaks-database.workers.dev/">
     <picture>
       <source media="(max-width: 600px)" srcset=".github/readme/hero-mobile.svg">
       <img src=".github/readme/hero.svg" alt="LMU Setup Database von Three Peaks Racing" width="1200">
@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev/"><img src=".github/readme/open-database.svg" alt="Datenbank öffnen" width="232" height="56"></a>
+  <a href="https://le-mans-ultimate-setups.3peaks-database.workers.dev/"><img src=".github/readme/open-database.svg" alt="Datenbank öffnen" width="232" height="56"></a>
   <a href="CHANGELOG.md"><img src=".github/readme/changelog.svg" alt="Changelog lesen" width="204" height="56"></a>
 </p>
 
