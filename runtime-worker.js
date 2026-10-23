@@ -1,6 +1,6 @@
 import { submitBugReport } from "./bug-reports.js";
 import { ticketApi, isTicketOwner } from "./bug-tickets.js";
-import { fullAdminApi } from "./full-admin.js";
+import { fullAdminApi, isMaintenanceActive } from "./full-admin.js";
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
@@ -8,6 +8,7 @@ import { writeSetupAuditEvent } from "./audit-log.js";
 export default {
   async fetch(request,env,ctx){
     const url=new URL(request.url);
+    if(url.pathname!=='/api/me'&&!url.pathname.startsWith('/api/admin')&&await isMaintenanceActive(env)){const me=await readMe(request,env,ctx);if(!me?.user?.fullAdmin)return new Response('<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center}main{max-width:620px;padding:30px}</style><main><h1>Wartungsarbeiten</h1><p>Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.</p></main>',{status:503,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store'}})}
     if(url.pathname==='/bug-report'&&request.method==='GET'){
       const me=await readMe(request,env,ctx);
       if(!hasSiteAccess(me))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
