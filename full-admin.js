@@ -13,8 +13,9 @@ async function ownerOnly(request,env,ctx,productionWorker){
   const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);
   const me=await r.json().catch(()=>null);
   if(!me?.loggedIn)return {error:json({success:false,error:'Nicht angemeldet.'},401)};
-  if(!me.user?.isOwner&&!me.user?.fullAdmin)return {error:json({success:false,error:'Nur Full-Admins dürfen diese Einstellungen verwalten.'},403)};
-  return {user:me.user};
+  const configuredOwner=String(me.user?.id)===ownerUserId(env);
+  if(!configuredOwner&&!me.user?.isOwner&&!me.user?.fullAdmin)return {error:json({success:false,error:'Nur Full-Admins dürfen diese Einstellungen verwalten.'},403)};
+  return {user:{...me.user,isOwner:configuredOwner||Boolean(me.user?.isOwner),fullAdmin:configuredOwner||Boolean(me.user?.fullAdmin)}};
 }
 export async function isMaintenanceActive(env){try{const row=await env.ACCESS_DB?.prepare("SELECT value FROM site_settings WHERE key='maintenance'").first();return row?.value==='1'}catch{return false}}
 export async function maintenanceState(env){try{const rows=await env.ACCESS_DB?.prepare("SELECT key,value FROM site_settings WHERE key IN ('maintenance','maintenance_message')").all();const out=Object.fromEntries((rows?.results||[]).map(x=>[x.key,x.value]));return {enabled:out.maintenance==='1',message:out.maintenance_message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.'}}catch{return {enabled:false,message:''}}}
