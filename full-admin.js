@@ -4,7 +4,8 @@ const validUserId=v=>/^\d{16,22}$/.test(String(v||'').trim())?String(v).trim():n
 
 async function ensure(env){
   if(!env.ACCESS_DB)throw Error('db');
-  await env.ACCESS_DB.prepare(`CREATE TABLE IF NOT EXISTS full_admin_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run();
+  await env.ACCESS_DB.prepare(`CREATE TABLE IF NOT EXISTS full_admin_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, username TEXT)`).run();
+  try{await env.ACCESS_DB.prepare('ALTER TABLE full_admin_access ADD COLUMN username TEXT').run()}catch{}
 }
 async function ownerOnly(request,env,ctx,productionWorker){
   const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);
@@ -31,15 +32,16 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
   if(path==='/api/admin/maintenance'){if(request.method==='GET')return json({success:true,...await maintenanceState(env)});let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}const message=String(body?.message||'').trim().slice(0,500);await env.ACCESS_DB.batch([env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(body?.enabled?'1':'0'),env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance_message',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.')]);return json({success:true,enabled:Boolean(body?.enabled),message});}
   if(request.method==='GET'){
     const r=await env.ACCESS_DB.prepare('SELECT user_id,granted_by,created_at FROM full_admin_access ORDER BY created_at DESC').all();
-    const grants=[];for(const row of r.results||[])grants.push({...row,username:await discordUsername(row.user_id,env)});
+    const grants=[];for(const row of r.results||[]){const username=row.username||await discordUsername(row.user_id,env);grants.push({...row,username});}
     return json({success:true,grants});
   }
   let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}
   const userId=validUserId(body?.userId);if(!userId)return json({success:false,error:'Ungültige Discord User ID.'},400);
+  const username=await discordUsername(userId,env);
   if(userId===String(auth.user.id))return json({success:false,error:'Deine Haupt-Admin-Rechte können hier nicht geändert werden.'},400);
   if(request.method==='POST'){
     await env.ACCESS_DB.batch([
-      env.ACCESS_DB.prepare('INSERT INTO full_admin_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by,created_at=CURRENT_TIMESTAMP').bind(userId,auth.user.id),
+      env.ACCESS_DB.prepare('INSERT INTO full_admin_access (user_id,granted_by,created_at,username) VALUES (?,?,CURRENT_TIMESTAMP,?) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by,created_at=CURRENT_TIMESTAMP,username=excluded.username').bind(userId,auth.user.id,username),
       env.ACCESS_DB.prepare('INSERT INTO database_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by').bind(userId,auth.user.id),
       env.ACCESS_DB.prepare('INSERT INTO upload_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by').bind(userId,auth.user.id)
     ]);
