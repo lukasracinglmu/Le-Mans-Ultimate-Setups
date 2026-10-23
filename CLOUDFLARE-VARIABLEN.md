@@ -33,7 +33,7 @@ Diese Werte dürfen nicht im Repository oder in normalen Textvariablen stehen.
 | `DISCORD_CHANNEL_ID` | `1557002876906377258` | Zielkanal für Setup Requests. |
 | `DISCORD_AUDIT_CHANNEL_ID` | `1560579797472645151` | Zielkanal für Änderungsprotokolle. |
 | `DISCORD_SETUP_REQUEST_ROLE_ID` | `1538601074074849330` | Rolle, die bei Setup Requests erwähnt wird. |
-| `SITE_URL` | `https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev` | Öffentliche Adresse und Grundlage des Discord-Redirects. |
+| `SITE_URL` | `https://le-mans-ultimate-setups.3peaks-database.workers.dev` | Öffentliche Adresse und Grundlage des Discord-Redirects. |
 | `GITHUB_OWNER` | `lukasracinglmu` | Besitzer des GitHub-Repositorys. |
 | `GITHUB_REPO` | `Le-Mans-Ultimate-Setups` | Name des GitHub-Repositorys. |
 | `GITHUB_BRANCH` | `main` | Branch für Website, Setups und Audit-Logs. |
@@ -70,5 +70,5 @@ npx wrangler@4 secret put SESSION_SECRET
 Der Discord-Redirect muss zu `SITE_URL` passen:
 
 ```text
-https://le-mans-ultimate-setups.lukastraudt-racing.workers.dev/auth/discord/callback
+https://le-mans-ultimate-setups.3peaks-database.workers.dev/auth/discord/callback
 ```
