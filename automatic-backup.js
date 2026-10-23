@@ -42,6 +42,32 @@ async function notifyOwner(env,tag,now,size){
   ],footer:{text:'Three Peaks Racing Setup Database'}};
   await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
+function backupTagDate(tag){
+  const match=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-|$)/);
+  if(!match)return null;
+  const date=new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]),23,59,59));
+  return Number.isNaN(date.getTime())?null:date;
+}
+async function cleanupOldBackups(env,now=new Date()){
+  if(!env.GITHUB_TOKEN||!env.GITHUB_OWNER||!env.GITHUB_REPO)return {deleted:0};
+  const cutoff=now.getTime()-14*24*60*60*1000;
+  const repo=`${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs/tags?per_page=100`,{headers:headers(env)});
+  if(!response.ok)return {deleted:0};
+  const refs=await response.json();
+  let deleted=0;
+  for(const ref of Array.isArray(refs)?refs:[]){
+    const tag=String(ref?.ref||'').replace(/^refs\/tags\//,'');
+    const date=backupTagDate(tag);
+    if(!tag.startsWith('backup-')||!date||date.getTime()>=cutoff)continue;
+    const removed=await fetch(`${GITHUB_API}/repos/${repo}/git/refs/tags/${encodeURIComponent(tag)}`,{method:'DELETE',headers:headers(env)});
+    if(removed.ok||removed.status===404){
+      deleted++;
+      if(env.ACCESS_DB)await env.ACCESS_DB.prepare('DELETE FROM automatic_backups WHERE tag=?').bind(tag).run().catch(()=>{});
+    }
+  }
+  return {deleted};
+}
 async function createBackup(env,now=new Date(),force=false){
   const slot=localBackupSlot(now);
   if((!slot&&!force)||!env.GITHUB_TOKEN||!env.GITHUB_OWNER||!env.GITHUB_REPO)return {skipped:true};
@@ -65,5 +91,5 @@ async function createBackup(env,now=new Date(),force=false){
   return {success:true,tag,sha};
 }
 
-export async function createScheduledBackup(env,now=new Date()){return createBackup(env,now,false)}
-export async function createManualBackup(env,now=new Date()){return createBackup(env,now,true)}
+export async function createScheduledBackup(env,now=new Date()){await cleanupOldBackups(env,now).catch(()=>{});return createBackup(env,now,false)}
+export async function createManualBackup(env,now=new Date()){await cleanupOldBackups(env,now).catch(()=>{});return createBackup(env,now,true)}
