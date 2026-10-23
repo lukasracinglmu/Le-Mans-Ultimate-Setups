@@ -9,7 +9,8 @@ export function rolePermissions(userId, roles, env, grants = {}) {
   const canManageDatabaseAccess = fullAdmin || hasRole(env.DISCORD_OWNER_ROLE_ID);
   const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
   const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
-  return { databaseAccess, canUpload, isOwner, fullAdmin, canViewTickets:fullAdmin, isAdmin:canManageDatabaseAccess,
+  const canViewAdminPanel = fullAdmin || canManageDatabaseAccess || Boolean(grants.adminPanel);
+  return { databaseAccess, canUpload, canViewAdminPanel, isOwner, fullAdmin, canViewTickets:fullAdmin, isAdmin:canManageDatabaseAccess,
     canManageDatabaseAccess, canManageUploadAccess:canManageDatabaseAccess,
     individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:Boolean(grants.fullAdmin) };
 }
@@ -35,6 +36,6 @@ export async function resolvePermissions(userId, env) {
       return { roles:Array.isArray(data.roles)?data.roles:[], available:Array.isArray(data.roles) };
     } catch { return { roles:[], available:false }; }
   };
-  const [database,upload,fullAdmin,result]=await Promise.all([grant('database_access'),grant('upload_access'),grant('full_admin_access'),member()]);
-  return { ...rolePermissions(userId,result.roles,env,{ database,upload,fullAdmin }), rolesAvailable:result.available };
+  const [database,upload,fullAdmin,adminPanel,result]=await Promise.all([grant('database_access'),grant('upload_access'),grant('full_admin_access'),grant('admin_panel_access'),member()]);
+  return { ...rolePermissions(userId,result.roles,env,{ database,upload,fullAdmin,adminPanel }), rolesAvailable:result.available };
 }
