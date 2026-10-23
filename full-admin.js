@@ -22,7 +22,7 @@ async function discordProfile(userId,env){
     const r=await fetch(`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`},signal:AbortSignal.timeout(8000)});
     if(!r.ok)return null;
     const member=await r.json();
-    const user=member?.user;return user?{username:user.global_name||user.username||null,avatar:user.avatar?`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`:null}:null;
+    const user=member?.user;return user?{username:user.global_name||user.username||null,avatar:user.avatar?`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`:`https://cdn.discordapp.com/embed/avatars/${Number(BigInt(user.id)>>22n)%6}.png`}:null;
   }catch{return null}
 }
 export async function fullAdminApi(request,env,ctx,productionWorker){
