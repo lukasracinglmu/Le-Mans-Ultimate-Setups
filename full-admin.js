@@ -10,7 +10,7 @@ async function ownerOnly(request,env,ctx,productionWorker){
   const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);
   const me=await r.json().catch(()=>null);
   if(!me?.loggedIn)return {error:json({success:false,error:'Nicht angemeldet.'},401)};
-  if(!me.user?.isOwner)return {error:json({success:false,error:'Nur der Haupt-Admin darf Full Admin Rechte verwalten.'},403)};
+  if(!me.user?.isOwner&&!me.user?.fullAdmin)return {error:json({success:false,error:'Nur Full-Admins dürfen diese Einstellungen verwalten.'},403)};
   return {user:me.user};
 }
 export async function isMaintenanceActive(env){try{const row=await env.ACCESS_DB?.prepare("SELECT value FROM site_settings WHERE key='maintenance'").first();return row?.value==='1'}catch{return false}}
