@@ -259,7 +259,7 @@ function enhanceHome(source) {
   );
   html = html.replace(
     /<img class="brand-logo"[^>]*>/,
-    '<img class="brand-logo" src="/assets/header-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
+    '<img class="brand-logo" src="/assets/bp-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
   );
   html = html.replace(
     'Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.',
