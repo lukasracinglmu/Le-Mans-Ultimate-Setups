@@ -15,6 +15,15 @@ async function ownerOnly(request,env,ctx,productionWorker){
 }
 export async function isMaintenanceActive(env){try{const row=await env.ACCESS_DB?.prepare("SELECT value FROM site_settings WHERE key='maintenance'").first();return row?.value==='1'}catch{return false}}
 export async function maintenanceState(env){try{const rows=await env.ACCESS_DB?.prepare("SELECT key,value FROM site_settings WHERE key IN ('maintenance','maintenance_message')").all();const out=Object.fromEntries((rows?.results||[]).map(x=>[x.key,x.value]));return {enabled:out.maintenance==='1',message:out.maintenance_message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.'}}catch{return {enabled:false,message:''}}}
+async function discordUsername(userId,env){
+  if(!env.DISCORD_BOT_TOKEN||!env.DISCORD_GUILD_ID)return null;
+  try{
+    const r=await fetch(`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`},signal:AbortSignal.timeout(8000)});
+    if(!r.ok)return null;
+    const member=await r.json();
+    return member?.user?.global_name||member?.user?.username||null;
+  }catch{return null}
+}
 export async function fullAdminApi(request,env,ctx,productionWorker){
   const path=new URL(request.url).pathname;
   const auth=await ownerOnly(request,env,ctx,productionWorker);if(auth.error)return auth.error;
@@ -22,7 +31,8 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
   if(path==='/api/admin/maintenance'){if(request.method==='GET')return json({success:true,...await maintenanceState(env)});let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}const message=String(body?.message||'').trim().slice(0,500);await env.ACCESS_DB.batch([env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(body?.enabled?'1':'0'),env.ACCESS_DB.prepare("INSERT INTO site_settings (key,value) VALUES ('maintenance_message',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(message||'Die Website ist momentan wegen Wartungsarbeiten nicht erreichbar.')]);return json({success:true,enabled:Boolean(body?.enabled),message});}
   if(request.method==='GET'){
     const r=await env.ACCESS_DB.prepare('SELECT user_id,granted_by,created_at FROM full_admin_access ORDER BY created_at DESC').all();
-    return json({success:true,grants:r.results||[]});
+    const grants=[];for(const row of r.results||[])grants.push({...row,username:await discordUsername(row.user_id,env)});
+    return json({success:true,grants});
   }
   let body;try{body=await request.json()}catch{return json({success:false,error:'Ungültige Anfrage.'},400)}
   const userId=validUserId(body?.userId);if(!userId)return json({success:false,error:'Ungültige Discord User ID.'},400);
