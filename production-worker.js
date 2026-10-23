@@ -255,11 +255,11 @@ function enhanceHome(source) {
 
   html = html.replace(
     /<link rel="preload" href="\/assets\/three-peaks-racing-logo\.webp" as="image" type="image\/webp">/,
-    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp" as="image" type="image/webp">'
+    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp?v=20261023-1" as="image" type="image/webp">'
   );
   html = html.replace(
     /<img class="brand-logo"[^>]*>/,
-    '<img class="brand-logo" src="/assets/bp-logo.webp" alt="Three Peaks Racing" width="96" height="48">'
+    '<img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing" width="96" height="48">'
   );
   html = html.replace(
     'Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.',
@@ -287,7 +287,7 @@ function enhanceHome(source) {
 .brand-logo{width:96px!important;height:48px!important;object-fit:contain!important;display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto;position:relative;z-index:2}
 .layout{position:relative;isolation:isolate;display:flex;align-items:flex-start}
 .hero:after,.vehicle:after{display:none!important}
-body:before{content:"";position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,700px);height:min(36vw,460px);background:url('/assets/bp-logo.webp') center/contain no-repeat;opacity:.07;pointer-events:none;z-index:0}
+body:before{content:"";position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,700px);height:min(36vw,460px);background:url('/assets/bp-logo.webp?v=20261023-1') center/contain no-repeat;opacity:.07;pointer-events:none;z-index:0}
 main{position:relative;z-index:1}
 .manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
 @media(max-width:800px){.layout{display:block}.brand-logo{width:72px!important;height:38px!important}body:before{width:90vw;height:60vw;opacity:.05}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
