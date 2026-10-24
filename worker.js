@@ -159,7 +159,7 @@ async function favoritesApi(request, env) {
     const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
     const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
     if(!category||!vehicle)return json({success:false,error:"Fahrzeug fehlt."},400);
-    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle) VALUES (?,?,CURRENT_TIMESTAMP)").bind(String(session.id),category,vehicle).run();
+    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle) VALUES (?,?,CURRENT_TIMESTAMP)").bind(String(session.id),category).run();
     else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(String(session.id),category,vehicle).run();
     return json({success:true,category,vehicle,favorite:request.method==="POST"});
   } catch(error) {
