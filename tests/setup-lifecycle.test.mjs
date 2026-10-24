@@ -1,3 +1,4 @@
+/* @file-notes: Tests für Setup-Lifecycle, Veraltet-Markierung, Ersetzen und Löschen. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readPreviousSetups,applyPreviousSetups,deleteGithubSetup,enrichSetupLifecycle} from '../setup-lifecycle.js';
