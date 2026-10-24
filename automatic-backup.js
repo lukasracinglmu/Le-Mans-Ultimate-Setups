@@ -1,3 +1,4 @@
+/* @file-notes: Erstellt manuelle und geplante Backups, verwaltet Backup-Links und entfernt alte Backups. */
 const GITHUB_API='https://api.github.com';
 
 function headers(env){
