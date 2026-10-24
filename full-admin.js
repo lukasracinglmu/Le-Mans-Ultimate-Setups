@@ -1,3 +1,4 @@
+/* @file-notes: Verwaltet Full-Admin-Freigaben, Owner-only-Einstellungen und den Wartungsmodus. */
 import { writeSetupAuditEvent } from "./audit-log.js";
 import { ownerUserId } from "./discord-permissions.js";
 import { createManualBackup } from "./automatic-backup.js";
