@@ -55,7 +55,10 @@ export default {
         const retired=[];
         for (const item of Array.isArray(data.uploaded) ? data.uploaded : []) {
           if (item?.name) {
-            try { if(!previous.duplicateOf||!item.alreadyExists)await storeSetupVersion(category, vehicle, item.name, parsed.version, env); }
+            try {
+              if(!previous.duplicateOf||!item.alreadyExists)await storeSetupVersion(category, vehicle, item.name, parsed.version, env);
+              if(!previous.duplicateOf&&env.ACCESS_DB)await env.ACCESS_DB.prepare("DELETE FROM setup_lifecycle WHERE category=? AND vehicle=? AND file_name=?").bind(category,vehicle,item.name).run();
+            }
             catch {
               return json({success:false,error:"ZIP gespeichert, Versionsdaten konnten noch nicht bestätigt werden. Erneuter Versuch folgt.",code:"VERSION_STORAGE",retryable:true},503);
             }
