@@ -83,7 +83,6 @@ async function favoritesApi(request,env,ctx){
     const me=await readMe(request,env,ctx);
     if(!hasSiteAccess(me))return Response.json({success:false,error:"Nicht angemeldet oder keine Datenbankberechtigung."},{status:403,headers:{"Cache-Control":"no-store"}});
     if(!env.ACCESS_DB)return Response.json({success:false,error:"Favoriten-Datenbank nicht verfügbar."},{status:503});
-    await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS vehicle_favorites (user_id TEXT NOT NULL, category TEXT NOT NULL, vehicle TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,category,vehicle))").run();
     const userId=String(me.user.id);
     if(request.method==="GET"){
       const rows=await env.ACCESS_DB.prepare("SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC").bind(userId).all();
