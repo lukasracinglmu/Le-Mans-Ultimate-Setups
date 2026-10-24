@@ -1,3 +1,4 @@
+/* @file-notes: Zentrale Zugriffs- und Berechtigungsprüfung für Datenbank, Upload/Delete, Admin-Rechte und Setup-Metadaten. */
 import { readDisplayName, displayNameStatement, readStoredDisplayName } from "./setup-display-name.js";
 import uiWorker from "./ui-hotfix.js";
 import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
