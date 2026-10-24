@@ -1,3 +1,4 @@
+/* @file-notes: Speichert und liest benutzerdefinierte Anzeigenamen für Setup-Dateien. */
 export function readDisplayName(value){
   if(typeof value!=='string')return {error:'Ungültiger Anzeigename.'};
   const displayName=value.trim();
