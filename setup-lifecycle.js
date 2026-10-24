@@ -1,3 +1,4 @@
+/* @file-notes: Verwaltet Zustände wie behalten, ersetzen, löschen und veraltet für Setup-Dateien. */
 import { githubFailure } from './upload-storage.js';
 
 export function setupManufacturer(name) {
