@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-24T17:36:25.042Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Bahrain Paddock beAlien.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Bahrain Paddock beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4",
+  "result": "SUCCESS"
+}
