@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-24T17:37:39.926Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Long Beach HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "1.4",
+  "result": "SUCCESS"
+}
