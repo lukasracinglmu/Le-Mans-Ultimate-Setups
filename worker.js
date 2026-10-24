@@ -145,22 +145,27 @@ async function requireDatabaseAccess(request, env) {
 }
 
 async function favoritesApi(request, env) {
-  const session=await readSession(request,env.SESSION_SECRET);
-  if(!session)return json({success:false,error:"Nicht angemeldet."},401);
-  if(!env.ACCESS_DB)return json({success:false,error:"Favoriten-Datenbank nicht verfügbar."},503);
-  await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS vehicle_favorites (user_id TEXT NOT NULL, category TEXT NOT NULL, vehicle TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,category,vehicle))").run();
-  if(request.method==="GET"){
-    const rows=await env.ACCESS_DB.prepare("SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC").bind(String(session.id)).all();
-    return json({success:true,favorites:rows.results||[]});
+  try {
+    const session=await readSession(request,env.SESSION_SECRET);
+    if(!session)return json({success:false,error:"Nicht angemeldet."},401);
+    if(!env.ACCESS_DB)return json({success:false,error:"Favoriten-Datenbank nicht verfügbar."},503);
+    await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS vehicle_favorites (user_id TEXT NOT NULL, category TEXT NOT NULL, vehicle TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,category,vehicle))").run();
+    if(request.method==="GET"){
+      const rows=await env.ACCESS_DB.prepare("SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC").bind(String(session.id)).all();
+      return json({success:true,favorites:rows.results||[]});
+    }
+    let body;
+    try{body=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}
+    const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
+    const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
+    if(!category||!vehicle)return json({success:false,error:"Fahrzeug fehlt."},400);
+    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle) VALUES (?,?,CURRENT_TIMESTAMP)").bind(String(session.id),category,vehicle).run();
+    else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(String(session.id),category,vehicle).run();
+    return json({success:true,category,vehicle,favorite:request.method==="POST"});
+  } catch(error) {
+    console.error("favoritesApi failed",error);
+    return json({success:false,error:"Favorit konnte nicht gespeichert werden."},503);
   }
-  let body;
-  try{body=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}
-  const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
-  const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
-  if(!category||!vehicle)return json({success:false,error:"Fahrzeug fehlt."},400);
-  if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT INTO vehicle_favorites (user_id,category,vehicle) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id,category,vehicle) DO NOTHING").bind(String(session.id),category,vehicle).run();
-  else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(String(session.id),category,vehicle).run();
-  return json({success:true,category,vehicle,favorite:request.method==="POST"});
 }
 async function currentUser(request, env) {
   const session=await readSession(request,env.SESSION_SECRET);
