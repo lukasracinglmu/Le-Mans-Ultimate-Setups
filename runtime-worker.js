@@ -1,3 +1,4 @@
+/* @file-notes: Öffentlicher Worker-Einstiegspunkt für Seitenrouting, Wartung, APIs, Berechtigungen und Hintergrundaktionen. */
 import { submitBugReport } from "./bug-reports.js";
 import { ticketApi, isTicketOwner } from "./bug-tickets.js";
 import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admin.js";
