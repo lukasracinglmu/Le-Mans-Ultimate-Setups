@@ -1,9 +1,7 @@
-/* @file-notes: Zentrale Zugriffs- und Berechtigungsprüfung für Datenbank, Upload/Delete, Admin-Rechte und Setup-Metadaten. */
 import { readDisplayName, displayNameStatement, readStoredDisplayName } from "./setup-display-name.js";
 import uiWorker from "./ui-hotfix.js";
 import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
-import { ownerUserId } from "./discord-permissions.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GITHUB_API = "https://api.github.com";
@@ -19,7 +17,6 @@ export default {
     if (path === "/api/admin/database-access" && method === "POST") return grantDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/database-access" && method === "DELETE") return revokeDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/access" && method === "GET") return listCombinedAccess(request, env, ctx);
-    if (path === "/api/admin/admin-panel-access" && (method === "POST" || method === "DELETE")) return changeAdminPanelAccess(request, env, ctx);
 
     if ((path === "/api/admin/upload-access" || path === "/api/admin/all-access") && (method === "POST" || method === "DELETE")) {
       return changeManagedAccess(request, env, ctx, path === "/api/admin/all-access");
@@ -54,9 +51,10 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
       const category = cleanPath(body?.category), vehicle = cleanPath(body?.vehicle), name = cleanPath(body?.name);
-      const hasVersion=Object.hasOwn(body,'version'),hasName=Object.hasOwn(body,'displayName'),markOutdated=body?.outdated===true;
-      if(!hasVersion&&!hasName&&!markOutdated)return json({success:false,error:"Keine Änderung angegeben."},400);
+      const hasVersion=Object.hasOwn(body,'version'),hasName=Object.hasOwn(body,'displayName'),hasOutdated=Object.hasOwn(body,'outdated');
+      if(!hasVersion&&!hasName&&!hasOutdated)return json({success:false,error:"Keine Änderung angegeben."},400);
       if(hasVersion&&typeof body.version!=='string')return json({success:false,error:"Ungültige Version."},400);
+      if(hasOutdated&&typeof body.outdated!=='boolean')return json({success:false,error:"Ungültiger Status."},400);
       const version=hasVersion?body.version.trim():null;
       if (!category || !vehicle || !name || !/\.zip$/i.test(name)) return json({ success: false, error: "Ungültiges Setup." }, 400);
       if(hasVersion&&(version.length>40||/[\u0000-\u001F\u007F]/.test(version)))return json({success:false,error:"Ungültige Version (maximal 40 Zeichen)."},400);
@@ -69,13 +67,7 @@ export default {
       if(existing.status===404)return json({success:false,error:"Setup wurde nicht gefunden."},404);
       if(!existing.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);
       const file=await safeJson(existing);
-      if(hasName&&!/^[a-f0-9]{40}$/.test(file?.sha||''))return json({success:false,error:"Dateistand konnte nicht bestätigt werden."},502);
-      if(markOutdated){
-        try{await env.ACCESS_DB.prepare("INSERT INTO setup_lifecycle (category,vehicle,file_name,file_sha,outdated,updated_at) VALUES (?,?,?,?,1,CURRENT_TIMESTAMP) ON CONFLICT(category,vehicle,file_name) DO UPDATE SET file_sha=excluded.file_sha,outdated=1,updated_at=CURRENT_TIMESTAMP").bind(category,vehicle,name,file.sha).run();}
-        catch{return json({success:false,error:"Setup konnte nicht als veraltet markiert werden."},503)}
-        runAuditTasks([safeAudit({action:'SETUP_OUTDATED',discordAccount:permission.user.username,discordUserId:permission.user.id,setup:name,vehicle,manufacturer:classifyManufacturer(name),track:inferTrack(name),newValue:'Veraltet',result:'SUCCESS'},env)],ctx);
-        return json({success:true,category,vehicle,name,version:await readStoredVersion(category,vehicle,name,env),displayName:await readStoredDisplayName(category,vehicle,name,file.sha,env),outdated:true});
-      }
+      if((hasName||hasOutdated)&&!/^[a-f0-9]{40}$/.test(file?.sha||''))return json({success:false,error:"Dateistand konnte nicht bestätigt werden."},502);
       const oldVersion=await readStoredVersion(category,vehicle,name,env);
       let oldName=null;
       try{
@@ -86,14 +78,16 @@ export default {
             displayNameStatement(env,category,vehicle,name,file.sha,parsedName.displayName)
           ]);
         }else if(hasName)await displayNameStatement(env,category,vehicle,name,file.sha,parsedName.displayName).run();
-        else await storeSetupVersion(category,vehicle,name,version,env);
+        else if(hasVersion)await storeSetupVersion(category,vehicle,name,version,env);
+        if(hasOutdated)await env.ACCESS_DB.prepare('INSERT INTO setup_lifecycle (category, vehicle, file_name, file_sha, outdated, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(category, vehicle, file_name) DO UPDATE SET file_sha = excluded.file_sha, outdated = excluded.outdated, updated_at = CURRENT_TIMESTAMP').bind(category,vehicle,name,file.sha,body.outdated?1:0).run();
       }catch{return json({success:false,error:"Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen."},503);}
       runAuditTasks([(async()=>{
         const common={discordAccount:permission.user.username,discordUserId:permission.user.id,setup:name,vehicle,manufacturer:classifyManufacturer(name),track:inferTrack(name),result:"SUCCESS"};
         if(hasVersion&&version!==(oldVersion||''))await safeAudit({...common,action:"SETUP_VERSION_UPDATE",oldValue:oldVersion,newValue:version},env);
         if(hasName&&parsedName.displayName!==(oldName||''))await safeAudit({...common,action:"SETUP_DISPLAY_NAME_UPDATE",oldValue:oldName,newValue:parsedName.displayName},env);
+        if(hasOutdated)await safeAudit({...common,action:body.outdated?'SETUP_OUTDATED':'SETUP_OUTDATED_REVERT',oldValue:body.outdated?'AKTUELL':'VERALTET',newValue:body.outdated?'VERALTET':'AKTUELL'},env);
       })()],ctx);
-      return json({success:true,category,vehicle,name,version:hasVersion?version:oldVersion,...(hasName?{displayName:parsedName.displayName||null}:{})});
+      return json({success:true,category,vehicle,name,version:hasVersion?version:oldVersion,...(hasName?{displayName:parsedName.displayName||null}:{}),...(hasOutdated?{outdated:body.outdated}:{})});
     }
 
     if (path === "/api/setups/delete" && method === "POST") {
@@ -147,16 +141,10 @@ async function augmentedMe(request, env, ctx) {
 async function requireOwner(request, env, ctx, capability="canManageDatabaseAccess") {
   const me=await getBaseMe(request,env,ctx);
   if (!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
-  if (String(me.user?.id)!==ownerUserId(env) && !me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
+  if (!me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
   return {user:me.user};
 }
 
-async function requireFullAdmin(request, env, ctx) {
-  const me=await getBaseMe(request,env,ctx);
-  if(!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
-  if(String(me.user?.id)!==ownerUserId(env) && !me.user?.fullAdmin) return {error:json({success:false,error:"Nur Full-Admins dürfen Admin-Rechte verwalten."},403)};
-  return {user:me.user};
-}
 async function hasUploadGrant(userId, env) {
   if (!userId || !env.ACCESS_DB) return false;
   try { const row = await env.ACCESS_DB.prepare("SELECT user_id FROM upload_access WHERE user_id = ? LIMIT 1").bind(String(userId)).first(); return Boolean(row?.user_id); }
@@ -192,34 +180,19 @@ async function changeManagedAccess(request, env, ctx, all) {
   } catch { return json({success:false,error:"Freigaben konnten nicht gespeichert werden."},503); }
 }
 
-async function changeAdminPanelAccess(request, env, ctx) {
-  const auth = await requireFullAdmin(request, env, ctx); if (auth.error) return auth.error;
-  if (!env.ACCESS_DB) return json({success:false,error:"Rechte-Datenbank nicht konfiguriert."},503);
-  let body; try { body = await request.json(); } catch { return json({success:false,error:"Ungültige Anfrage."},400); }
-  const userId = String(body?.userId || "").trim();
-  if (!/^\d{16,22}$/.test(userId)) return json({success:false,error:"Ungültige Discord User ID."},400);
-  await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS admin_panel_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-  if (request.method === "POST") {
-    await env.ACCESS_DB.prepare("INSERT INTO admin_panel_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by,created_at=CURRENT_TIMESTAMP").bind(userId,auth.user.id).run();
-    return json({success:true,userId,adminPanel:true});
-  }
-  await env.ACCESS_DB.prepare("DELETE FROM admin_panel_access WHERE user_id=?").bind(userId).run();
-  return json({success:true,userId,adminPanel:false});
-}
 async function listCombinedAccess(request, env, ctx) {
   const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error;
   if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503);
-  const [db, upload, panel] = await Promise.all([env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM admin_panel_access").all().catch(()=>({results:[]}))]);
+  const [db, upload] = await Promise.all([env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all()]);
   const users = new Map();
   for (const row of db.results || []) users.set(row.user_id, { userId: row.user_id, databaseAccess: true, databaseGrantedAt: row.created_at, uploadAccess: false, uploadGrantedAt: null });
-  for (const row of panel.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.adminPanelAccess = true; item.adminPanelGrantedAt = row.created_at; users.set(row.user_id, item); }
   for (const row of upload.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.uploadAccess = true; item.uploadGrantedAt = row.created_at; item.databaseAccess = true; users.set(row.user_id, item); }
   const out = [];
-  const resolved=await Promise.all([...users.values()].map(async item=>{const member=await fetchGuildMember(item.userId,env);if(member?.missing&&!member?.external){await env.ACCESS_DB.batch(["database_access","upload_access","admin_panel_access"].map(table=>env.ACCESS_DB.prepare(`DELETE FROM ${table} WHERE user_id=?`).bind(item.userId)));return null;}item.username=member?.user?.global_name||member?.user?.username||"Unbekannt / nicht verfügbar";item.avatar=member?.user?.avatar?`https://cdn.discordapp.com/avatars/${item.userId}/${member.user.avatar}.png?size=128`:`https://cdn.discordapp.com/embed/avatars/${Number(BigInt(item.userId)>>22n)%6}.png`;item.permission=item.uploadAccess?"Datenbank ansehen, Setups ändern":"Datenbank nur ansehen";if(item.adminPanelAccess)item.permission+=", Admin-Panel sehen";return item;}));for(const item of resolved)if(item)out.push(item);
+  for (const item of users.values()) { const member = await fetchGuildMember(item.userId, env); item.username = member?.user?.global_name || member?.user?.username || "Unbekannt / nicht verfügbar"; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen"; out.push(item); }
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
-async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !userId) return null; try { const headers={Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`}; if(env.DISCORD_GUILD_ID){const r=await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,{headers,signal:AbortSignal.timeout(8000)});if(r.ok)return await r.json();if(r.status!==404&&!r.ok)return null;} const global=await fetch(`${DISCORD_API}/users/${userId}`,{headers,signal:AbortSignal.timeout(8000)});if(!global.ok)return {missing:true};return {user:await global.json(),external:true}; } catch { return null; } }
+async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID || !userId) return null; try { const r = await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } }); if (!r.ok) return null; return await r.json(); } catch { return null; } }
 
 function ghHeaders(env) { const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "lmu-setups-worker" }; if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`; return headers; }
 function ghRepo(env) { return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`; }
@@ -245,7 +218,7 @@ async function downloadSetupForGrantedUser(request, env) {
   const path = `/${ghRepo(env)}/contents/setups/${enc(cat)}/${enc(veh)}/${enc(name)}?ref=${enc(ghBranch(env))}`; const meta = await ghReq(path, {}, env); if (meta.status === 404) return json({ success: false, error: "Setup nicht gefunden." }, 404); if (!meta.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502); const data = await meta.json(); const file = await fetch(data.download_url, { headers: { Accept: "application/octet-stream" } }); if (!file.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502); const headers = new Headers(file.headers); headers.set("Content-Type", "application/zip"); headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(name)}`); headers.set("Cache-Control", "private, no-store"); headers.set("X-Content-Type-Options", "nosniff"); return new Response(file.body, { status: 200, headers });
 }
 
-function fixHeaderLogo(html) { return html.replace('<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">','<link rel="preload" href="/assets/bp-logo.webp?v=20261023-1" as="image" type="image/webp">').replace('<img class="brand-logo" src="/assets/three-peaks-racing-logo.webp"','<img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1"').replace("logo.src='/assets/three-peaks-racing-logo.webp'","logo.src='/assets/bp-logo.webp?v=20261023-1'"); }
+function fixHeaderLogo(html) { return html.replace('<link rel="preload" href="/assets/three-peaks-racing-logo.webp" as="image" type="image/webp">','<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">').replace('<img class="brand-logo" src="/assets/three-peaks-racing-logo.webp"','<img class="brand-logo" src="/assets/header-logo.webp"').replace("logo.src='/assets/three-peaks-racing-logo.webp'","logo.src='/assets/header-logo.webp'"); }
 function injectAdminUi(html) {
   const oldPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button onclick="grantUploadAccess()">Upload freigeben</button><button onclick="revokeUploadAccess()">Freigabe entfernen</button><button onclick="registerRequestCommand()">/request registrieren</button></div><div id="adminResult" class="request-message"></div></div>';
   const newPanel = '<div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><p>Freigaben für die eingegebene Person. Discord-Rollen gelten weiterhin.</p><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button type="button" data-upload-admin onclick="adminSetAllFromInput(true)">Alles freigeben</button><button type="button" data-upload-admin onclick="adminSetAllFromInput(false)">Alles entfernen</button><button type="button" onclick="grantDatabaseAccess()">Database freigeben</button><button type="button" onclick="revokeDatabaseAccess()">Database entfernen</button><button type="button" data-upload-admin onclick="grantUploadAccess()">Upload/Delete freigeben</button><button type="button" data-upload-admin onclick="revokeUploadAccess()">Upload/Delete entfernen</button></div><div id="adminResult" class="request-message"></div><div id="adminAccessList" style="margin-top:16px;display:grid;gap:10px"></div></div>';
@@ -255,3 +228,4 @@ function injectAdminUi(html) {
 }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
 function json(data, status=200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
+
