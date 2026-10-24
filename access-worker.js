@@ -53,8 +53,8 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
       const category = cleanPath(body?.category), vehicle = cleanPath(body?.vehicle), name = cleanPath(body?.name);
-      const hasVersion=Object.hasOwn(body,'version'),hasName=Object.hasOwn(body,'displayName');
-      if(!hasVersion&&!hasName)return json({success:false,error:"Keine Änderung angegeben."},400);
+      const hasVersion=Object.hasOwn(body,'version'),hasName=Object.hasOwn(body,'displayName'),markOutdated=body?.outdated===true;
+      if(!hasVersion&&!hasName&&!markOutdated)return json({success:false,error:"Keine Änderung angegeben."},400);
       if(hasVersion&&typeof body.version!=='string')return json({success:false,error:"Ungültige Version."},400);
       const version=hasVersion?body.version.trim():null;
       if (!category || !vehicle || !name || !/\.zip$/i.test(name)) return json({ success: false, error: "Ungültiges Setup." }, 400);
@@ -69,6 +69,12 @@ export default {
       if(!existing.ok)return json({success:false,error:"Setup konnte nicht geprüft werden."},502);
       const file=await safeJson(existing);
       if(hasName&&!/^[a-f0-9]{40}$/.test(file?.sha||''))return json({success:false,error:"Dateistand konnte nicht bestätigt werden."},502);
+      if(markOutdated){
+        try{await env.ACCESS_DB.prepare("INSERT INTO setup_lifecycle (category,vehicle,file_name,file_sha,outdated,updated_at) VALUES (?,?,?,?,1,CURRENT_TIMESTAMP) ON CONFLICT(category,vehicle,file_name) DO UPDATE SET file_sha=excluded.file_sha,outdated=1,updated_at=CURRENT_TIMESTAMP").bind(category,vehicle,name,file.sha).run();}
+        catch{return json({success:false,error:"Setup konnte nicht als veraltet markiert werden."},503)}
+        runAuditTasks([safeAudit({action:'SETUP_OUTDATED',discordAccount:permission.user.username,discordUserId:permission.user.id,setup:name,vehicle,manufacturer:classifyManufacturer(name),track:inferTrack(name),newValue:'Veraltet',result:'SUCCESS'},env)],ctx);
+        return json({success:true,category,vehicle,name,version:await readStoredVersion(category,vehicle,name,env),displayName:await readStoredDisplayName(category,vehicle,name,file.sha,env),outdated:true});
+      }
       const oldVersion=await readStoredVersion(category,vehicle,name,env);
       let oldName=null;
       try{
