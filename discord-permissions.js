@@ -1,3 +1,4 @@
+/* @file-notes: Ermittelt Discord-Rollen, persönliche Freigaben und daraus abgeleitete Website-Berechtigungen. */
 const DEFAULT_OWNER_USER_ID = '1033453785416208564';
 
 export function ownerUserId(env) { return String(env.DISCORD_OWNER_USER_ID || DEFAULT_OWNER_USER_ID); }
