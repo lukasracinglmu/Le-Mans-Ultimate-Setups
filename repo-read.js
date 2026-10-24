@@ -1,3 +1,4 @@
+/* @file-notes: Liest geschützte Dateien und Verzeichnisse sicher aus dem GitHub-Repository. */
 // GitHub credentials stay in the Worker, including when the repository is private.
 export async function readRepoFile(env, path) {
   const owner = env.GITHUB_OWNER || "lukasracinglmu";
