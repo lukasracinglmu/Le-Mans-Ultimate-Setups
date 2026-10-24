@@ -143,6 +143,7 @@ const HOTFIX_JS = `<script>
       if(!d.databaseAccess){showAccessState('forbidden',d.user);return;}
       showAccessState('authorized',d.user);
       if(typeof loadData==='function')await loadData();
+      try{const saved=JSON.parse(sessionStorage.getItem('lmu-open-car')||'null');if(saved?.category&&saved?.vehicle&&setupData?.[saved.category]?.some(v=>v.name===saved.vehicle))await window.showCar(saved.category,saved.vehicle,{__history:true});}catch{}
       syncCarFilter();initVersionEditor();setTimeout(refreshVehicleCounts,0);
     }catch{setLoginControls(false);showAccessState('login');}
   };
@@ -153,8 +154,8 @@ const HOTFIX_JS = `<script>
     const originalShowCar=window.showCar;
     const originalShowHome=window.showHome;
     if(history.state?.lmuPage!=='home'&&history.state?.lmuPage!=='car')history.replaceState({lmuPage:'home'},'',location.href);
-    if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(category,vehicle,opts){if(document.documentElement.dataset.dbAccess!=='authorized')return;const fromHistory=opts&&opts.__history===true;if(!fromHistory)history.pushState({lmuPage:'car',category,vehicle},'',location.href);const r=await originalShowCar.call(this,category,vehicle);syncCarFilter();renderVendorSetups(currentCarSetups);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
-    if(typeof originalShowHome==='function'&&!originalShowHome.__historyWrapped){const wrapped=function(opts){const fromHistory=opts&&opts.__history===true;if(!fromHistory&&document.getElementById('carPage')?.classList.contains('active')){history.back();return;}return originalShowHome.call(this);};wrapped.__historyWrapped=true;window.showHome=wrapped;}
+    if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(category,vehicle,opts){if(document.documentElement.dataset.dbAccess!=='authorized')return;try{sessionStorage.setItem('lmu-open-car',JSON.stringify({category,vehicle}));}catch{}const fromHistory=opts&&opts.__history===true;if(!fromHistory)history.pushState({lmuPage:'car',category,vehicle},'',location.href);const r=await originalShowCar.call(this,category,vehicle);window.scrollTo(0,0);syncCarFilter();renderVendorSetups(currentCarSetups);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
+    if(typeof originalShowHome==='function'&&!originalShowHome.__historyWrapped){const wrapped=function(opts){try{sessionStorage.removeItem('lmu-open-car');}catch{}const fromHistory=opts&&opts.__history===true;if(!fromHistory&&document.getElementById('carPage')?.classList.contains('active')){history.back();return;}return originalShowHome.call(this);};wrapped.__historyWrapped=true;window.showHome=wrapped;}
     window.addEventListener('popstate',async(e)=>{const state=e.state;if(state?.lmuPage==='car'&&state.category&&state.vehicle){await window.showCar(state.category,state.vehicle,{__history:true});return;}if(typeof originalShowHome==='function')originalShowHome();});
     const categories=document.getElementById('categories');if(categories)new MutationObserver(()=>refreshVehicleCounts()).observe(categories,{childList:true,subtree:false});
     authorize();
