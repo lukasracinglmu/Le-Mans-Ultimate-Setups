@@ -1,3 +1,4 @@
+/* @file-notes: Erweitert die Basis-Worker-APIs um Setup-Versionen, Anzeigenamen und Setup-Lifecycle-Verarbeitung. */
 import { enrichDisplayNames } from "./setup-display-name.js";
 import baseWorker from "./worker.js";
 import { readPreviousSetups, applyPreviousSetups, enrichSetupLifecycle } from "./setup-lifecycle.js";
