@@ -28,6 +28,7 @@ function normalizeEvent(event) {
   const setupActions = new Set([
     "SETUP_UPLOAD",
     "SETUP_OUTDATED",
+    "SETUP_OUTDATED_REVERT",
     "SETUP_DELETE",
     "SETUP_DISPLAY_NAME_UPDATE",
     "SETUP_VERSION_UPDATE"
@@ -69,6 +70,7 @@ async function gh(path, opts, env) {
 function discordTitle(action) {
   if (action === "SETUP_UPLOAD") return "SETUP HOCHGELADEN";
   if (action === "SETUP_OUTDATED") return "SETUP ALS VERALTET MARKIERT";
+  if (action === "SETUP_OUTDATED_REVERT") return "SETUP WIEDER AKTUELL MARKIERT";
   if (action === "SETUP_DELETE") return "SETUP GELÖSCHT";
   if (action === "SETUP_DISPLAY_NAME_UPDATE") return "SETUP-ANZEIGENAME GEÄNDERT";
   if (action === "SETUP_VERSION_UPDATE") return "SETUP-VERSION GEÄNDERT";
