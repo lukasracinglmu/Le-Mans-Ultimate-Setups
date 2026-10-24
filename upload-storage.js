@@ -1,3 +1,4 @@
+/* @file-notes: Verarbeitet Upload-Dateien, prüft ZIPs und schreibt Setups sicher in GitHub. */
 import { cleanSetupFileName } from "./setup-version.js";
 // Upload storage is retried by the browser; every attempt first checks Git identity.
 const MAX_BODY_BYTES = 26 * 1024 * 1024;
