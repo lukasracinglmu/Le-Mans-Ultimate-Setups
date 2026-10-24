@@ -36,6 +36,7 @@ export default {
       return sitePage(request,env,'admin.html',true);
     }
     if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance'||url.pathname==='/api/admin/backup')return fullAdminApi(request,env,ctx,productionWorker);
+    if(url.pathname==='/api/favorites'&&(request.method==='GET'||request.method==='POST'||request.method==='DELETE'))return favoritesApi(request,env,ctx);
     if(url.pathname==='/api/bug-reports'){
       if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});
       const me=await readMe(request,env,ctx);
@@ -77,6 +78,26 @@ function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':
 
 async function readMe(request,env,ctx){const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);try{return await r.json()}catch{return null}}
 function hasSiteAccess(me){return Boolean(me?.loggedIn&&me?.databaseAccess&&me?.user?.id)}
+async function favoritesApi(request,env,ctx){
+  try{
+    const me=await readMe(request,env,ctx);
+    if(!hasSiteAccess(me))return Response.json({success:false,error:"Nicht angemeldet oder keine Datenbankberechtigung."},{status:403,headers:{"Cache-Control":"no-store"}});
+    if(!env.ACCESS_DB)return Response.json({success:false,error:"Favoriten-Datenbank nicht verfügbar."},{status:503});
+    await env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS vehicle_favorites (user_id TEXT NOT NULL, category TEXT NOT NULL, vehicle TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,category,vehicle))").run();
+    const userId=String(me.user.id);
+    if(request.method==="GET"){
+      const rows=await env.ACCESS_DB.prepare("SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC").bind(userId).all();
+      return Response.json({success:true,favorites:rows.results||[]},{headers:{"Cache-Control":"private, no-store"}});
+    }
+    let body;try{body=await request.json()}catch{return Response.json({success:false,error:"Ungültige Anfrage."},{status:400})}
+    const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
+    const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
+    if(!category||!vehicle)return Response.json({success:false,error:"Fahrzeug fehlt."},{status:400});
+    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle) VALUES (?,?,CURRENT_TIMESTAMP)").bind(userId,category,vehicle).run();
+    else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(userId,category,vehicle).run();
+    return Response.json({success:true,category,vehicle,favorite:request.method==="POST"},{headers:{"Cache-Control":"no-store"}});
+  }catch(error){console.error("favoritesApi failed",error);return Response.json({success:false,error:"Favorit konnte nicht gespeichert werden."},{status:503,headers:{"Cache-Control":"no-store"}})}
+}
 async function sitePage(request,env,file,privatePage){const source=await readSiteFile(request,env,file);const headers=new Headers(source.headers);headers.set('Content-Type',source.ok?'text/html; charset=utf-8':'text/plain; charset=utf-8');headers.set('Cache-Control',privatePage?'private, no-store':'no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(source.body,{status:source.status,headers});}
 function injectHomeLogo(html){const script=`<script>(()=>{const brand=document.querySelector('header .brand');if(!brand)return;brand.style.cursor='pointer';brand.setAttribute('role','link');brand.setAttribute('tabindex','0');brand.setAttribute('aria-label','Zur Startseite');const go=()=>{location.href='/'};brand.addEventListener('click',e=>{if(e.target.closest('a,button')&&e.target.closest('a,button')!==brand)return;go()});brand.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})})();</script>`;return html.replace('</body>',script+'</body>');}
 
