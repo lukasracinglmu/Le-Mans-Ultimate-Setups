@@ -1,3 +1,4 @@
+/* @file-notes: Ergänzt die Website um Rollenanzeige, Fahrzeugnavigation, Upload-Editoren und UI-Kompatibilität. */
 import productionWorker from "./production-worker.js";
 
 const HOTFIX_CSS = `
