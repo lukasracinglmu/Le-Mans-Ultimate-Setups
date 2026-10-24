@@ -323,7 +323,8 @@ $("deleteConfirm").addEventListener("click",async()=>{
   }catch(error){$("deleteModalText").textContent=error.message;}
   finally{deleteInFlight=false;$("deleteConfirm").disabled=false;$("deleteCancel").disabled=false;$("deleteConfirm").textContent='Löschen';}
 });
-$("search").addEventListener("input",e=>renderCategories(e.target.value));\n$("favoriteFilterButton").addEventListener("click",()=>{favoritesOnly=!favoritesOnly;const button=$("favoriteFilterButton");button.classList.toggle("active",favoritesOnly);button.textContent=favoritesOnly?"Alle Fahrzeuge anzeigen":"Favoriten anzeigen";renderCategories($("search").value)});
+$("search").addEventListener("input",e=>renderCategories(e.target.value));
+$("favoriteFilterButton").addEventListener("click",()=>{favoritesOnly=!favoritesOnly;const button=$("favoriteFilterButton");button.classList.toggle("active",favoritesOnly);button.textContent=favoritesOnly?"Alle Fahrzeuge anzeigen":"Favoriten anzeigen";renderCategories($("search").value)});
 document.querySelectorAll('#classFilter .mfr-btn[data-class]').forEach(btn=>btn.addEventListener('click',()=>{activeClass=btn.dataset.class||'';document.querySelectorAll('#classFilter .mfr-btn[data-class]').forEach(b=>b.classList.toggle('active',b===btn));renderCategories($("search").value)}));
 $("trackSearch").addEventListener("input",e=>{trackSearchVal=e.target.value;renderSetups(currentCarSetups)});
 document.querySelectorAll('#mfrFilter .mfr-btn').forEach(btn=>btn.addEventListener('click',()=>{activeMfr=btn.dataset.mfr||'';document.querySelectorAll('#mfrFilter .mfr-btn').forEach(b=>b.classList.toggle('active',b===btn));if($("carPage").classList.contains('active'))renderSetups(currentCarSetups)}));
