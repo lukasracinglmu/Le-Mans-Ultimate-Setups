@@ -1,3 +1,4 @@
+/* @file-notes: Startpunkt und Laufzeitkonfiguration für den Discord-Presence-Dienst. */
 import 'dotenv/config';
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
 
