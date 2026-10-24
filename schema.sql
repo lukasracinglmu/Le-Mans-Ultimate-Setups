@@ -70,3 +70,11 @@ CREATE TABLE IF NOT EXISTS bug_report_limits (
   report_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('sending', 'sent', 'failed'))
 );
+
+CREATE TABLE IF NOT EXISTS vehicle_favorites (
+  user_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  vehicle TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, category, vehicle)
+);
