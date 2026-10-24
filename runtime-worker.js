@@ -92,7 +92,7 @@ async function favoritesApi(request,env,ctx){
     const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
     const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
     if(!category||!vehicle)return Response.json({success:false,error:"Fahrzeug fehlt."},{status:400});
-    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,CURRENT_TIMESTAMP)").bind(userId,category,vehicle).run();
+    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,?)").bind(userId,category,vehicle,new Date().toISOString()).run();
     else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(userId,category,vehicle).run();
     return Response.json({success:true,category,vehicle,favorite:request.method==="POST"},{headers:{"Cache-Control":"no-store"}});
   }catch(error){console.error("favoritesApi failed",error);return Response.json({success:false,error:"Favorit konnte nicht gespeichert werden."},{status:503,headers:{"Cache-Control":"no-store"}})}
