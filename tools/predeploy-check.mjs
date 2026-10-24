@@ -1,3 +1,4 @@
+/* @file-notes: Prüft vor einem Deployment Syntax, Assets und zentrale Konfigurationsfehler. */
 import { readFile } from 'node:fs/promises';
 import { access, readdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
