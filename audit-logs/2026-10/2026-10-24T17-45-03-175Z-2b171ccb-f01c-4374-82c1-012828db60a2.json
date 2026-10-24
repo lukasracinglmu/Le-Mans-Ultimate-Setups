@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-24T17:45:03.175Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Alpine Barcelona HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Barcelona HYMO",
+  "manufacturer": "HYMO",
+  "version": "1.4",
+  "result": "SUCCESS"
+}
