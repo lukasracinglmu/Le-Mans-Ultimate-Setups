@@ -1,4 +1,3 @@
-/* @file-notes: Schreibt strukturierte Audit-Ereignisse in das Audit-Repository und behandelt Audit-Fehler unabhängig von der Hauptaktion. */
 const GITHUB_API = "https://api.github.com";
 const DISCORD_API = "https://discord.com/api/v10";
 
@@ -26,6 +25,16 @@ function inferTrack(name) {
   return base || null;
 }
 function normalizeEvent(event) {
+  const setupActions = new Set([
+    "SETUP_UPLOAD",
+    "SETUP_OUTDATED",
+    "SETUP_DELETE",
+    "SETUP_DISPLAY_NAME_UPDATE",
+    "SETUP_VERSION_UPDATE"
+  ]);
+  const category = setupActions.has(String(event.action || ""))
+    ? "SETUPS"
+    : "RECHTE_UND_ADMINISTRATION";
   const out = {
     timestamp: new Date().toISOString(),
     action: clean(event.action),
@@ -43,8 +52,12 @@ function normalizeEvent(event) {
     newValue: clean(event.newValue),
     result: "SUCCESS"
   };
+  out.category = category;
   for (const key of Object.keys(out)) if (out[key] == null) delete out[key];
   return out;
+}
+function auditColor(category) {
+  return category === "SETUPS" ? 0x3498db : 0x8e44ad;
 }
 async function gh(path, opts, env) {
   return fetch(`${GITHUB_API}/${ghRepo(env)}${path}`, {
@@ -92,7 +105,7 @@ async function writeDiscordAuditEvent(event, env) {
     signal: AbortSignal.timeout(10000),
     headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      embeds: [{ title: discordTitle(event.action), fields: discordFields(event), timestamp: event.timestamp }],
+      embeds: [{ title: discordTitle(event.action), color: auditColor(event.category), fields: discordFields(event), timestamp: event.timestamp }],
       allowed_mentions: { parse: [], users: mentionUsers }
     })
   });
@@ -124,3 +137,4 @@ export async function writeSetupAuditEvent(event, env) {
   catch (error) { console.error("Discord audit failed", error instanceof Error ? error.message : "unknown"); }
   return safe;
 }
+
