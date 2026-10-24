@@ -1,3 +1,4 @@
+/* @file-notes: Speichert und liest Setup-Versionen in der D1-Metadatenbank. */
 export async function enrichSetupVersions(setups, category, vehicle, env) {
   if (!Array.isArray(setups) || !env.ACCESS_DB) return setups;
   try {
