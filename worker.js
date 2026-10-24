@@ -94,7 +94,7 @@ function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {
 function safeError(error) { if (!error) return "unknown"; return error instanceof Error ? (error.name || "Error") : "unknown"; }
 function securityHeaders(headers = new Headers()) {
   const h = new Headers(headers);
-  h.set("X-Content-Type-Options", "nosniff"); h.set("Referrer-Policy", "strict-origin-when-cross-origin"); h.set("X-Frame-Options", "DENY");
+  h.set("X-Content-Type-Options", "nosniff"); h.set("Referrer-Policy", "strict-origin-when-cross-origin"); h.set("X-Frame-Options", "DENY"); h.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains"); h.set("X-Permitted-Cross-Domain-Policies", "none");
   h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
   h.set("Cross-Origin-Opener-Policy", "same-origin"); h.set("Cross-Origin-Resource-Policy", "same-origin");
   h.set("Content-Security-Policy", "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' https://cdn.discordapp.com data:; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; upgrade-insecure-requests");
