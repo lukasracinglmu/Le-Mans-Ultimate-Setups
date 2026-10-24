@@ -1,3 +1,4 @@
+/* @file-notes: Discord-Bot-Prozess für Präsenz, Nachrichten und Bot-Kommunikation. */
 import 'dotenv/config';
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
 
