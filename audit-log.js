@@ -1,3 +1,4 @@
+/* @file-notes: Schreibt strukturierte Audit-Ereignisse in das Audit-Repository und behandelt Audit-Fehler unabhängig von der Hauptaktion. */
 const GITHUB_API = "https://api.github.com";
 const DISCORD_API = "https://discord.com/api/v10";
 
