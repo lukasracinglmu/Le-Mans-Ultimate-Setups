@@ -31,3 +31,10 @@ The existing vehicle catalog from `setups.json` supplies vehicle names and class
 - Driver assignment: round-robin through the entered driver list
 
 The next safe extension is a versioned vehicle-data table with source URL, BoP version, validity date and history.
+## Calculator UI update (25.10.2026)
+
+The Beta now follows the pitstop-calculator layout: vehicle/track selection, class tabs, race parameters, Fuel/VE inputs, Fuel Test and Results. Vehicle autocomplete shows suggestions from the existing `setups.json` catalog after three characters. Start Fuel explicitly supports liters or percent; Start VE is a separate percent field.
+
+The calculator refuses to present automatic vehicle values as fact until a complete, versioned LMU dataset exists for the selected car, track/layout and BoP version. Official LMU documentation confirms that Virtual Energy is class-dependent and that Hypercar/LMGT3 strategy can be VE-limited, while LMP2/LMP3 need fuel-limited handling. The current UI therefore requires verified Fuel-per-lap, VE-per-lap and tank values before calculating.
+
+Current backup before this overhaul: `backup/pre-fuel-overhaul-2026-10-25` at `ec998fec45da265b33231b441e257a90509db657`.
