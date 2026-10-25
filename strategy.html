@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fuel & Stint Planner | Three Peaks Racing</title>
+<style>
+*{box-sizing:border-box}html{background:#111318}body{margin:0;background:#111318;color:#f5f6f8;font:14px Arial,Helvetica,sans-serif}body.light{background:#eef2f6;color:#17202b}header{height:68px;border-bottom:1px solid #30353e;display:flex;align-items:center;justify-content:space-between;padding:0 26px;background:#191c22;position:sticky;top:0;z-index:2}.light header{background:#fff;border-color:#c8d1dc}.brand{display:flex;align-items:center;gap:11px}.brand img{width:72px;height:38px;object-fit:contain}.brand strong{font-size:15px}.actions{display:flex;gap:8px;align-items:center}button,a,input,select{font:inherit}button,a.button{border:1px solid #30353e;background:#191c22;color:inherit;border-radius:8px;padding:9px 13px;cursor:pointer;text-decoration:none}.light button,.light a.button{background:#fff;border-color:#c8d1dc}.accent{background:#5865f2!important;border-color:#5865f2!important;color:#fff!important}.layout{max-width:1160px;margin:0 auto;padding:34px 22px 80px}.hero,.panel{background:#191c22;border:1px solid #30353e;border-radius:14px;padding:22px;box-shadow:0 10px 30px #0002}.light .hero,.light .panel{background:#fff;border-color:#c8d1dc}.hero{margin-bottom:18px}.hero h1{margin:0 0 8px;font-size:30px}.muted{color:#9ba1ab}.light .muted{color:#596675}.beta{display:inline-block;padding:3px 8px;border-radius:999px;background:#d88725;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.field{display:grid;gap:6px;margin-bottom:13px}.field label{font-weight:700;font-size:12px}.field input,.field select{width:100%;padding:10px 11px;border:1px solid #30353e;border-radius:8px;background:#111318;color:inherit}.light .field input,.light .field select{background:#eef2f6;border-color:#c8d1dc}.full{grid-column:1/-1}.range{display:grid;grid-template-columns:1fr 100px;gap:9px;align-items:center}.range input[type=range]{width:100%}.message{min-height:22px;color:#f0a43b}.warning{padding:10px;border:1px solid #d88725;background:#3a2919;border-radius:8px;margin-top:10px}.light .warning{background:#fff6df}.table-wrap{overflow:auto;margin-top:12px}.table{width:100%;border-collapse:collapse;min-width:680px}.table th,.table td{text-align:left;padding:10px;border-bottom:1px solid #30353e}.light .table th,.light .table td{border-color:#c8d1dc}.actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.hidden{display:none!important}@media(max-width:800px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.layout{padding:22px 14px 55px}header{padding:0 13px}.brand strong{display:none}}
+</style>
+</head>
+<body>
+<header><a class="brand" href="/"><img id="logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing"><strong>Fuel & Stint Planner <span class="beta">BETA</span></strong></a><div class="actions"><button id="theme">☾ Dark Mode</button><a class="button" href="/">Zur Datenbank</a></div></header>
+<main class="layout">
+<section class="hero"><h1>Fuel Calculator & Stint Planner <span class="beta">BETA</span></h1><p class="muted">LMU-Strategieplanung auf Basis deiner eigenen Testdaten. Nicht verifizierte Fahrzeugwerte werden bewusst nicht vorgegeben.</p></section>
+<section class="panel">
+<h2>Fahrzeug und Fahrzeugdaten</h2>
+<div class="grid">
+<div class="field full"><label for="vehicle">Fahrzeug suchen</label><input id="vehicle" autocomplete="off" placeholder="Mindestens 3 Zeichen eingeben"><select id="vehiclePick" class="hidden" size="5"></select></div>
+<div class="field"><label>Klasse</label><input id="carClass" readonly placeholder="Wird automatisch erkannt"></div>
+<div class="field"><label for="tank">Tankkapazität / Fuel Maximum</label><input id="tank" type="number" min="0" step="0.01" placeholder="Nur verifizierten Wert eintragen"></div>
+<div class="field"><label for="ve">VE / Energy Maximum (optional)</label><input id="ve" type="number" min="0" step="0.01" placeholder="Nur falls relevant"></div>
+<div class="field"><label for="fuel">Start-Fuel</label><div class="range"><input id="fuelRange" type="range" min="0" max="100" step=".01"><input id="fuel" type="number" min="0" step=".01"></div></div>
+<div class="field"><label for="reserve">Sicherheitsreserve in Runden</label><input id="reserve" type="number" min="0" step=".1" value="1"></div>
+</div>
+<div id="dataNote" class="warning">Bitte ein Fahrzeug auswählen und verifizierte Tank-/VE-Werte eintragen.</div>
+</section>
+<section class="panel">
+<h2>Rennen</h2>
+<div class="grid">
+<div class="field"><label for="duration">Renndauer in Minuten</label><input id="duration" type="number" min="1" step=".1" value="60"></div>
+<div class="field"><label for="lapTime">Durchschnittliche Rundenzeit in Sekunden</label><input id="lapTime" type="number" min="1" step=".1" placeholder="z. B. 105.0"></div>
+<div class="field"><label for="consumption">Verbrauch pro Runde</label><input id="consumption" type="number" min="0.0001" step=".001" placeholder="Aus Testfahrten"></div>
+<div class="field"><label for="pitLoss">Boxenstoppverlust in Sekunden</label><input id="pitLoss" type="number" min="0" step=".1" value="0"></div>
+<div class="field"><label for="drivers">Fahrer, getrennt durch Komma</label><input id="drivers" placeholder="Fahrer 1, Fahrer 2"></div>
+<div class="field"><label for="maxStint">Maximale Stintlänge in Runden (optional)</label><input id="maxStint" type="number" min="1" step="1"></div>
+</div>
+<div class="actions-row"><button class="accent" id="calculate">Strategie berechnen</button><button id="reset">Zurücksetzen</button></div><div id="resultMessage" class="message"></div>
+</section>
+<section class="panel"><h2>Verbrauchstest</h2><div class="grid"><div class="field"><label for="testStart">Startwert</label><input id="testStart" type="number" step=".01"></div><div class="field"><label for="testEnd">Endwert</label><input id="testEnd" type="number" step=".01"></div><div class="field"><label for="testLaps">Gefahrene Runden</label><input id="testLaps" type="number" min="1" step="1"></div></div><div class="actions-row"><button id="addRun">Test-Run hinzufügen</button><button id="applyAverage">Durchschnitt für Strategie übernehmen</button></div><div id="runs" class="muted"></div></section>
+<section class="panel"><h2>Stint-Plan</h2><div id="plan" class="muted">Noch keine Berechnung vorhanden.</div></section>
+</main><script src="/strategy.js"></script></body></html>
