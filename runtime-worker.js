@@ -36,7 +36,7 @@ export default {
       if(!me?.loggedIn||!me.user?.canViewAdminPanel)return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
       return sitePage(request,env,'admin.html',true);
     }
-    if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance'||url.pathname==='/api/admin/backup')return fullAdminApi(request,env,ctx,productionWorker);
+    if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance'||url.pathname==='/api/admin/backup'||url.pathname==='/api/admin/backups')return fullAdminApi(request,env,ctx,productionWorker);
     if(url.pathname==='/api/favorites'&&(request.method==='GET'||request.method==='POST'||request.method==='DELETE'))return favoritesApi(request,env,ctx);
     if(url.pathname==='/api/bug-reports'){
       if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});
