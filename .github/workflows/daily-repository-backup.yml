@@ -15,6 +15,7 @@ jobs:
     steps:
       - name: Create backup in private backup repository
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
           BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
         run: |
