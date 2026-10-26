@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-26T20:38:48.165Z",
+  "action": "SETUP_OUTDATED_REVERT",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "GO V1.4.3 ORECA 2024 LMP2 COTA.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "GO V1.4.3 ORECA 2024 LMP2 COTA",
+  "manufacturer": "GO",
+  "oldValue": "VERALTET",
+  "newValue": "AKTUELL",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
