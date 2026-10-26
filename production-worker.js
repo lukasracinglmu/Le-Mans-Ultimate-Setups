@@ -151,47 +151,62 @@ async function discordInteraction(request, env) {
   try { interaction = JSON.parse(rawBody); }
   catch { return new Response("bad request", { status: 400 }); }
   if (interaction.type === 1) return discordJson({ type: 1 });
-  if (interaction.type === 2 && interaction.data?.name === "request") return discordJson(requestModalResponse());
-  if (interaction.type === 5 && interaction.data?.custom_id === REQUEST_MODAL_ID) {
+
+  const catalogResponse = await readSiteFile(request, env, "setups.json");
+  if (!catalogResponse.ok) return discordJson({ type: 4, data: { content: "Fahrzeugliste momentan nicht verfügbar.", flags: 64 } });
+  let catalog;
+  try { catalog = await catalogResponse.json(); }
+  catch { return discordJson({ type: 4, data: { content: "Fahrzeugliste momentan nicht verfügbar.", flags: 64 } }); }
+  const vehicles = Object.entries(catalog).flatMap(([carClass, list]) =>
+    Array.isArray(list) ? list.map(vehicle => ({ name: String(vehicle.name || ""), carClass })) : []
+  ).filter(vehicle => vehicle.name);
+
+  if (interaction.type === 4 && interaction.data?.name === "request") {
+    const query = String(interaction.data?.options?.find(option => option.name === "vehicle")?.value || "").trim().toLowerCase();
+    const choices = query.length < 3 ? [] : vehicles
+      .filter(vehicle => vehicle.name.toLowerCase().includes(query))
+      .slice(0, 25)
+      .map(vehicle => ({ name: vehicle.name, value: vehicle.name }));
+    return discordJson({ type: 8, data: { choices } });
+  }
+
+  if (interaction.type === 2 && interaction.data?.name === "request") {
+    const selectedVehicle = String(interaction.data?.options?.find(option => option.name === "vehicle")?.value || "").trim();
+    const match = vehicles.find(vehicle => vehicle.name.toLowerCase() === selectedVehicle.toLowerCase());
+    if (!match) return discordJson({ type: 4, data: { content: "Bitte ein Fahrzeug aus den Vorschlägen auswählen.", flags: 64 } });
+    return discordJson(requestModalResponse(match.name));
+  }
+
+  if (interaction.type === 5 && String(interaction.data?.custom_id || "").startsWith(REQUEST_MODAL_ID + ":")) {
+    const selectedVehicle = decodeURIComponent(String(interaction.data.custom_id).slice(REQUEST_MODAL_ID.length + 1));
+    const match = vehicles.find(vehicle => vehicle.name.toLowerCase() === selectedVehicle.toLowerCase());
     const values = modalValues(interaction.data.components);
     const user = interaction.member?.user || interaction.user || {};
     const data = {
       userId: user.id ? String(user.id) : null,
       username: user.global_name || user.username || "Discord User",
-      vehicle: clean(values.vehicle, 100),
-      carClass: clean(values.class, 80),
+      vehicle: match?.name || "",
+      carClass: match?.carClass || "",
       track: clean(values.track, 100),
       message: clean(values.message, 500)
     };
-    if (!data.vehicle || !data.track) return discordJson({ type: 4, data: { content: "Fahrzeug und Strecke sind erforderlich.", flags: 64 } });
-    const catalogResponse=await readSiteFile(request,env,"setups.json");
-  if(!catalogResponse.ok)return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);
-  let catalog;try{catalog=await catalogResponse.json();}catch{return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);}
-  const match=Object.entries(catalog).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===data.vehicle.toLowerCase());
-  if(!match)return json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400);
-  data.vehicle=match.name;data.carClass=match.carClass;
-  const sent = await sendSetupRequest(data, env);
+    if (!match || !data.track) return discordJson({ type: 4, data: { content: "Fahrzeug und Strecke sind erforderlich.", flags: 64 } });
+    const sent = await sendSetupRequest(data, env);
     return discordJson({ type: 4, data: { content: sent.ok ? "Setup Request wurde gesendet." : "Setup Request konnte nicht gesendet werden.", flags: 64 } });
   }
   const delegated = new Request(request.url, { method: "POST", headers: request.headers, body: rawBody });
   return baseWorker.fetch(delegated, env);
 }
 
-function requestModalResponse() {
-  const input = (customId, label, options = {}) => ({
-    type: 1,
-    components: [{ type: 4, custom_id: customId, label, style: options.paragraph ? 2 : 1, required: options.required !== false, min_length: options.required === false ? undefined : 1, max_length: options.maxLength || 100, placeholder: options.placeholder }]
-  });
+function requestModalResponse(vehicle) {
   return {
     type: 9,
     data: {
-      custom_id: REQUEST_MODAL_ID,
+      custom_id: REQUEST_MODAL_ID + ":" + encodeURIComponent(vehicle),
       title: "Setup Request",
       components: [
-        input("vehicle", "Fahrzeug", { maxLength: 100, placeholder: "z. B. Porsche 963" }),
-        input("class", "Klasse", { maxLength: 80, placeholder: "z. B. Hypercar" }),
-        input("track", "Strecke", { maxLength: 100, placeholder: "z. B. Le Mans" }),
-        input("message", "Weitere Informationen", { required: false, paragraph: true, maxLength: 500, placeholder: "Optional" })
+        { type: 1, components: [{ type: 4, custom_id: "track", label: "Strecke", style: 1, required: true, max_length: 100, placeholder: "z. B. Le Mans" }] },
+        { type: 1, components: [{ type: 4, custom_id: "message", label: "Weitere Infos", style: 2, required: false, max_length: 500, placeholder: "Optional" }] }
       ]
     }
   };
