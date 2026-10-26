@@ -133,8 +133,14 @@ const HOTFIX_JS = `<script>
     setLoginControls(false);
     showAccessState('checking');
     try{
-      const r=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'});const d=await r.json();
-      if(!d.loggedIn){currentUser=null;setLoginControls(false);showAccessState('login');return;}
+      let d=null;
+      for(let attempt=0;attempt<3;attempt++){
+        const r=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'});
+        d=await r.json().catch(()=>null);
+        if(d?.loggedIn && (d.databaseAccess || d.rolesAvailable!==false))break;
+        if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
+      }
+      if(!d?.loggedIn){currentUser=null;setLoginControls(false);showAccessState('login');return;}
       currentUser=d.user||null;
       setLoginControls(true);
       const login=document.getElementById('loginButton');const account=document.getElementById('account');const accountName=document.getElementById('accountName');const accountAvatar=document.getElementById('accountAvatar');
