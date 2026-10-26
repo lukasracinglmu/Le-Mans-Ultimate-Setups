@@ -150,7 +150,8 @@ async function ensureAccessSchema(env) {
   await env.ACCESS_DB.batch([
     env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS database_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS upload_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
-    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS admin_panel_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS admin_panel_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
+    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS full_admin_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
   ]);
 }
 
@@ -218,11 +219,35 @@ async function changeManagedAccess(request, env, ctx, all) {
 async function listCombinedAccess(request, env, ctx) {
   const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error;
   if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503);
-  const [db, upload] = await Promise.all([env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all()]);
+  const [db, upload, adminPanel, fullAdmin] = await Promise.all([
+    env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access").all(),
+    env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access").all(),
+    env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM admin_panel_access").all(),
+    env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM full_admin_access").all()
+  ]);
   const users = new Map();
-  for (const row of db.results || []) users.set(row.user_id, { userId: row.user_id, databaseAccess: true, databaseGrantedAt: row.created_at, uploadAccess: false, uploadGrantedAt: null });
-  for (const row of upload.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.uploadAccess = true; item.uploadGrantedAt = row.created_at; item.databaseAccess = true; users.set(row.user_id, item); }
-  const out = await Promise.all([...users.values()].map(async item => { const member = await fetchGuildMember(item.userId, env); const discordUser = member?.user ?? null; const nick = member?.nick ?? null; const guildAvatar = member?.avatar ?? null; const globalAvatar = discordUser?.avatar ?? null; const avatarHash = guildAvatar || globalAvatar; const avatarBase = guildAvatar ? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${item.userId}/avatars/${guildAvatar}.png?size=128` : globalAvatar ? `https://cdn.discordapp.com/avatars/${item.userId}/${globalAvatar}.png?size=128` : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(String(item.userId)) % 6n)}.png`; item.username = nick || discordUser?.global_name || discordUser?.username || "Unbekannt / nicht verfügbar"; item.avatar = avatarBase; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen"; return item; }));
+  const ensure = userId => users.get(userId) || (() => { const item = { userId, databaseAccess:false, uploadAccess:false, adminPanelAccess:false, fullAdminAccess:false, databaseGrantedAt:null, uploadGrantedAt:null, adminPanelGrantedAt:null, fullAdminGrantedAt:null }; users.set(userId,item); return item; })();
+  for (const row of db.results || []) { const item=ensure(row.user_id); item.databaseAccess=true; item.databaseGrantedAt=row.created_at; }
+  for (const row of upload.results || []) { const item=ensure(row.user_id); item.uploadAccess=true; item.databaseAccess=true; item.uploadGrantedAt=row.created_at; }
+  for (const row of adminPanel.results || []) { const item=ensure(row.user_id); item.adminPanelAccess=true; item.adminPanelGrantedAt=row.created_at; }
+  for (const row of fullAdmin.results || []) { const item=ensure(row.user_id); item.fullAdminAccess=true; item.adminPanelAccess=true; item.databaseAccess=true; item.uploadAccess=true; item.fullAdminGrantedAt=row.created_at; }
+  const out = await Promise.all([...users.values()].map(async item => {
+    const member = await fetchGuildMember(item.userId, env);
+    const discordUser = member?.user ?? null;
+    const nick = member?.nick ?? null;
+    const guildAvatar = member?.avatar ?? null;
+    const globalAvatar = discordUser?.avatar ?? null;
+    item.avatar = guildAvatar ? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${item.userId}/avatars/${guildAvatar}.png?size=128` : globalAvatar ? `https://cdn.discordapp.com/avatars/${item.userId}/${globalAvatar}.png?size=128` : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(String(item.userId)) % 6n)}.png`;
+    item.username = nick || discordUser?.global_name || discordUser?.username || "Unbekannt / nicht verfügbar";
+    item.permissions = [
+      item.fullAdminAccess ? "FULL_ADMIN" : null,
+      item.adminPanelAccess ? "ADMIN_PANEL" : null,
+      item.databaseAccess ? "DATABASE" : null,
+      item.uploadAccess ? "UPLOAD" : null
+    ].filter(Boolean);
+    item.permission = item.permissions.join(" · ");
+    return item;
+  }));
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
