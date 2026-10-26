@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-26T20:33:25.253Z",
+  "action": "PERMISSION_GRANT",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "targetDiscordUserId": "711862720567312455",
+  "permission": "DATABASE_AND_UPLOAD_DELETE_ACCESS",
+  "oldValue": "DENIED",
+  "newValue": "GRANTED",
+  "result": "SUCCESS",
+  "category": "RECHTE_UND_ADMINISTRATION"
+}
