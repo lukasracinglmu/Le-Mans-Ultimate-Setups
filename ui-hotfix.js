@@ -139,7 +139,7 @@ const HOTFIX_JS = `<script>
       setLoginControls(true);
       const login=document.getElementById('loginButton');const account=document.getElementById('account');const accountName=document.getElementById('accountName');const accountAvatar=document.getElementById('accountAvatar');
       if(login)login.classList.add('hidden');if(account)account.style.display='flex';if(accountName)accountName.textContent=d.user?.username||'';if(accountAvatar&&d.user?.avatar){accountAvatar.src=d.user.avatar;accountAvatar.style.display='block';}
-      if(!d.databaseAccess){showAccessState('forbidden',d.user);return;}
+      if(!(d.databaseAccess??d.user?.databaseAccess)){showAccessState('forbidden',d.user);return;}
       showAccessState('authorized',d.user);
       if(typeof loadData==='function')await loadData();
       syncCarFilter();initVersionEditor();setTimeout(refreshVehicleCounts,0);
