@@ -222,8 +222,7 @@ async function listCombinedAccess(request, env, ctx) {
   const users = new Map();
   for (const row of db.results || []) users.set(row.user_id, { userId: row.user_id, databaseAccess: true, databaseGrantedAt: row.created_at, uploadAccess: false, uploadGrantedAt: null });
   for (const row of upload.results || []) { const item = users.get(row.user_id) || { userId: row.user_id, databaseAccess: false, databaseGrantedAt: null, uploadAccess: false, uploadGrantedAt: null }; item.uploadAccess = true; item.uploadGrantedAt = row.created_at; item.databaseAccess = true; users.set(row.user_id, item); }
-  const out = [];
-  for (const item of users.values()) { const member = await fetchGuildMember(item.userId, env); item.username = member?.user?.global_name || member?.user?.username || "Unbekannt / nicht verfügbar"; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen"; out.push(item); }
+  const out = await Promise.all([...users.values()].map(async item => { const member = await fetchGuildMember(item.userId, env); item.username = member?.user?.global_name || member?.user?.username || "Unbekannt / nicht verfügbar"; item.permission = item.uploadAccess ? "Datenbank ansehen, Setups ändern" : "Datenbank nur ansehen"; return item; }));
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
