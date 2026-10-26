@@ -1,6 +1,8 @@
 /* @file-notes: Erstellt manuelle und geplante Backups, verwaltet Backup-Links und entfernt alte Backups. */
 const GITHUB_API='https://api.github.com';
 
+function backupOwner(env){return env.BACKUP_GITHUB_OWNER||env.GITHUB_OWNER||'lukasracinglmu';}
+function backupRepoName(env){return env.BACKUP_GITHUB_REPO||env.GITHUB_REPO||'LMU-Database-Backups';}
 function headers(env){
   return {Accept:'application/vnd.github+json','Content-Type':'application/json','User-Agent':'lmu-automatic-backup','X-GitHub-Api-Version':'2022-11-28',Authorization:`Bearer ${env.GITHUB_TOKEN}`};
 }
@@ -21,7 +23,7 @@ function formatBackupDate(now){
 }
 async function backupSize(env,sha){
   try{
-    const response=await fetch(`${GITHUB_API}/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/git/trees/${sha}?recursive=1`,{headers:headers(env)});
+    const response=await fetch(`${GITHUB_API}/repos/${backupOwner(env)}/${backupRepoName(env)}/git/trees/${sha}?recursive=1`,{headers:headers(env)});
     if(!response.ok)return null;
     const data=await response.json();
     return (data.tree||[]).reduce((total,item)=>total+Number(item.type==='blob'?item.size||0:0),0);
@@ -33,8 +35,8 @@ async function notifyOwner(env,tag,now,size){
   const channel=await fetch('https://discord.com/api/v10/users/@me/channels',{method:'POST',headers,body:JSON.stringify({recipient_id:String(env.DISCORD_OWNER_USER_ID)})});
   if(!channel.ok)return;
   const data=await channel.json();
-  const downloadLink=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/archive/refs/tags/${tag}.zip`;
-  const viewLink=`https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/tree/${tag}`;
+  const downloadLink=`https://github.com/${backupOwner(env)}/${backupRepoName(env)}/archive/refs/tags/${tag}.zip`;
+  const viewLink=`https://github.com/${backupOwner(env)}/${backupRepoName(env)}/tree/${tag}`;
   const embed={title:'Backup wurde erfolgreich erstellt',color:0x2b9b68,fields:[
     {name:'Datum und Uhrzeit',value:formatBackupDate(now),inline:true},
     {name:'Größe',value:formatBackupSize(size),inline:true},
@@ -50,9 +52,9 @@ function backupTagDate(tag){
   return Number.isNaN(date.getTime())?null:date;
 }
 async function cleanupOldBackups(env,now=new Date()){
-  if(!env.GITHUB_TOKEN||!env.GITHUB_OWNER||!env.GITHUB_REPO)return {deleted:0};
+  if(!env.GITHUB_TOKEN||!backupOwner(env)||!backupRepoName(env))return {deleted:0};
   const cutoff=now.getTime()-5*24*60*60*1000;
-  const repo=`${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs/tags?per_page=100`,{headers:headers(env)});
   if(!response.ok)return {deleted:0};
   const refs=await response.json();
@@ -71,14 +73,14 @@ async function cleanupOldBackups(env,now=new Date()){
 }
 async function createBackup(env,now=new Date(),force=false){
   const slot=localBackupSlot(now);
-  if((!slot&&!force)||!env.GITHUB_TOKEN||!env.GITHUB_OWNER||!env.GITHUB_REPO)return {skipped:true};
+  if((!slot&&!force)||!env.GITHUB_TOKEN||!backupOwner(env)||!backupRepoName(env))return {skipped:true};
   const backupDate=slot||Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).map(x=>[x.type,x.value]));
   const key=`${backupDate.year}-${backupDate.month}-${backupDate.day}`;
   if(env.ACCESS_DB){
     await env.ACCESS_DB.prepare('CREATE TABLE IF NOT EXISTS automatic_backups (slot TEXT PRIMARY KEY, tag TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
     if(!force&&await env.ACCESS_DB.prepare('SELECT slot FROM automatic_backups WHERE slot=?').bind(key).first())return {skipped:true,reason:'already-created'};
   }
-  const repo=`${env.GITHUB_OWNER}/${env.GITHUB_REPO}`;
+  const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
   const branch=await fetch(`${GITHUB_API}/repos/${repo}/git/ref/heads/${env.GITHUB_BRANCH||'main'}`,{headers:headers(env)});
   if(!branch.ok)throw Error('GitHub main ref konnte nicht gelesen werden.');
   const branchData=await branch.json(),sha=branchData.object?.sha;
