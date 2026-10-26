@@ -151,6 +151,12 @@ async function discordInteraction(request, env) {
   try { interaction = JSON.parse(rawBody); }
   catch { return new Response("bad request", { status: 400 }); }
   if (interaction.type === 1) return discordJson({ type: 1 });
+  const isRequestCommand = (interaction.type === 2 || interaction.type === 4) && interaction.data?.name === "request";
+  const isRequestModal = interaction.type === 5 && String(interaction.data?.custom_id || "").startsWith(REQUEST_MODAL_ID + ":");
+  if (!isRequestCommand && !isRequestModal) {
+    const delegated = new Request(request.url, { method: "POST", headers: request.headers, body: rawBody });
+    return baseWorker.fetch(delegated, env);
+  }
 
   const catalogResponse = await readSiteFile(request, env, "setups.json");
   if (!catalogResponse.ok) return discordJson({ type: 4, data: { content: "Fahrzeugliste momentan nicht verfügbar.", flags: 64 } });
