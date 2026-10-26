@@ -13,7 +13,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Create backup in private backup repository
+      - name: Create organized backup in private backup repository
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
           fi
 
           export TZ=Europe/Berlin
-          if [ "$(date +%H:%M)" != "00:00" ]; then
+          if [ "$(date +%H:%M)" != "00:00" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo "Not midnight in Europe/Berlin. Nothing to do."
             exit 0
           fi
@@ -36,22 +36,48 @@ jobs:
           TAG="backup-$TODAY"
           WORK="$(mktemp -d)"
           trap 'rm -rf "$WORK"' EXIT
+          SOURCE_URL="https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
+          BACKUP_URL="https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git"
 
-          git clone --mirror "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" "$WORK/source.git"
-          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" "refs/heads/main:refs/heads/main"
-
+          git clone --mirror "$SOURCE_URL" "$WORK/source.git"
+          git -C "$WORK/source.git" push "$BACKUP_URL" "refs/heads/main:refs/tmp/$TAG"
           git -C "$WORK/source.git" tag -f "$TAG" "$(git -C "$WORK/source.git" rev-parse refs/heads/main)"
-          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" "refs/tags/$TAG"
+          git -C "$WORK/source.git" push "$BACKUP_URL" "refs/tags/$TAG"
+          git push "$BACKUP_URL" ":refs/tmp/$TAG" || true
+
+          git clone "$BACKUP_URL" "$WORK/backup"
+          cd "$WORK/backup"
+          git config user.name "LMU Backup Bot"
+          git config user.email "actions@users.noreply.github.com"
+          mkdir -p "backups/$TODAY"
+          cat > "backups/$TODAY/$TAG.md" <<EOF
+          # LMU Backup
+
+          **Backup name:** \`$TAG\`
+          **Date:** \`$TODAY\`
+
+          [Download this complete backup as ZIP](https://github.com/$BACKUP_REPOSITORY/archive/refs/tags/$TAG.zip)
+          EOF
+          git add "backups/$TODAY/$TAG.md"
+          git commit -m "Add backup $TAG"
+          git push origin main
 
           CUTOFF="$(date -d '5 days ago' +%Y-%m-%d)"
-          git ls-remote --tags "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" |
-            awk '{print $2}' | sed 's#refs/tags/##' |
-            grep '^backup-[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}$' |
-            while read -r OLD_TAG; do
-              OLD_DATE="${OLD_TAG#backup-}"
-              if [[ "$OLD_DATE" < "$CUTOFF" ]]; then
-                git push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" ":refs/tags/$OLD_TAG"
-              fi
-            done
+          while read -r _ REF; do
+            OLD_TAG="${REF#refs/tags/}"
+            [[ "$OLD_TAG" == backup-* ]] || continue
+            OLD_DATE="${OLD_TAG#backup-}"
+            OLD_DATE="${OLD_DATE:0:10}"
+            if [[ "$OLD_DATE" < "$CUTOFF" ]]; then
+              git push "$BACKUP_URL" ":refs/tags/$OLD_TAG" || true
+              rm -f "backups/$OLD_DATE/$OLD_TAG.md"
+            fi
+          done < <(git ls-remote --tags "$BACKUP_URL" | awk '{print $2}' | sed 's#refs/tags/##' | grep -E '^backup-[0-9]{4}-[0-9]{2}-[0-9]{2}(-.*)?$' || true)
 
-          echo "Backup $TAG created in $BACKUP_REPOSITORY."
+          git add -A backups
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove expired backups"
+            git push origin main
+          fi
+
+          echo "Backup $TAG created in $BACKUP_REPOSITORY/backups/$TODAY/"
