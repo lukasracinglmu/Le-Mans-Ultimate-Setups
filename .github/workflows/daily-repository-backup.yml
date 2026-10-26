@@ -2,7 +2,7 @@ name: Daily Repository Backup
 
 on:
   schedule:
-    # Hourly is required because GitHub cron uses UTC and Berlin switches between CET and CEST.
+    # Hourly because GitHub cron uses UTC and Berlin switches between CET and CEST.
     - cron: "0 * * * *"
   workflow_dispatch:
 
@@ -13,11 +13,17 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Create daily backup at midnight Europe/Berlin
+      - name: Create backup in private backup repository
         env:
-          GH_TOKEN: ${{ github.token }}
+          BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
         run: |
           set -euo pipefail
+
+          if [ -z "${BACKUP_TOKEN:-}" ]; then
+            echo "BACKUP_REPO_TOKEN is not configured."
+            exit 1
+          fi
 
           export TZ=Europe/Berlin
           if [ "$(date +%H:%M)" != "00:00" ]; then
@@ -27,27 +33,24 @@ jobs:
 
           TODAY="$(date +%Y-%m-%d)"
           TAG="backup-$TODAY"
+          WORK="$(mktemp -d)"
+          trap 'rm -rf "$WORK"' EXIT
 
-          if git ls-remote --exit-code --tags "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "Backup $TAG already exists."
-          else
-            git init backup-source
-            cd backup-source
-            git remote add origin "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git"
-            git fetch --depth=1 origin main
-            git checkout --detach FETCH_HEAD
-            git tag -a "$TAG" -m "Daily full repository backup $TODAY"
-            git push origin "$TAG"
-            cd ..
-            rm -rf backup-source
-            echo "Created $TAG."
-          fi
+          git clone --mirror "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" "$WORK/source.git"
+          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" "refs/heads/main:refs/heads/main"
+
+          git -C "$WORK/source.git" tag -f "$TAG" "$(git -C "$WORK/source.git" rev-parse refs/heads/main)"
+          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" "refs/tags/$TAG"
 
           CUTOFF="$(date -d '5 days ago' +%Y-%m-%d)"
-          git ls-remote --tags "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git"             | awk '{print $2}'             | sed 's#refs/tags/##'             | grep '^backup-[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}$'             | while read -r OLD_TAG; do
-                OLD_DATE="${OLD_TAG#backup-}"
-                if [[ "$OLD_DATE" < "$CUTOFF" ]]; then
-                  git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" ":refs/tags/$OLD_TAG"
-                  echo "Deleted $OLD_TAG."
-                fi
-              done
+          git ls-remote --tags "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" |
+            awk '{print $2}' | sed 's#refs/tags/##' |
+            grep '^backup-[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}$' |
+            while read -r OLD_TAG; do
+              OLD_DATE="${OLD_TAG#backup-}"
+              if [[ "$OLD_DATE" < "$CUTOFF" ]]; then
+                git push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" ":refs/tags/$OLD_TAG"
+              fi
+            done
+
+          echo "Backup $TAG created in $BACKUP_REPOSITORY."
