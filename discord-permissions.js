@@ -12,15 +12,15 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 
   // Nur der konfigurierte Owner besitzt Full Admin, Wartungsmodus, Backups und Tickets.
   // Die Discord-Owner-Rolle verwaltet ausschließlich Database-/Upload-Freigaben.
-  const fullAdmin = isOwner;
-  const canManageDatabaseAccess = isOwner || hasOwnerRole;
-  const canManageUploadAccess = isOwner || hasOwnerRole;
-  const canUpload = isOwner || hasSetupSupplyRole || Boolean(grants.upload);
-  const databaseAccess = isOwner || hasOwnerRole || hasSetupSupplyRole || hasTeamRole || Boolean(grants.database) || Boolean(grants.upload);
-  const canViewAdminPanel = isOwner || hasOwnerRole || Boolean(grants.adminPanel);
+  const fullAdmin = isOwner || Boolean(grants.fullAdmin);
+  const canManageDatabaseAccess = fullAdmin || hasOwnerRole;
+  const canManageUploadAccess = fullAdmin || hasOwnerRole;
+  const canUpload = fullAdmin || hasSetupSupplyRole || Boolean(grants.upload);
+  const databaseAccess = fullAdmin || hasOwnerRole || hasSetupSupplyRole || hasTeamRole || Boolean(grants.database) || Boolean(grants.upload);
+  const canViewAdminPanel = fullAdmin || hasOwnerRole || Boolean(grants.adminPanel);
   return { databaseAccess, canUpload, canViewAdminPanel, isOwner, fullAdmin, canViewTickets:isOwner, isAdmin:canManageDatabaseAccess,
     canManageDatabaseAccess, canManageUploadAccess,
-    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:false };
+    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:Boolean(grants.fullAdmin) };
 }
 
 export async function resolvePermissions(userId, env, oauthAccessToken = null) {
