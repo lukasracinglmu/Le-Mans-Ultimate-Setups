@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Copy existing backup tags to private backup repository
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
           BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
         run: |
@@ -31,7 +33,7 @@ jobs:
 
           git ls-remote --tags "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" |
             awk '{print $2}' | sed 's#refs/tags/##' |
-            grep '^backup-[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} |
+            grep -E '^backup-[0-9]{4}-[0-9]{2}-[0-9]{2}$' |
             while read -r OLD_TAG; do
               gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$OLD_TAG"
               echo "Removed old backup tag $OLD_TAG from the main repository."
