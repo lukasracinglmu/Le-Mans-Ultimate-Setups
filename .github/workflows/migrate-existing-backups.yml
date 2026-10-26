@@ -29,5 +29,13 @@ jobs:
           git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --all
           git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --tags
 
-          echo "Existing repository history and backup tags were copied."
-          echo "The old backup tags are intentionally kept until the copy is verified."
+          git ls-remote --tags "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" |
+            awk '{print $2}' | sed 's#refs/tags/##' |
+            grep '^backup-[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} |
+            while read -r OLD_TAG; do
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$OLD_TAG"
+              echo "Removed old backup tag $OLD_TAG from the main repository."
+            done
+
+          echo "Existing repository history and backup tags were migrated."
+          echo "The backup tags now live in $BACKUP_REPOSITORY."
