@@ -106,7 +106,7 @@ function redirectUri(env) { return `${env.SITE_URL}/auth/discord/callback`; }
 function discordLogin(env) {
   if (!env.DISCORD_CLIENT_ID || !env.SITE_URL) return json({ success: false, error: "Discord Login nicht verfügbar." }, 500);
   const state = crypto.randomUUID();
-  const p = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, response_type: "code", redirect_uri: redirectUri(env), scope: "identify", state });
+  const p = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, response_type: "code", redirect_uri: redirectUri(env), scope: "identify guilds.members.read", state });
   const h = securityHeaders(new Headers({ Location: `${DISCORD_OAUTH}/authorize?${p}` })); h.append("Set-Cookie", cookie(STATE_COOKIE, state, 600));
   return new Response(null, { status: 302, headers: h });
 }
@@ -122,7 +122,7 @@ async function discordCallback(request, env) {
   const td = await tr.json(); const ur = await df("/users/@me", { headers: { Authorization: `Bearer ${td.access_token}` } });
   if (!ur.ok) return new Response("Discord-Anmeldung fehlgeschlagen.", { status: 502, headers: securityHeaders() });
   const user = await ur.json();
-  const sess = await createSession({ id: user.id, username: user.global_name || user.username, avatar: user.avatar || null, exp: Math.floor(Date.now() / 1000) + SESSION_TTL }, env.SESSION_SECRET);
+  const sess = await createSession({ id: user.id, username: user.global_name || user.username, avatar: user.avatar || null, accessToken: td.access_token, exp: Math.floor(Date.now() / 1000) + SESSION_TTL }, env.SESSION_SECRET);
   const appUrl = new URL("/", env.SITE_URL).toString();
   const h = securityHeaders(new Headers({ "Content-Type": "text/html; charset=UTF-8", "Cache-Control": "no-store" }));
   h.append("Set-Cookie", cookie(SESSION_COOKIE, sess, SESSION_TTL)); h.append("Set-Cookie", cookie(STATE_COOKIE, "", 0));
@@ -141,7 +141,7 @@ async function fetchGuildMember(userId, env) {
 async function requireDatabaseAccess(request, env) {
   const session=await readSession(request,env.SESSION_SECRET);
   if (!session) return { error:json({success:false,error:"Nicht angemeldet."},401) };
-  const permission=await resolvePermissions(session.id,env);
+  const permission=await resolvePermissions(session.id,env,session.accessToken);
   if (!permission.databaseAccess) return { error:json({success:false,error:permission.rolesAvailable?"Erforderliche Discord-Rolle fehlt.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503) };
   return { session };
 }
@@ -172,7 +172,7 @@ async function favoritesApi(request, env) {
 async function currentUser(request, env) {
   const session=await readSession(request,env.SESSION_SECRET);
   if (!session) return json({loggedIn:false,databaseAccess:false});
-  const permission=await resolvePermissions(session.id,env);
+  const permission=await resolvePermissions(session.id,env,session.accessToken);
   const avatar=session.avatar?`https://cdn.discordapp.com/avatars/${session.id}/${session.avatar}.png?size=64`:`https://cdn.discordapp.com/embed/avatars/${Number(BigInt(session.id)%6n)}.png`;
   const {databaseAccess,rolesAvailable,...userPermissions}=permission;
   return json({loggedIn:true,databaseAccess,rolesAvailable,user:{id:session.id,username:session.username,avatar,...userPermissions}});
@@ -205,7 +205,7 @@ async function uploadSetups(request, env, suppliedForm) {
   if (sizeError) return sizeError;
   const session = await readSession(request, env.SESSION_SECRET);
   if (!session) return json({ success:false, error:"Nicht angemeldet." }, 401);
-  const permission=await resolvePermissions(session.id,env);
+  const permission=await resolvePermissions(session.id,env,session.accessToken);
   if (!permission.canUpload) return json({success:false,error:permission.rolesAvailable?"Keine Upload-Berechtigung.":"Discord-Rollenprüfung nicht verfügbar.",retryable:!permission.rolesAvailable},permission.rolesAvailable?403:503);
   let form;
   try { form = suppliedForm || await readUploadForm(request); }
@@ -229,7 +229,7 @@ async function uploadSetups(request, env, suppliedForm) {
 }
 
 async function deleteSetup(request, env) {
-  const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);const permission=await resolvePermissions(s.id,env);if(!permission.canUpload)return json({success:false,error:permission.rolesAvailable?"Keine Löschberechtigung.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503);
+  const s=await readSession(request,env.SESSION_SECRET);if(!s)return json({success:false,error:"Nicht angemeldet."},401);const permission=await resolvePermissions(s.id,env,s.accessToken);if(!permission.canUpload)return json({success:false,error:permission.rolesAvailable?"Keine Löschberechtigung.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503);
   let b;try{b=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}const cat=safe(b.category),veh=safe(b.vehicle),name=safe(b.name);if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültige Datei."},400);
   if(b.sha!==undefined&&!/^[a-f0-9]{40}$/.test(b.sha))return json({success:false,error:"Ungültiger Dateistand.",retryable:false},400);
   const result=await deleteGithubSetup({category:cat,vehicle:veh,name,expectedSha:b.sha,branch:ghBranch(env),githubRequest:(path,options)=>ghReq(path,options,env)});
