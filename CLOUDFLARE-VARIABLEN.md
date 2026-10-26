@@ -25,7 +25,7 @@ Diese Werte dürfen nicht im Repository oder in normalen Textvariablen stehen.
 | Name | Aktueller Wert | Zweck |
 | :--- | :--- | :--- |
 | `DISCORD_CLIENT_ID` | `1556978316404068452` | ID der Discord-Anwendung für Login und Slash-Befehl. |
-| `DISCORD_GUILD_ID` | `1367893409234161846` | Discord-Server für Rollenprüfung und Requests. |
+| `DISCORD_GUILD_ID` | `1464926567401652418` | Discord-Server für Rollenprüfung und Requests. |
 | `DISCORD_DATABASE_ROLE_ID` | `1464926567401652420` | Teamrolle für Datenbank und Downloads. |
 | `DISCORD_UPLOAD_ROLE_ID` | `1538601074074849330` | Setup-Supply-Rolle für Upload, Löschen und Bearbeiten. |
 | `DISCORD_OWNER_ROLE_ID` | `1464926567401652423` | Rolle für Admin-Panel und persönliche Freigaben. |
