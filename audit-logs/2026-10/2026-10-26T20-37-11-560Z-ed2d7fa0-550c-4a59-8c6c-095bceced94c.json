@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-26T20:37:11.560Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "GO V1.4.3 ORECA ELMS LMP2 PAR.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "GO V1.4.3 ORECA ELMS LMP2 PAR",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
