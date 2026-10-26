@@ -2,9 +2,6 @@ name: Migrate Existing Backups
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: write
