@@ -115,7 +115,6 @@ async function writeDiscordAuditEvent(event, env) {
 }
 
 export async function writeSetupAuditEvent(event, env) {
-  if (!env.GITHUB_TOKEN) throw new Error("GitHub audit token unavailable");
   const safe = normalizeEvent({
     ...event,
     manufacturer: event.manufacturer || classifyManufacturer(event.setup),
@@ -124,19 +123,38 @@ export async function writeSetupAuditEvent(event, env) {
   const id = crypto.randomUUID();
   const path = `audit-logs/${safe.timestamp.slice(0, 7)}/${safe.timestamp.replace(/[:.]/g, "-")}-${id}.json`;
   const subject = safe.setup || safe.targetDiscordUserId || safe.vehicle || id;
-  const body = {
-    message: `Audit ${safe.action}: ${subject}`,
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + "\n"))),
-    branch: ghBranch(env)
-  };
-  const response = await gh(`/contents/${path.split('/').map(encodeURIComponent).join('/')}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  }, env);
-  if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
-  try { await writeDiscordAuditEvent(safe, env); }
-  catch (error) { console.error("Discord audit failed", error instanceof Error ? error.message : "unknown"); }
+  const tasks = [];
+
+  if (env.GITHUB_TOKEN) {
+    const body = {
+      message: `Audit ${safe.action}: ${subject}`,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + "\\n"))),
+      branch: ghBranch(env)
+    };
+    tasks.push(
+      gh(`/contents/${path.split("/").map(encodeURIComponent).join("/")}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }, env).then(response => {
+        if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
+      })
+    );
+  } else {
+    console.error("GitHub audit token unavailable");
+  }
+
+  if (env.DISCORD_BOT_TOKEN && env.DISCORD_AUDIT_CHANNEL_ID) {
+    tasks.push(writeDiscordAuditEvent(safe, env));
+  } else {
+    console.error("Discord audit configuration unavailable");
+  }
+
+  const results = await Promise.allSettled(tasks);
+  const failures = results.filter(result => result.status === "rejected");
+  for (const failure of failures) {
+    console.error("Audit write failed", failure.reason instanceof Error ? failure.reason.message : "unknown");
+  }
   return safe;
 }
 
