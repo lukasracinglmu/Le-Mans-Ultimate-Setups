@@ -12,7 +12,14 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
-    if (path === "/api/me" && method === "GET") return augmentedMe(request, env, ctx);
+   
+    if (path.startsWith("/api/admin/")) {
+      try { await ensureAccessSchema(env); }
+      catch { return json({ success: false, error: "Rechte-Datenbank nicht verfügbar." }, 503); }
+    }
+ if (path === "/api/me" && method === "GET") return augmentedMe(request, env, ctx);    if (path === "/api/admin/admin-panel-access" && method === "GET") return listAdminPanelAccess(request, env, ctx);
+    if (path === "/api/admin/admin-panel-access" && (method === "POST" || method === "DELETE")) return changeAdminPanelAccess(request, env, ctx);
+
     if (path === "/api/admin/database-access" && method === "GET") return listDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/database-access" && method === "POST") return grantDatabaseAccess(request, env, ctx);
     if (path === "/api/admin/database-access" && method === "DELETE") return revokeDatabaseAccess(request, env, ctx);
@@ -138,6 +145,15 @@ async function augmentedMe(request, env, ctx) {
   return uiWorker.fetch(request, env, ctx);
 }
 
+async function ensureAccessSchema(env) {
+  if (!env.ACCESS_DB) throw Error("db");
+  await env.ACCESS_DB.batch([
+    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS database_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
+    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS upload_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
+    env.ACCESS_DB.prepare("CREATE TABLE IF NOT EXISTS admin_panel_access (user_id TEXT PRIMARY KEY, granted_by TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+  ]);
+}
+
 async function requireOwner(request, env, ctx, capability="canManageDatabaseAccess") {
   const me=await getBaseMe(request,env,ctx);
   if (!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
@@ -159,6 +175,25 @@ async function requireUploadDeleteAccess(request, env, ctx) {
 
 function validUserId(value) { const id = String(value || "").trim(); return /^\d{16,22}$/.test(id) ? id : null; }
 async function readUserId(request) { try { return validUserId((await request.json())?.userId); } catch { return null; } }
+
+async function listAdminPanelAccess(request, env, ctx) {
+  const auth = await requireOwner(request, env, ctx);
+  if (auth.error) return auth.error;
+  const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM admin_panel_access ORDER BY created_at DESC").all();
+  return json({ success: true, grants: result.results || [] });
+}
+async function changeAdminPanelAccess(request, env, ctx) {
+  const auth = await requireOwner(request, env, ctx);
+  if (auth.error) return auth.error;
+  const userId = await readUserId(request);
+  if (!userId) return json({ success: false, error: "Ungültige Discord User ID." }, 400);
+  if (request.method === "POST") {
+    await env.ACCESS_DB.prepare("INSERT INTO admin_panel_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by, created_at=CURRENT_TIMESTAMP").bind(userId, auth.user.id).run();
+    return json({ success: true, userId, adminPanel: true });
+  }
+  await env.ACCESS_DB.prepare("DELETE FROM admin_panel_access WHERE user_id=?").bind(userId).run();
+  return json({ success: true, userId, adminPanel: false });
+}
 
 async function listDatabaseAccess(request, env, ctx) { const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM database_access ORDER BY created_at DESC").all(); return json({ success: true, grants: result.results || [] }); }
 async function grantDatabaseAccess(request, env, ctx) { const auth = await requireOwner(request, env, ctx); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const userId = await readUserId(request); if (!userId) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("INSERT INTO database_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by = excluded.granted_by").bind(userId, auth.user.id).run(); return json({ success: true, userId }); }
