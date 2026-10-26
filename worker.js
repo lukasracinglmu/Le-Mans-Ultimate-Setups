@@ -76,12 +76,13 @@ function enforceSameOriginForStateChange(request, env) {
   if (!new Set(["POST", "PUT", "PATCH", "DELETE"]).has(method)) return null;
   const url = new URL(request.url);
   if (url.pathname === "/interactions/discord") return null;
-  const expected = (() => { try { return new URL(env.SITE_URL || url.origin).origin; } catch { return url.origin; } })();
+  const allowedOrigins = new Set([url.origin]);
+  try { if (env.SITE_URL) allowedOrigins.add(new URL(env.SITE_URL).origin); } catch {}
   const origin = request.headers.get("Origin");
-  if (origin && origin !== expected) return json({ success: false, error: "Origin nicht erlaubt." }, 403);
+  if (origin && !allowedOrigins.has(origin)) return json({ success: false, error: "Origin nicht erlaubt." }, 403);
   const referer = request.headers.get("Referer");
   if (!origin && referer) {
-    try { if (new URL(referer).origin !== expected) return json({ success: false, error: "Origin nicht erlaubt." }, 403); }
+    try { if (!allowedOrigins.has(new URL(referer).origin)) return json({ success: false, error: "Origin nicht erlaubt." }, 403); }
     catch { return json({ success: false, error: "Origin nicht erlaubt." }, 403); }
   }
   return null;
