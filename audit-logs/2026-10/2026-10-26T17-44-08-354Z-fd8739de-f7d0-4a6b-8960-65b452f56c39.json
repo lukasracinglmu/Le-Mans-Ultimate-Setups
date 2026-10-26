@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-26T17:44:08.354Z",
+  "action": "SETUP_OUTDATED_REVERT",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Alpine Barcelona GO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Barcelona GO",
+  "manufacturer": "GO",
+  "oldValue": "VERALTET",
+  "newValue": "AKTUELL",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}\n
