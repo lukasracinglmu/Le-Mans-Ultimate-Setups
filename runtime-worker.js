@@ -51,7 +51,7 @@ export default {
     if(request.method==='GET'&&url.pathname==='/setups.json'){
       const me=await readMe(request,env,ctx);
       if(!me?.loggedIn)return Response.json({success:false,error:'Nicht angemeldet.'},{status:401});
-      if(!me?.databaseAccess)return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});
+      if(!(me?.databaseAccess??me?.user?.databaseAccess))return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});
       const source=await readSiteFile(request,env,'setups.json');
       return new Response(source.body,{status:source.ok?200:502,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store'}});
     }
