@@ -45,6 +45,31 @@ async function notifyOwner(env,tag,now,size){
   ],footer:{text:'Three Peaks Racing Setup Database'}};
   await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
+async function backupIndexFile(env,tag){
+  const date=String(tag).slice(7,17);
+  return `backups/${date}/${tag}.md`;
+}
+async function writeBackupIndex(env,tag,now){
+  const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
+  const path=await backupIndexFile(env,tag);
+  const text=`# LMU Backup
+
+**Backup name:** \`${tag}\`
+**Created:** \`${formatBackupDate(now)}\`
+
+[Download this complete backup as ZIP](https://github.com/${repo}/archive/refs/tags/${tag}.zip)
+`;
+  const response=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'PUT',headers:headers(env),body:JSON.stringify({message:`Add backup ${tag} to index`,content:btoa(text),branch:'main'})});
+  if(!response.ok&&response.status!==422)throw Error('Backup-Übersicht konnte nicht aktualisiert werden.');
+}
+async function removeBackupIndex(env,tag){
+  const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
+  const path=await backupIndexFile(env,tag);
+  const current=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=main`,{headers:headers(env)});
+  if(!current.ok)return;
+  const data=await current.json();
+  await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:'main'})});
+}
 function backupTagDate(tag){
   const match=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-|$)/);
   if(!match)return null;
@@ -65,6 +90,7 @@ async function cleanupOldBackups(env,now=new Date()){
     if(!tag.startsWith('backup-')||!date||date.getTime()>=cutoff)continue;
     const removed=await fetch(`${GITHUB_API}/repos/${repo}/git/refs/tags/${encodeURIComponent(tag)}`,{method:'DELETE',headers:headers(env)});
     if(removed.ok||removed.status===404){
+      await removeBackupIndex(env,tag).catch(()=>{});
       deleted++;
       if(env.ACCESS_DB)await env.ACCESS_DB.prepare('DELETE FROM automatic_backups WHERE tag=?').bind(tag).run().catch(()=>{});
     }
@@ -88,6 +114,7 @@ async function createBackup(env,now=new Date(),force=false){
   const tag=`backup-${key}${force?`-${Date.now()}`:''}`;
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
   if(!response.ok&&response.status!==422)throw Error('GitHub Backup konnte nicht erstellt werden.');
+  await writeBackupIndex(env,tag,now).catch(()=>{});
   if(env.ACCESS_DB)await env.ACCESS_DB.prepare('INSERT OR REPLACE INTO automatic_backups (slot,tag) VALUES (?,?)').bind(key,tag).run();
   const size=await backupSize(env,sha);
   await notifyOwner(env,tag,now,size).catch(()=>{});
