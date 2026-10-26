@@ -6,14 +6,21 @@ export function ownerUserId(env) { return String(env.DISCORD_OWNER_USER_ID || DE
 export function rolePermissions(userId, roles, env, grants = {}) {
   const hasRole = id => Boolean(id && Array.isArray(roles) && roles.includes(String(id)));
   const isOwner = String(userId) === ownerUserId(env);
-  const fullAdmin = isOwner || Boolean(grants.fullAdmin);
-  const canManageDatabaseAccess = fullAdmin || Boolean(grants.adminPanel) || hasRole(env.DISCORD_OWNER_ROLE_ID);
-  const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
-  const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
-  const canViewAdminPanel = fullAdmin || canManageDatabaseAccess || Boolean(grants.adminPanel);
+  const hasOwnerRole = hasRole(env.DISCORD_OWNER_ROLE_ID);
+  const hasSetupSupplyRole = hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
+  const hasTeamRole = hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
+
+  // Nur der konfigurierte Owner besitzt Full Admin, Wartungsmodus, Backups und Tickets.
+  // Die Discord-Owner-Rolle verwaltet ausschließlich Database-/Upload-Freigaben.
+  const fullAdmin = isOwner;
+  const canManageDatabaseAccess = isOwner || hasOwnerRole;
+  const canManageUploadAccess = isOwner || hasOwnerRole;
+  const canUpload = isOwner || hasSetupSupplyRole || Boolean(grants.upload);
+  const databaseAccess = isOwner || hasOwnerRole || hasSetupSupplyRole || hasTeamRole || Boolean(grants.database) || Boolean(grants.upload);
+  const canViewAdminPanel = isOwner || hasOwnerRole;
   return { databaseAccess, canUpload, canViewAdminPanel, isOwner, fullAdmin, canViewTickets:isOwner, isAdmin:canManageDatabaseAccess,
-    canManageDatabaseAccess, canManageUploadAccess:canManageDatabaseAccess,
-    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:Boolean(grants.fullAdmin) };
+    canManageDatabaseAccess, canManageUploadAccess,
+    individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:false };
 }
 
 export async function resolvePermissions(userId, env) {
