@@ -1,16 +1,19 @@
-name: Migrate Existing Backups
+name: Organize Backup Repository
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
-  migrate:
+  organize:
     runs-on: ubuntu-latest
     steps:
-      - name: Copy existing backup tags to private backup repository
+      - name: Keep only backup tags and create organized folders
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
@@ -18,7 +21,6 @@ jobs:
           BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
         run: |
           set -euo pipefail
-
           if [ -z "${BACKUP_TOKEN:-}" ]; then
             echo "BACKUP_REPO_TOKEN is not configured."
             exit 1
@@ -26,18 +28,54 @@ jobs:
 
           WORK="$(mktemp -d)"
           trap 'rm -rf "$WORK"' EXIT
-          git clone --mirror "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" "$WORK/source.git"
+          git clone "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" "$WORK/backup"
+          cd "$WORK/backup"
+          git fetch --tags --force
 
-          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --all
-          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --tags
+          mapfile -t TAGS < <(git tag -l 'backup-*' | sort)
+          if [ "${#TAGS[@]}" -eq 0 ]; then
+            echo "No backup tags found."
+            exit 1
+          fi
 
-          git ls-remote --tags "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" |
-            awk '{print $2}' | sed 's#refs/tags/##' |
-            grep -E '^backup-[0-9]{4}-[0-9]{2}-[0-9]{2}$' |
-            while read -r OLD_TAG; do
-              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$OLD_TAG"
-              echo "Removed old backup tag $OLD_TAG from the main repository."
-            done
+          git config user.name "LMU Backup Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --orphan organized-main
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p backups
 
-          echo "Existing repository history and backup tags were migrated."
-          echo "The backup tags now live in $BACKUP_REPOSITORY."
+          for TAG in "${TAGS[@]}"; do
+            DATE="${TAG#backup-}"
+            DATE="${DATE:0:10}"
+            mkdir -p "backups/$DATE"
+            cat > "backups/$DATE/$TAG.md" <<EOF
+          # LMU Backup
+
+          **Backup name:** `$TAG`
+          **Date:** `$DATE`
+
+          [Download this backup as ZIP](https://github.com/$BACKUP_REPOSITORY/archive/refs/tags/$TAG.zip)
+          EOF
+          done
+
+          cat > README.md <<EOF
+          # LMU Database Backups
+
+          This private repository contains only automatic backups and backups created manually through the LMU portal.
+
+          Backups are organized below `backups/YYYY-MM-DD/`. Each entry links to the complete repository state stored under its backup tag.
+          EOF
+
+          git add README.md backups
+          git commit -m "Organize LMU backups by date"
+          git branch -M main
+          git push --force origin main
+
+          while read -r _ REF; do
+            BRANCH="${REF#refs/heads/}"
+            if [ "$BRANCH" != "main" ]; then
+              git push origin --delete "$BRANCH" || true
+            fi
+          done < <(git ls-remote --heads origin)
+
+          echo "Backup repository organized successfully."
