@@ -17,7 +17,7 @@ export function rolePermissions(userId, roles, env, grants = {}) {
   const canManageUploadAccess = isOwner || hasOwnerRole;
   const canUpload = isOwner || hasSetupSupplyRole || Boolean(grants.upload);
   const databaseAccess = isOwner || hasOwnerRole || hasSetupSupplyRole || hasTeamRole || Boolean(grants.database) || Boolean(grants.upload);
-  const canViewAdminPanel = isOwner || hasOwnerRole;
+  const canViewAdminPanel = isOwner || hasOwnerRole || Boolean(grants.adminPanel);
   return { databaseAccess, canUpload, canViewAdminPanel, isOwner, fullAdmin, canViewTickets:isOwner, isAdmin:canManageDatabaseAccess,
     canManageDatabaseAccess, canManageUploadAccess,
     individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:false };
