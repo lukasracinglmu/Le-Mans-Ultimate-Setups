@@ -109,3 +109,4 @@ test('readable storage names resolve equal-version content conflicts without ove
   }};
   const first=await persistSetupFile(params),retry=await persistSetupFile(params);assert.equal(first.uploaded,true);assert.equal(retry.alreadyExists,true);assert.equal(first.name,retry.name);assert.equal(puts,1);assert.equal(files.get('Spa HYMO (Version v2).zip'),'c'.repeat(40));
 });
+

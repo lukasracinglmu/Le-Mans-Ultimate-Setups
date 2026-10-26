@@ -142,3 +142,4 @@ export async function persistSetupFile({ file, name, category, vehicle, branch, 
     return { error: 'Verbindung zu GitHub unterbrochen. Speicherstand wird beim nächsten Versuch geprüft.', code: 'GITHUB_NETWORK', retryable: true };
   }
 }
+

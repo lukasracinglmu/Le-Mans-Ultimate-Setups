@@ -33,3 +33,4 @@ jobs:
           sparse-checkout-cone-mode: false
       - name: Upload-Versionen und Fehlerbehandlung testen
         run: node --test tests/*.test.mjs
+

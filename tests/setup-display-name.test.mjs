@@ -28,3 +28,4 @@ test('name-only edit and reset work without requiring a version',async()=>{
 test('unauthorized or invalid edits cannot change metadata',async()=>{
  await harness(async({env,req,ctx,writes})=>{assert.equal((await accessWorker.fetch(await req({displayName:'Fuji'},false),env,ctx)).status,401);assert.equal((await accessWorker.fetch(await req({displayName:'x'.repeat(161)}),env,ctx)).status,400);assert.equal(writes.length,0);});
 });
+

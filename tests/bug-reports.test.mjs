@@ -53,3 +53,4 @@ test('Discord rate limit is surfaced with Retry-After instead of a false success
 });
 
 test('three trimmed characters are accepted',async()=>{await harness(async({env})=>{assert.equal((await submitBugReport(request({description:' abc '}),user,env)).status,200);});});
+

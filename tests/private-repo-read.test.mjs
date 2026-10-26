@@ -107,3 +107,4 @@ test('private ZIP download streams authenticated content after permission valida
 test('private file path segments and branch are encoded independently',async()=>{
   await withFetch(async(url)=>{assert.ok(String(url).includes('/contents/setups/A%20B/a%23b.zip?ref=release%2Ftest'));return new Response('ok');},async()=>{assert.equal((await readRepoFile(envBase,'setups/A B/a#b.zip')).status,200);});
 });
+

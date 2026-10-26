@@ -48,3 +48,4 @@ client.login(token).catch(error => {
   console.error('Discord login failed:', error?.message || error);
   process.exit(1);
 });
+

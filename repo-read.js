@@ -36,3 +36,4 @@ export async function readSiteFile(request, env, path) {
     headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "30", "X-Content-Type-Options": "nosniff" }
   });
 }
+

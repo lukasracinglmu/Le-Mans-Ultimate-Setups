@@ -36,3 +36,4 @@ export function compareSetupVersions(a,b){
 }
 
 export function cleanSetupFileName(name){return String(name||'').replace(/\s*\[[^\]]*\s+(?:GO|HYMO|BE_?ALIEN)\s+(?:[a-f0-9]{12}|[a-f0-9]{4}\s+[a-f0-9]{4}\s+[a-f0-9]{4})\](?=\.zip$)/i,'').replace(/\s*\(Version [^)]*\)(?=\.zip$)/i,'');}
+

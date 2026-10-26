@@ -61,3 +61,4 @@ test('separate uploads store their own versions, including an empty replacement'
     baseWorker.fetch = originalFetch;
   }
 });
+

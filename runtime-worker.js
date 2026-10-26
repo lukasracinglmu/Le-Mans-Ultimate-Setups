@@ -51,7 +51,7 @@ export default {
     if(request.method==='GET'&&url.pathname==='/setups.json'){
       const me=await readMe(request,env,ctx);
       if(!me?.loggedIn)return Response.json({success:false,error:'Nicht angemeldet.'},{status:401});
-      if(!(me?.databaseAccess??me?.user?.databaseAccess))return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});
+      if(!me?.databaseAccess)return Response.json({success:false,error:'Erforderliche Discord-Rolle fehlt.'},{status:403});
       const source=await readSiteFile(request,env,'setups.json');
       return new Response(source.body,{status:source.ok?200:502,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store'}});
     }
@@ -113,3 +113,4 @@ function injectRoleHeader(html){
 function hideEmbeddedSections(html){const css=`<style>body.no-database-access #mfrFilter,body.no-database-access #classFilter{display:none!important}</style>`;const script=`<script>(()=>{document.body.classList.add('no-database-access');const hide=()=>{document.querySelectorAll('#adminPanel,[id*="adminAccess"],.admin-panel,.request-section,#requestForm,#requestLoginRequired').forEach(el=>{const section=el.closest('.request-section')||el;section.classList.add('hidden')});const oldBug=[...document.querySelectorAll('button,a')].find(el=>/bug melden/i.test((el.textContent||'').trim())&&!el.closest('#roleHeaderActions'));if(oldBug)oldBug.classList.add('hidden')};hide();fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(me?.loggedIn&&me?.databaseAccess)document.body.classList.remove('no-database-access');else document.body.classList.add('no-database-access')}).catch(()=>document.body.classList.add('no-database-access'));new MutationObserver(hide).observe(document.body,{childList:true,subtree:true})})();</script>`;return html.replace('</head>',css+'</head>').replace('</body>',script+'</body>');}
 function isPermissionChange(method,path){return(method==='POST'||method==='DELETE')&&(path==='/api/admin/database-access'||path==='/api/admin/upload-access'||path==='/api/admin/all-access'||path==='/api/admin/admin-panel-access')}
 function permissionAuditEvent(method,path,actor,targetUserId){const grant=method==='POST',database=path==='/api/admin/database-access',permission=path==='/api/admin/all-access'?'DATABASE_AND_UPLOAD_DELETE_ACCESS':path==='/api/admin/admin-panel-access'?'ADMIN_PANEL_ACCESS':database?'DATABASE_ACCESS':'UPLOAD_DELETE_ACCESS';return{action:grant?'PERMISSION_GRANT':'PERMISSION_REVOKE',discordAccount:actor.username||null,discordUserId:actor.id,targetDiscordUserId:targetUserId,permission,oldValue:grant?'DENIED':'GRANTED',newValue:grant?'GRANTED':'DENIED',result:'SUCCESS'}}
+

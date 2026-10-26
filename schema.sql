@@ -78,3 +78,4 @@ CREATE TABLE IF NOT EXISTS vehicle_favorites (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, category, vehicle)
 );
+

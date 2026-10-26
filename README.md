@@ -125,3 +125,4 @@ Die Datenbank wird von **Three Peaks Racing** für die LMU-Community betrieben.
 <p align="center">
   <img src=".github/readme/footer.svg" alt="Three Peaks Racing" width="1200">
 </p>
+

@@ -64,3 +64,4 @@ python3 .github/changelog/update_changelog.py --dry-run
 Der Probelauf schreibt keine Dateien. Beide Befehle funktionieren ohne KI-Zugang.
 
 [GitHub: kostenlose Nutzung von Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+

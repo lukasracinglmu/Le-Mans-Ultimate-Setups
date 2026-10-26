@@ -61,3 +61,4 @@ export async function fullAdminApi(request,env,ctx,productionWorker){
   }
   return json({success:false,error:'Methode nicht erlaubt.'},405);
 }
+

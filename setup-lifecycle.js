@@ -105,3 +105,4 @@ export async function enrichSetupLifecycle(setups,category,vehicle,env){
     return setups.map(setup=>({...setup,outdated:states.get(setup.name)?.file_sha===setup.sha&&Number(states.get(setup.name)?.outdated)===1}));
   }catch{return setups;}
 }
+

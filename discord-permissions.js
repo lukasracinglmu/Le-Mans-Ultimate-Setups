@@ -1,8 +1,5 @@
 /* @file-notes: Ermittelt Discord-Rollen, persönliche Freigaben und daraus abgeleitete Website-Berechtigungen. */
 const DEFAULT_OWNER_USER_ID = '1033453785416208564';
-const DEFAULT_OWNER_ROLE_ID = '1464926567401652423';
-const DEFAULT_DATABASE_ROLE_ID = '1464926567401652420';
-const DEFAULT_UPLOAD_ROLE_ID = '1538601074074849330';
 
 export function ownerUserId(env) { return String(env.DISCORD_OWNER_USER_ID || DEFAULT_OWNER_USER_ID); }
 
@@ -10,12 +7,12 @@ export function rolePermissions(userId, roles, env, grants = {}) {
   const hasRole = id => Boolean(id && Array.isArray(roles) && roles.includes(String(id)));
   const isOwner = String(userId) === ownerUserId(env);
   const fullAdmin = isOwner || Boolean(grants.fullAdmin);
-  const canManageDatabaseAccess = fullAdmin || Boolean(grants.adminPanel) || hasRole(env.DISCORD_OWNER_ROLE_ID || DEFAULT_OWNER_ROLE_ID);
-  const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID || DEFAULT_UPLOAD_ROLE_ID);
-  const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID || DEFAULT_DATABASE_ROLE_ID);
+  const canManageDatabaseAccess = fullAdmin || Boolean(grants.adminPanel) || hasRole(env.DISCORD_OWNER_ROLE_ID);
+  const canUpload = fullAdmin || Boolean(grants.upload) || hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
+  const databaseAccess = canUpload || canManageDatabaseAccess || Boolean(grants.database) || hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
   const canViewAdminPanel = fullAdmin || canManageDatabaseAccess || Boolean(grants.adminPanel);
   return { databaseAccess, canUpload, canViewAdminPanel, isOwner, fullAdmin, canViewTickets:isOwner, isAdmin:canManageDatabaseAccess,
-    canManageDatabaseAccess, canManageUploadAccess:canManageDatabaseAccess, canManageAdminAccess:fullAdmin,
+    canManageDatabaseAccess, canManageUploadAccess:canManageDatabaseAccess,
     individualDatabaseAccess:Boolean(grants.database), individualUploadAccess:Boolean(grants.upload), individualFullAdmin:Boolean(grants.fullAdmin) };
 }
 
@@ -43,3 +40,4 @@ export async function resolvePermissions(userId, env) {
   const [database,upload,fullAdmin,adminPanel,result]=await Promise.all([grant('database_access'),grant('upload_access'),grant('full_admin_access'),grant('admin_panel_access'),member()]);
   return { ...rolePermissions(userId,result.roles,env,{ database,upload,fullAdmin,adminPanel }), rolesAvailable:result.available };
 }
+

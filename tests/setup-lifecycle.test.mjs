@@ -114,3 +114,4 @@ test('cleanup retry after a deleted old ZIP is idempotent and leaves replacement
     assert.equal((await applyPreviousSetups(params)).success,true);assert.equal((await applyPreviousSetups(params)).success,true);assert.equal(writes,1);
   }finally{globalThis.fetch=original;}
 });
+

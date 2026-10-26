@@ -19,3 +19,4 @@ Tokens, Session-Secrets, Discord-Schlüssel und GitHub-Zugangsdaten gehören aus
 ## Unterstützte Sicherheitsmaßnahmen
 
 Das Projekt verwendet unter anderem signierte Sessions, CSRF-/Origin-Prüfungen, Content-Security-Policy, sichere Response-Header, Größenlimits, Dateitypprüfung, serverseitige Berechtigungsprüfung sowie automatisierte GitHub-Sicherheitsprüfungen.
+

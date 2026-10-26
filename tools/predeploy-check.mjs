@@ -13,3 +13,4 @@ for (const file of jsFiles) {
 const assets = await readdir('assets');
 if (!assets.includes('bp-logo.webp')) throw new Error('assets/bp-logo.webp fehlt.');
 console.log(`Pre-deploy check erfolgreich: ${jsFiles.length} JavaScript-Dateien und ${assets.length} Asset-Einträge geprüft.`);
+

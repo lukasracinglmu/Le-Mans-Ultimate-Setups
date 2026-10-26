@@ -21,3 +21,4 @@ export async function enrichDisplayNames(setups,category,vehicle,env){
     return setups.map(setup=>({...setup,displayName:rows.get(setup.name)?.file_sha===setup.sha?rows.get(setup.name)?.display_name||null:null}));
   }catch{return setups;}
 }
+

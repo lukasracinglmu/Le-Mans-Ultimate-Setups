@@ -19,3 +19,4 @@ Rechteänderungen, Full-Admin-Änderungen, Admin-Panel-Änderungen sowie Setup- 
 ## Wartungsmodus
 
 Der Wartungsmodus ist für eine editierbare Meldung vorgesehen. Während des Wartungsmodus bleibt der Zugriff für Full-Admins möglich; andere Besucher sehen ausschließlich die Wartungsseite.
+

@@ -17,3 +17,4 @@ for(const [status,action,label] of scenarios)for(const failure of [null,'channel
   else{assert.equal(calls[0].recipient_id,'222222222222222222');if(!failure){assert.equal(calls[1].embeds[0].title,'Ticket 0007 '+label);assert.deepEqual(calls[1].allowed_mentions,{parse:[]});}}
  }finally{globalThis.fetch=original;}
 });
+

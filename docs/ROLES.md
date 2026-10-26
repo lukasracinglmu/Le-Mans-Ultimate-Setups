@@ -49,3 +49,4 @@ Full-Admins können die entsprechenden Rechte verwalten. Die Haupt-Owner-Rechte 
 ## Grundsatz
 
 Die Berechtigungen werden sowohl in der Benutzeroberfläche als auch serverseitig geprüft. Das Ausblenden eines Bereichs allein gilt nicht als Sicherheitsmaßnahme; nicht erlaubte API-Aufrufe werden ebenfalls abgewiesen.
+

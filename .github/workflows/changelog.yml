@@ -72,3 +72,4 @@ jobs:
           done
           echo '::error::Changelog konnte nach drei Versuchen nicht gespeichert werden.'
           exit 1
+

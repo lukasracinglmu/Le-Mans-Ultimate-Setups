@@ -29,3 +29,4 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 -m unittest discover -s .github/changelog -p 'test_*.py' -v
+

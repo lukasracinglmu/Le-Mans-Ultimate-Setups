@@ -24,3 +24,4 @@ PRESENCE
 SECURITY
 - Never commit the real Discord token.
 - Keep the real token only in Wispbyte's .env/environment settings.
+

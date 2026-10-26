@@ -111,7 +111,7 @@ export default {
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
       const me = await getBaseMe(request, env, ctx);
       if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
-      if (!(me.databaseAccess??me.user?.databaseAccess)) return json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Kein Zugriff auf die Setup Database."},me.rolesAvailable===false?503:403);
+      if (!me.databaseAccess) return json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Kein Zugriff auf die Setup Database."},me.rolesAvailable===false?503:403);
       return uiWorker.fetch(request, env, ctx);
     }
 
@@ -228,4 +228,5 @@ function injectAdminUi(html) {
 }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
 function json(data, status=200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
+
 

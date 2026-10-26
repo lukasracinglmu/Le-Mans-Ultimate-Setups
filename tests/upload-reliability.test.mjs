@@ -132,3 +132,4 @@ test('full upload handler recovers ZIP after D1 fails without re-uploading its b
     const unauth=await worker.fetch(new Request('https://example.test/api/setups/upload',{method:'POST',body:'x'}),env);assert.equal(unauth.status,401);
   }finally{globalThis.fetch=original;}
 });
+

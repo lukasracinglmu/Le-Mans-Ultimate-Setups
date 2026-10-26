@@ -32,3 +32,4 @@ test('ticket numbers use white in every status',()=>{
  const html=readFileSync(new URL('../bug-tickets.html',import.meta.url),'utf8');
  assert.match(html,/\.nr\{color:#fff;/);
 });
+
