@@ -1,0 +1,33 @@
+name: Migrate Existing Backups
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy existing backup tags to private backup repository
+        env:
+          BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
+        run: |
+          set -euo pipefail
+
+          if [ -z "${BACKUP_TOKEN:-}" ]; then
+            echo "BACKUP_REPO_TOKEN is not configured."
+            exit 1
+          fi
+
+          WORK="$(mktemp -d)"
+          trap 'rm -rf "$WORK"' EXIT
+          git clone --mirror "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" "$WORK/source.git"
+
+          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --all
+          git -C "$WORK/source.git" push "https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git" --tags
+
+          echo "Existing repository history and backup tags were copied."
+          echo "The old backup tags are intentionally kept until the copy is verified."
