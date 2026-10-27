@@ -75,7 +75,7 @@ async function removeBackupIndex(env,tag){
 function backupTagDate(tag){
   const current=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})\/(\d{2})-(\d{2})-(\d{2})(?:-|$)/);
   if(current){const date=new Date(Date.UTC(Number(current[1]),Number(current[3])-1,Number(current[2]),Number(current[4]),Number(current[5]),Number(current[6])));return Number.isNaN(date.getTime())?null:date;}
-  const legacy=String(tag||'').match(/^backup-(\\d{4})-(\\d{2})-(\\d{2})(?:-|$)/);
+  const legacy=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-|$)/);
   if(!legacy)return null;
   const date=new Date(Date.UTC(Number(legacy[1]),Number(legacy[2])-1,Number(legacy[3]),23,59,59));
   return Number.isNaN(date.getTime())?null:date;
@@ -116,8 +116,11 @@ async function createBackup(env,now=new Date(),force=false){
   const branchData=await branch.json(),sha=branchData.object?.sha;
   if(!sha)throw Error('GitHub main SHA fehlt.');
   const stamp=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now).map(x=>[x.type,x.value]));
-  const tag=`backup-${stamp.year}-${stamp.day}-${stamp.month}/${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
-  const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
+  const preferredTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}/${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
+  const safeTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}-${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
+  let tag=preferredTag;
+  let response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
+  if(!response.ok&&response.status!==422){tag=safeTag;response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});}
   if(!response.ok&&response.status!==422)throw Error('GitHub Backup konnte nicht erstellt werden.');
   await writeBackupIndex(env,tag,now).catch(()=>{});
   if(env.ACCESS_DB)await env.ACCESS_DB.prepare('INSERT OR REPLACE INTO automatic_backups (slot,tag) VALUES (?,?)').bind(key,tag).run();
