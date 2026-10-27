@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:56:16.459Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Le Mans beAlien.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Le Mans beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
