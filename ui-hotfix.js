@@ -148,8 +148,9 @@ const HOTFIX_JS = `<script>
       if(!d.databaseAccess){showAccessState('forbidden',d.user);return;}
       showAccessState('authorized',d.user);
       if(typeof loadData==='function')await loadData();
+      // The URL is the route: a plain home link must never restore a saved car.
+      if(typeof openSetupFromQuery==='function')await openSetupFromQuery();
       syncCarFilter();initVersionEditor();setTimeout(refreshVehicleCounts,0);
-      try{const saved=JSON.parse(sessionStorage.getItem('tpr-open-vehicle')||'null');if(saved?.category&&saved?.vehicle&&typeof window.showCar==='function'){await window.showCar(saved.category,saved.vehicle,{__history:true});history.replaceState({lmuPage:'car',category:saved.category,vehicle:saved.vehicle},'',location.href);window.scrollTo(0,0);}}catch{}
     }catch{setLoginControls(false);showAccessState('login');}
   };
 
@@ -157,11 +158,9 @@ const HOTFIX_JS = `<script>
     initLogo();initManufacturerCarousel();initVersionEditor();const layout=document.querySelector('.layout');const upcoming=document.getElementById('upcoming');const main=layout?.querySelector('main');if(layout&&upcoming&&main&&upcoming.previousElementSibling!==main)layout.appendChild(upcoming);initResize();
     window.renderSetups=renderVendorSetups;
     const originalShowCar=window.showCar;
-    const originalShowHome=window.showHome;
-    if(history.state?.lmuPage!=='home'&&history.state?.lmuPage!=='car')history.replaceState({lmuPage:'home'},'',location.href);
-    if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(category,vehicle,opts){if(document.documentElement.dataset.dbAccess!=='authorized')return;const fromHistory=opts&&opts.__history===true;try{sessionStorage.setItem('tpr-open-vehicle',JSON.stringify({category,vehicle}));}catch{}if(!fromHistory)history.pushState({lmuPage:'car',category,vehicle},'',location.href);const r=await originalShowCar.call(this,category,vehicle);syncCarFilter();renderVendorSetups(currentCarSetups);window.scrollTo(0,0);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
-    if(typeof originalShowHome==='function'&&!originalShowHome.__historyWrapped){const wrapped=function(opts){const fromHistory=opts&&opts.__history===true;if(!fromHistory&&document.getElementById('carPage')?.classList.contains('active')){try{sessionStorage.removeItem('tpr-open-vehicle');}catch{}history.back();return;}try{sessionStorage.removeItem('tpr-open-vehicle');}catch{}return originalShowHome.call(this);};wrapped.__historyWrapped=true;window.showHome=wrapped;}
-    window.addEventListener('popstate',async(e)=>{const state=e.state;if(state?.lmuPage==='car'&&state.category&&state.vehicle){await window.showCar(state.category,state.vehicle,{__history:true});return;}if(typeof originalShowHome==='function')originalShowHome();});
+    // Retire the old tab-wide restore state; index.html alone manages history.
+    try{sessionStorage.removeItem('tpr-open-vehicle');}catch{}
+    if(typeof originalShowCar==='function'&&!originalShowCar.__hotfixed){const wrapped=async function(category,vehicle,updateHistory=true){if(document.documentElement.dataset.dbAccess!=='authorized')return;const r=await originalShowCar.call(this,category,vehicle,updateHistory);syncCarFilter();renderVendorSetups(currentCarSetups);window.scrollTo(0,0);return r;};wrapped.__hotfixed=true;window.showCar=wrapped;}
     document.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(!link)return;try{const path=new URL(link.href,location.href).pathname;if(['/admin','/bug-tickets','/request','/bug-report'].includes(path))sessionStorage.removeItem('tpr-open-vehicle');}catch{}});    const categories=document.getElementById('categories');if(categories)new MutationObserver(()=>refreshVehicleCounts()).observe(categories,{childList:true,subtree:false});
     authorize();
   };
@@ -171,7 +170,7 @@ const HOTFIX_JS = `<script>
 
 function applyHotfix(html){
   let out=html;
-  out=out.replace(/loadTheme\(\);initManufacturer\(\);checkLogin\(\);loadData\(\);/g,'loadTheme();');
+  out=out.replace(/loadTheme\(\);(?:initManufacturer\(\);)?checkLogin\(\);loadData\(\)(?:\.then\(openSetupFromQuery\))?;/g,'loadTheme();');
   if(out.includes('</style>')) out=out.replace('</style>',HOTFIX_CSS+'\n</style>');
   else out=out.replace('</head>','<style>'+HOTFIX_CSS+'</style></head>');
   out=out.replace('</body>',HOTFIX_JS+'\n</body>');
@@ -187,5 +186,3 @@ export default {
     return new Response(applyHotfix(await response.text()),{status:response.status,statusText:response.statusText,headers});
   }
 };
-
-
