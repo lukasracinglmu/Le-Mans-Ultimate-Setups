@@ -5,7 +5,8 @@ function backupOwner(env){return env.BACKUP_GITHUB_OWNER||env.GITHUB_OWNER||'luk
 function backupRepoName(env){return env.BACKUP_GITHUB_REPO||'LMU-Database-Backups';}
 function backupBranch(env){return env.BACKUP_GITHUB_BRANCH||'KNOWN_GOOD_ROLLBACK';}
 function headers(env){
-  return {Accept:'application/vnd.github+json','Content-Type':'application/json','User-Agent':'lmu-automatic-backup','X-GitHub-Api-Version':'2022-11-28',Authorization:`Bearer ${env.GITHUB_TOKEN}`};
+  const token=env.BACKUP_GITHUB_TOKEN||env.GITHUB_TOKEN;
+  return {Accept:'application/vnd.github+json','Content-Type':'application/json','User-Agent':'lmu-automatic-backup','X-GitHub-Api-Version':'2022-11-28',Authorization:`Bearer ${token}`};
 }
 function localBackupSlot(now=new Date()){
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now);
@@ -81,7 +82,7 @@ function backupTagDate(tag){
   return Number.isNaN(date.getTime())?null:date;
 }
 async function cleanupOldBackups(env,now=new Date()){
-  if(!env.GITHUB_TOKEN||!backupOwner(env)||!backupRepoName(env))return {deleted:0};
+  if(!(env.BACKUP_GITHUB_TOKEN||env.GITHUB_TOKEN)||!backupOwner(env)||!backupRepoName(env))return {deleted:0};
   const cutoff=now.getTime()-5*24*60*60*1000;
   const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs/tags?per_page=100`,{headers:headers(env)});
@@ -103,7 +104,7 @@ async function cleanupOldBackups(env,now=new Date()){
 }
 async function createBackup(env,now=new Date(),force=false){
   const slot=localBackupSlot(now);
-  if((!slot&&!force)||!env.GITHUB_TOKEN||!backupOwner(env)||!backupRepoName(env))return {skipped:true};
+  if((!slot&&!force)||!(env.BACKUP_GITHUB_TOKEN||env.GITHUB_TOKEN)||!backupOwner(env)||!backupRepoName(env))return {skipped:true};
   const backupDate=slot||Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).map(x=>[x.type,x.value]));
   const key=`${backupDate.year}-${backupDate.month}-${backupDate.day}`;
   if(env.ACCESS_DB){
