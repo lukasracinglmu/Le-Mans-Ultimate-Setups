@@ -266,8 +266,8 @@ client.on('interactionCreate', async interaction => {
         .setStyle(ButtonStyle.Success)
     );
     await channel.send({
-      content: `<@&${requestRoleId}>`,
-      allowedMentions: { roles: [requestRoleId], users: [interaction.user.id] },
+      content: 'Neue Setup-Anfrage',
+      allowedMentions: { users: [interaction.user.id] },
       flags: MessageFlags.SuppressNotifications,
       embeds: [embed],
       components: [confirmRow]
