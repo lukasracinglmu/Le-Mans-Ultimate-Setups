@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:26:25.313Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "GO V1.4.3 ORECA WEC LMP2 COTA.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "GO V1.4.3 ORECA WEC LMP2 COTA",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
