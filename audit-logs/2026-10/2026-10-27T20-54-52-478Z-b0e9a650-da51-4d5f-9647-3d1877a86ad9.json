@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:54:52.478Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Imola HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Imola HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
