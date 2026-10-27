@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:58:38.673Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Bahrain HYMO (Version V1.4.3).zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Bahrain HYMO (Version V1.4.3)",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
