@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:15:37.439Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Portimao HYMO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Portimao HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
