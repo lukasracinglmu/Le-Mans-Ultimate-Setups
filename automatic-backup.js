@@ -3,6 +3,7 @@ const GITHUB_API='https://api.github.com';
 
 function backupOwner(env){return env.BACKUP_GITHUB_OWNER||env.GITHUB_OWNER||'lukasracinglmu';}
 function backupRepoName(env){return env.BACKUP_GITHUB_REPO||'LMU-Database-Backups';}
+function backupBranch(env){return env.BACKUP_GITHUB_BRANCH||'KNOWN_GOOD_ROLLBACK';}
 function headers(env){
   return {Accept:'application/vnd.github+json','Content-Type':'application/json','User-Agent':'lmu-automatic-backup','X-GitHub-Api-Version':'2022-11-28',Authorization:`Bearer ${env.GITHUB_TOKEN}`};
 }
@@ -59,13 +60,13 @@ async function writeBackupIndex(env,tag,now){
 
 [Download this complete backup as ZIP](https://github.com/${repo}/archive/refs/tags/${tag}.zip)
 `;
-  const response=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'PUT',headers:headers(env),body:JSON.stringify({message:`Add backup ${tag} to index`,content:btoa(text),branch:'main'})});
+  const response=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'PUT',headers:headers(env),body:JSON.stringify({message:`Add backup ${tag} to index`,content:btoa(text),branch:backupBranch(env)})});
   if(!response.ok&&response.status!==422)throw Error('Backup-Übersicht konnte nicht aktualisiert werden.');
 }
 async function removeBackupIndex(env,tag){
   const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
   const path=await backupIndexFile(env,tag);
-  const current=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=main`,{headers:headers(env)});
+  const current=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=${encodeURIComponent(backupBranch(env))}`,{headers:headers(env)});
   if(!current.ok)return;
   const data=await current.json();
   await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:'main'})});
@@ -107,7 +108,7 @@ async function createBackup(env,now=new Date(),force=false){
     if(!force&&await env.ACCESS_DB.prepare('SELECT slot FROM automatic_backups WHERE slot=?').bind(key).first())return {skipped:true,reason:'already-created'};
   }
   const repo=`${backupOwner(env)}/${backupRepoName(env)}`;
-  const branch=await fetch(`${GITHUB_API}/repos/${repo}/git/ref/heads/${env.GITHUB_BRANCH||'main'}`,{headers:headers(env)});
+  const branch=await fetch(`${GITHUB_API}/repos/${repo}/git/ref/heads/${backupBranch(env)}`,{headers:headers(env)});
   if(!branch.ok)throw Error('GitHub main ref konnte nicht gelesen werden.');
   const branchData=await branch.json(),sha=branchData.object?.sha;
   if(!sha)throw Error('GitHub main SHA fehlt.');
