@@ -47,7 +47,8 @@ async function notifyOwner(env,tag,now,size){
   await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
 async function backupIndexFile(env,tag){
-  const date=String(tag).slice(7,17);
+  const match=String(tag).match(/^backup-(?:\\d{2}-\\d{2}-\\d{4}|\\d{4}-\\d{2}-\\d{2})/);
+  const date=match?match[0].slice(7):'unknown-date';
   return `backups/${date}/${tag}.md`;
 }
 async function writeBackupIndex(env,tag,now){
@@ -72,9 +73,11 @@ async function removeBackupIndex(env,tag){
   await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:'main'})});
 }
 function backupTagDate(tag){
-  const match=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-|$)/);
-  if(!match)return null;
-  const date=new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]),23,59,59));
+  const current=String(tag||'').match(/^backup-(\\d{2})-(\\d{2})-(\\d{4})-(\\d{2})-(\\d{2})-(\\d{2})(?:-|$)/);
+  if(current){const date=new Date(Date.UTC(Number(current[3]),Number(current[2])-1,Number(current[1]),Number(current[4]),Number(current[5]),Number(current[6])));return Number.isNaN(date.getTime())?null:date;}
+  const legacy=String(tag||'').match(/^backup-(\\d{4})-(\\d{2})-(\\d{2})(?:-|$)/);
+  if(!legacy)return null;
+  const date=new Date(Date.UTC(Number(legacy[1]),Number(legacy[2])-1,Number(legacy[3]),23,59,59));
   return Number.isNaN(date.getTime())?null:date;
 }
 async function cleanupOldBackups(env,now=new Date()){
@@ -112,7 +115,8 @@ async function createBackup(env,now=new Date(),force=false){
   if(!branch.ok)throw Error('GitHub main ref konnte nicht gelesen werden.');
   const branchData=await branch.json(),sha=branchData.object?.sha;
   if(!sha)throw Error('GitHub main SHA fehlt.');
-  const tag=`backup-${key}${force?`-${Date.now()}`:''}`;
+  const stamp=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now).map(x=>[x.type,x.value]));
+  const tag=`backup-${stamp.day}-${stamp.month}-${stamp.year}-${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
   const response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
   if(!response.ok&&response.status!==422)throw Error('GitHub Backup konnte nicht erstellt werden.');
   await writeBackupIndex(env,tag,now).catch(()=>{});
