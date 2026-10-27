@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T17:52:36.808Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Alpine Qatar HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Qatar HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
