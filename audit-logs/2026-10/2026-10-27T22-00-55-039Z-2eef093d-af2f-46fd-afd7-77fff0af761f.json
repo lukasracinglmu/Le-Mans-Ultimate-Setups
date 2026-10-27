@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:00:55.039Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "GO V1.4.2 GMR001 HYP Le Mans.zip",
+  "vehicle": "Genesis GMR-001",
+  "track": "GO V1.4.2 GMR001 HYP Le Mans",
+  "manufacturer": "GO",
+  "version": "1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
