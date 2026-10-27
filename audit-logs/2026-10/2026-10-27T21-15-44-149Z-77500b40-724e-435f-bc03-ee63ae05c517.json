@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:15:44.149Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Paul Ricard HYMO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Paul Ricard HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
