@@ -41,6 +41,7 @@ export default {
       if (p === "/interactions/discord" && m === "POST") return discordInteraction(request, env);
 
       if (p === "/api/me" && m === "GET") return currentUser(request, env);
+      if (p === "/api/admin/discord/role-status" && m === "GET") return discordRoleStatus(request, env);
       if (p === "/api/favorites" && (m === "GET" || m === "POST" || m === "DELETE")) return favoritesApi(request, env);
       if (p === "/api/setups" && m === "GET") return listSetups(request, env);
       if (p === "/api/setups/download" && m === "GET") return downloadSetup(request, env);
@@ -185,6 +186,31 @@ async function requireOwner(request, env) {
   return {session};
 }
 
+// Owner-only diagnostics: inspect Discord responses without returning credentials.
+async function discordRoleStatus(request, env) {
+  const auth=await requireOwner(request,env);
+  if(auth.error)return auth.error;
+  const targetId=new URL(request.url).searchParams.get("userId")||auth.session.id;
+  if(!/^\d{16,22}$/.test(targetId))return json({success:false,error:"Ungültige Discord User ID."},400);
+  const probe=async path=>{
+    if(!env.DISCORD_BOT_TOKEN)return {status:0,code:"BOT_TOKEN_MISSING",data:null};
+    try{
+      const r=await fetch(DISCORD_API+path,{headers:{Authorization:`Bot ${env.DISCORD_BOT_TOKEN}`},signal:AbortSignal.timeout(8000)});
+      const data=await r.json().catch(()=>null);
+      return {status:r.status,code:r.ok?null:data?.code||"DISCORD_ERROR",data:r.ok?data:null};
+    }catch{return {status:0,code:"DISCORD_UNAVAILABLE",data:null};}
+  };
+  const [identity,guildRoles,member]=await Promise.all([
+    probe("/users/@me"),
+    probe("/guilds/"+encodeURIComponent(env.DISCORD_GUILD_ID||"")+"/roles"),
+    probe("/guilds/"+encodeURIComponent(env.DISCORD_GUILD_ID||"")+"/members/"+encodeURIComponent(targetId))
+  ]);
+  const configured={team:env.DISCORD_DATABASE_ROLE_ID,setupSupply:env.DISCORD_UPLOAD_ROLE_ID||env.DISCORD_ROLE_ID,owner:env.DISCORD_OWNER_ROLE_ID};
+  const roles=Array.isArray(guildRoles.data)?guildRoles.data:[];
+  const memberRoles=Array.isArray(member.data?.roles)?member.data.roles:[];
+  return json({success:true,bot:{status:identity.status,code:identity.code,applicationMatches:identity.data?String(identity.data.id)===String(env.DISCORD_CLIENT_ID):null},guild:{status:guildRoles.status,code:guildRoles.code,id:env.DISCORD_GUILD_ID},configuredRoles:Object.fromEntries(Object.entries(configured).map(([key,id])=>[key,{id,exists:roles.some(role=>role.id===id),name:roles.find(role=>role.id===id)?.name||null}])),member:{userId:targetId,status:member.status,code:member.code,roles:memberRoles},session:{memberScopeRequested:"guilds.members.read",hasMemberToken:Boolean(auth.session.accessToken)}});
+}
+
 async function listUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC").all(); return json({ success: true, grants: result.results || [] }); }
 async function grantUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const userId = String(body.userId || "").trim(); if (!/^\d{16,22}$/.test(userId)) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("INSERT INTO upload_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by = excluded.granted_by, created_at = CURRENT_TIMESTAMP").bind(userId, auth.session.id).run(); return json({ success: true, userId }); }
 async function revokeUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); let body; try { body = await request.json(); } catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); } const userId = String(body.userId || "").trim(); if (!/^\d{16,22}$/.test(userId)) return json({ success: false, error: "Ungültige Discord User ID." }, 400); await env.ACCESS_DB.prepare("DELETE FROM upload_access WHERE user_id = ?").bind(userId).run(); return json({ success: true, userId }); }
@@ -260,4 +286,3 @@ function base64ToBytes(b){const s=atob(b),a=new Uint8Array(s.length);for(let i=0
 function logout(){const h=securityHeaders(new Headers({Location:"/"}));h.append("Set-Cookie",cookie(SESSION_COOKIE,"",0));return new Response(null,{status:302,headers:h})}
 function json(d,s=200){return new Response(JSON.stringify(d),{status:s,headers:securityHeaders(new Headers({"Content-Type":"application/json; charset=UTF-8","Cache-Control":"no-store"}))})}
 async function serveHome(request,env){const r=await readSiteFile(request,env,"index.html");const h=securityHeaders(new Headers(r.headers));h.set("Content-Type",r.ok?"text/html; charset=utf-8":"text/plain; charset=utf-8");h.set("Cache-Control","no-store");return new Response(r.body,{status:r.status,statusText:r.statusText,headers:h})}
-
