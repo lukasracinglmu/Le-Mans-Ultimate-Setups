@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:56:25.768Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Road Atlanta GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Road Atlanta GO",
+  "manufacturer": "GO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
