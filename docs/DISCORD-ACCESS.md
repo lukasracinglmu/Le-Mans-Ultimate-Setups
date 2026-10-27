@@ -8,14 +8,15 @@
 4. Erst eine bestätigte Rollenliste wird in Website-Rechte übersetzt. Persönliche Freigaben werden zusätzlich aus D1 gelesen.
 5. Fehlende Rollen führen zu einer Zugriffsverweigerung. Ein Timeout, ein Discord-Limit oder eine fehlgeschlagene Abfrage wird als vorübergehender Prüfungsfehler angezeigt.
 
-## Team und Setup Supply
+## Automatische Serverrollen
 
 | Rolle | Datenbank / Download | Upload / Bearbeiten / Veraltet / Löschen | Admin-Panel |
 | --- | --- | --- | --- |
 | Team (`1464926567401652420`) | Ja | Nein | Nein |
 | Setup Supply (`1538601074074849330`) | Ja | Ja | Nein |
+| Konfigurierte Owner-Rolle (`1464926567401652423`) | Ja | Ja | Ja, Database-/Upload-Freigaben und Benutzerliste |
 
-Zusätzliche, ausdrücklich erteilte persönliche Freigaben gelten weiterhin. Dieser Fix verändert die bestehende Zuordnung der Owner-, Admin- und Full-Admin-Rechte nicht. Tickets, Backups und Wartungsmodus bleiben auf die persönliche Owner-ID beschränkt.
+Alle drei Rollen werden beim Discord-Login automatisch auf demselben Weg abgefragt; eine manuelle Freigabe ist dafür nicht nötig. Die Owner-Rolle umfasst auch Upload, Bearbeiten, Veraltet/Aktuell und Löschen. Zusätzliche, ausdrücklich erteilte persönliche Freigaben gelten weiterhin. Die Discord-Owner-Rolle ist nicht mit der persönlichen Owner-ID oder einer Full-Admin-Freigabe gleichzusetzen. Tickets, Backups und Wartungsmodus bleiben auf die persönliche Owner-ID beschränkt.
 
 ## Kurzzeitiger Rollen-Zwischenspeicher
 

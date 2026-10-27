@@ -16,7 +16,7 @@ function clean(value) { const v = String(value ?? "").trim(); return v || null; 
 function classifyManufacturer(name) {
   const n = String(name || "").toUpperCase();
   if (n.includes("HYMO")) return "HYMO";
-  if (n.includes("BEALIEN") || n.includes("BE_ALIEN")) return "beAlien";
+  if (n.includes("BEALIEN") || n.includes("BE_ALIEN") || /(?:^|[^A-Z0-9])BA[12]?(?=$|[^A-Z0-9])/.test(n)) return "beAlien";
   if (n.includes(" GO") || n.includes("_GO") || /\bGO\b/.test(n)) return "GO";
   return null;
 }
@@ -139,5 +139,3 @@ export async function writeSetupAuditEvent(event, env) {
   catch (error) { console.error("Discord audit failed", error instanceof Error ? error.message : "unknown"); }
   return safe;
 }
-
-

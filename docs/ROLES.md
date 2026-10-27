@@ -21,8 +21,9 @@ Diese Übersicht beschreibt die vorgesehenen Website-Rechte der Discord-Rollen.
 
 - Sieht **Bug melden**, **Setup Request** und **Admin-Panel**.
 - Hat vollständige Rechte für Upload, Bearbeitung und Löschung von Setups.
-- Kann Database-, Upload/Delete- und Admin-Panel-Freigaben verwalten.
-- Full-Admins können zusätzlich den Wartungsmodus und weitere Adminrechte verwalten.
+- Kann Database- und Upload/Delete-Freigaben verwalten und die Liste freigegebener Nutzer sehen.
+- Die Rollen-Zuordnung erfolgt automatisch über denselben Anmeldeweg wie für Team und Setup Supply.
+- Diese Serverrolle erteilt keine persönlichen Owner-Rechte für Tickets, Backups oder Wartungsmodus.
 
 ## Individuelle Admin-Freigaben
 
@@ -41,12 +42,10 @@ Eine Person mit Full-Admin-Freigabe sieht alle Bereiche:
 
 - Database- und Upload-Rechte
 - Admin-Rechte
-- Wartungsmodus
 - Freigegebene User
 
-Full-Admins können die entsprechenden Rechte verwalten. Die Haupt-Owner-Rechte bleiben davon getrennt und können nicht entfernt werden.
+Tickets, Backups und Wartungsmodus bleiben ausschließlich dem persönlichen Owner vorbehalten. Eine Full-Admin-Freigabe oder die Discord-Owner-Rolle gibt diese Bereiche nicht frei.
 
 ## Grundsatz
 
 Die Berechtigungen werden sowohl in der Benutzeroberfläche als auch serverseitig geprüft. Das Ausblenden eines Bereichs allein gilt nicht als Sicherheitsmaßnahme; nicht erlaubte API-Aufrufe werden ebenfalls abgewiesen.
-

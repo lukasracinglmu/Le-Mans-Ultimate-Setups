@@ -10,7 +10,7 @@ const userId='222222222222222222',targetId='333333333333333333';
 for(const [name,roles,grants,read,write,admin] of [
   ['Team',[envBase.DISCORD_DATABASE_ROLE_ID],{},true,false,false],
   ['Setup Supply',[envBase.DISCORD_UPLOAD_ROLE_ID],{},true,true,false],
-  ['Owner role',[envBase.DISCORD_OWNER_ROLE_ID],{},true,false,true],
+  ['Owner role',[envBase.DISCORD_OWNER_ROLE_ID],{},true,true,true],
   ['Owner and Supply',[envBase.DISCORD_OWNER_ROLE_ID,envBase.DISCORD_UPLOAD_ROLE_ID],{},true,true,true],
   ['Request ping',[envBase.DISCORD_SETUP_REQUEST_ROLE_ID],{},false,false,false],
   ['No role',[],{},false,false,false],
@@ -61,7 +61,7 @@ test('both worker layers expose the same Team/Supply/Owner capabilities',async()
       const a=await (await accessWorker.fetch(await request('/api/me'),env,ctx)).json();
       const b=await (await worker.fetch(await request('/api/me'),env,ctx)).json();
       assert.equal(a.databaseAccess,b.databaseAccess);assert.equal(a.user.canUpload,b.user.canUpload);assert.equal(a.user.canManageDatabaseAccess,b.user.canManageDatabaseAccess);
-      assert.equal(a.user.canUpload,roles.includes(envBase.DISCORD_UPLOAD_ROLE_ID));
+      assert.equal(a.user.canUpload,roles.includes(envBase.DISCORD_UPLOAD_ROLE_ID)||roles.includes(envBase.DISCORD_OWNER_ROLE_ID));
     });
   }
 });
@@ -91,8 +91,8 @@ test('Team and Setup Supply cannot manage external access',async()=>{
   }
 });
 
-test('Setup Supply can delete through both guards using the correct GitHub path',async()=>{
-  await harness([envBase.DISCORD_UPLOAD_ROLE_ID],async({env,request,ctx,github})=>{
+for(const role of [envBase.DISCORD_UPLOAD_ROLE_ID,envBase.DISCORD_OWNER_ROLE_ID])test('Supply/Owner role '+role+' can delete through both guards using the correct GitHub path',async()=>{
+  await harness([role],async({env,request,ctx,github})=>{
     const r=await accessWorker.fetch(await request('/api/setups/delete','POST',{category:'Hypercar',vehicle:'Test Car',name:'test.zip'}),env,ctx);
     assert.equal(r.status,200);
     const deletion=github.find(r=>r.options.method==='DELETE');
@@ -100,8 +100,8 @@ test('Setup Supply can delete through both guards using the correct GitHub path'
   });
 });
 
-test('Team, Request ping and Owner role alone cannot change or delete setups',async()=>{
-  for(const role of [envBase.DISCORD_DATABASE_ROLE_ID,envBase.DISCORD_SETUP_REQUEST_ROLE_ID,envBase.DISCORD_OWNER_ROLE_ID]){
+test('Team and Request ping alone cannot change or delete setups',async()=>{
+  for(const role of [envBase.DISCORD_DATABASE_ROLE_ID,envBase.DISCORD_SETUP_REQUEST_ROLE_ID]){
     await harness([role],async({env,request,ctx,github,writes})=>{
       for(const path of ['/api/setups/delete','/api/setups/version','/api/setups/upload']){
         assert.equal((await accessWorker.fetch(await request(path,'POST',{category:'Hypercar',vehicle:'Test Car',name:'test.zip',version:'v2'}),env,ctx)).status,403);
@@ -125,8 +125,8 @@ test('Discord outages fail closed with a temporary status instead of granting ac
   },{discordStatus:503});
 });
 
-test('Setup Supply can change setup versions without the Team or ping role',async()=>{
-  await harness([envBase.DISCORD_UPLOAD_ROLE_ID],async({env,request,ctx,writes})=>{
+for(const role of [envBase.DISCORD_UPLOAD_ROLE_ID,envBase.DISCORD_OWNER_ROLE_ID])test('Supply/Owner role '+role+' can change setup versions without the Team or ping role',async()=>{
+  await harness([role],async({env,request,ctx,writes})=>{
     const r=await accessWorker.fetch(await request('/api/setups/version','POST',{category:'Hypercar',vehicle:'Test Car',name:'test.zip',version:'v3'}),env,ctx);
     assert.equal(r.status,200);assert.equal((await r.json()).version,'v3');
     assert.ok(writes.some(w=>w.sql.includes('INSERT INTO setup_versions')&&w.params[3]==='v3'));

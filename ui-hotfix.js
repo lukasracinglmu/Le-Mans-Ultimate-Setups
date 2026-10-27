@@ -40,7 +40,7 @@ const HOTFIX_JS = `<script>
   ];
   const vendors=['GO','HYMO','beAlien'];
   const widthKey='tpr-upcoming-width';
-  const classify=(name)=>typeof classifyVendor==='function'?classifyVendor(name):(()=>{const n=String(name||'').toUpperCase();if(n.includes('HYMO'))return'HYMO';if(n.includes('BEALIEN')||n.includes('BE_ALIEN'))return'beAlien';if(n.includes(' GO')||n.includes('_GO')||/\\bGO\\b/.test(n))return'GO';return null;})();
+  const classify=(name)=>typeof classifyVendor==='function'?classifyVendor(name):(()=>{const n=String(name||'').toUpperCase();if(n.includes('HYMO'))return'HYMO';if(n.includes('BEALIEN')||n.includes('BE_ALIEN')||/(?:^|[^A-Z0-9])BA[12]?(?=$|[^A-Z0-9])/.test(n))return'beAlien';if(n.includes(' GO')||n.includes('_GO')||/\\bGO\\b/.test(n))return'GO';return null;})();
   const currentMfr=()=>typeof activeMfr==='string'?activeMfr:(document.querySelector('#mfrFilter .mfr-btn.active')?.dataset.mfr||'');
   const clampWidth=(value)=>{const min=220;const viewport=document.documentElement.clientWidth||window.innerWidth;const max=Math.max(min,Math.min(460,Math.floor(viewport*0.34),Math.max(min,viewport-520)));return Math.max(min,Math.min(max,Math.round(value||260)));};
 

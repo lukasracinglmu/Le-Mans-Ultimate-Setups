@@ -20,13 +20,17 @@ const env={...config,ACCESS_DB:emptyDB};
 const ctx={waitUntil(p){p.catch(()=>{});}};
 async function external(mock,run){const original=fetch;globalThis.fetch=mock;try{return await run();}finally{globalThis.fetch=original;}}
 const roleResult=roles=>Response.json({roles,user:{id}});
-test('OAuth login asks for guild membership and new Team users receive roles without grants',async()=>{
+for(const [label,role,upload,admin] of [
+ ['Team',config.DISCORD_DATABASE_ROLE_ID,false,false],
+ ['Setup Supply',config.DISCORD_UPLOAD_ROLE_ID,true,false],
+ ['Server Owner role',config.DISCORD_OWNER_ROLE_ID,true,true]
+])test('OAuth login automatically grants '+label+' permissions without manual grants',async()=>{
  let oauthLookups=0,botLookups=0,githubReads=0;
  await external(async(url,opts={})=>{
    const value=String(url);
    if(value.endsWith('/oauth2/token'))return Response.json({access_token:'test-oauth',scope:'identify guilds.members.read',expires_in:604800});
    if(value.endsWith('/users/@me'))return Response.json({id,username:'Team User'});
-   if(value.includes('/users/@me/guilds/')){oauthLookups++;assert.equal(opts.headers.Authorization,'Bearer test-oauth');return roleResult([config.DISCORD_DATABASE_ROLE_ID]);}
+   if(value.includes('/users/@me/guilds/')){oauthLookups++;assert.equal(opts.headers.Authorization,'Bearer test-oauth');return roleResult([role]);}
    if(value.includes('discord.com')){botLookups++;throw Error('OAuth should avoid shared bot calls');}
    if(value.includes('api.github.com')){githubReads++;return value.includes('/contents/setups.json')?Response.json({Hypercar:[{name:'Test Car'}]}):Response.json([]);}
    throw Error('Unexpected request');
@@ -40,7 +44,9 @@ test('OAuth login asks for guild membership and new Team users receive roles wit
    const cookie=callback.headers.getSetCookie().find(c=>c.startsWith('lmu_session=')).split(';')[0];
    const me=await runtime.fetch(request('/api/me',cookie),env,ctx);
    const data=await me.json();
-   assert.equal(data.databaseAccess,true);assert.equal(data.user.canUpload,false);assert.equal(data.user.canViewAdminPanel,false);
+   assert.equal(data.databaseAccess,true);assert.equal(data.user.canUpload,upload);assert.equal(data.user.canViewAdminPanel,admin);
+   assert.equal(data.user.canManageDatabaseAccess,admin);assert.equal(data.user.canManageUploadAccess,admin);
+   for(const capability of ['isOwner','fullAdmin','canManageAdminAccess','canViewBackups','canViewTickets','canManageMaintenance'])assert.equal(data.user[capability],false);
    assert.equal(data.user.individualDatabaseAccess,false);assert.equal(data.roleSource,'oauth');
    assert.equal(data.memberSnapshot,undefined);assert.equal(data.user.accessToken,undefined);
    assert.equal(oauthLookups,1);assert.equal(botLookups,0);
@@ -53,10 +59,15 @@ test('OAuth login asks for guild membership and new Team users receive roles wit
    assert.equal(botLookups,0);assert.ok(githubReads>0);
  });
 });
-test('bot lookup supports legacy sessions without OAuth tokens',async()=>{
- await external(async(url,opts)=>{assert.match(String(url),/\/guilds\/.*\/members\//);assert.equal(opts.headers.Authorization,'Bot test-bot');return roleResult([config.DISCORD_DATABASE_ROLE_ID]);},async()=>{
+for(const [label,role,upload,admin] of [
+ ['Team',config.DISCORD_DATABASE_ROLE_ID,false,false],
+ ['Setup Supply',config.DISCORD_UPLOAD_ROLE_ID,true,false],
+ ['Server Owner role',config.DISCORD_OWNER_ROLE_ID,true,true]
+])test('bot fallback automatically grants '+label+' permissions in legacy sessions',async()=>{
+ await external(async(url,opts)=>{assert.match(String(url),/\/guilds\/.*\/members\//);assert.equal(opts.headers.Authorization,'Bot test-bot');return roleResult([role]);},async()=>{
    const data=await(await worker.fetch(request('/api/me',await signedCookie({accessToken:undefined})),env,ctx)).json();
    assert.equal(data.databaseAccess,true);assert.equal(data.roleSource,'bot');assert.equal(data.reauthorize,false);
+   assert.equal(data.user.canUpload,upload);assert.equal(data.user.canViewAdminPanel,admin);assert.equal(data.user.fullAdmin,false);assert.equal(data.user.canViewBackups,false);
  });
 });
 test('missing OAuth scope falls back to the configured bot',async()=>{
