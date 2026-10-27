@@ -29,6 +29,14 @@ const githubRepo = process.env.GITHUB_REPO?.trim() || 'Le-Mans-Ultimate-Setups';
 const githubBranch = process.env.GITHUB_BRANCH?.trim() || 'main';
 const setupDownloadBaseUrl = process.env.SETUP_DOWNLOAD_BASE_URL?.trim() || 'https://le-mans-ultimate-setups.3peaks-database.workers.dev';
 const setupSupplyRoleId = process.env.DISCORD_UPLOAD_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
+const setupConfirmationWhitelist = new Set([
+  '771358435416473600',
+  '640948738445279261',
+  '198399938739175424',
+  '711862720567312455',
+  '646758275714514955',
+  '999265474078593164'
+]);
 
 if (!token || !clientId || !guildId || !requestChannelId || !requestRoleId) {
   console.error('ERROR: DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_SETUP_REQUEST_CHANNEL_ID und DISCORD_SETUP_REQUEST_ROLE_ID müssen gesetzt sein.');
@@ -159,7 +167,8 @@ function requestField(embed, name) {
 }
 
 function supplyRoleCanConfirm(interaction) {
-  return Boolean(setupSupplyRoleId && interaction.member?.roles?.cache?.has(setupSupplyRoleId));
+  const userId = String(interaction.user?.id || interaction.member?.user?.id || '');
+  return setupConfirmationWhitelist.has(userId) || Boolean(setupSupplyRoleId && interaction.member?.roles?.cache?.has(setupSupplyRoleId));
 }
 
 async function registerCommands() {
