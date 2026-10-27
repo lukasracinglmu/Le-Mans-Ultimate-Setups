@@ -273,7 +273,7 @@ async function listCombinedAccess(request, env, ctx) {
   out.sort((a,b)=>String(a.username).localeCompare(String(b.username), "de"));
   return json({ success: true, users: out });
 }
-async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID || !userId) return null; try { const r = await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } }); if (!r.ok) return null; return await r.json(); } catch { return null; } }
+async function fetchGuildMember(userId, env) { if (!env.DISCORD_BOT_TOKEN || !userId) return null; const headers = { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }; try { if (env.DISCORD_GUILD_ID) { const member = await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, { headers }); if (member.ok) return await member.json(); } const user = await fetch(`${DISCORD_API}/users/${userId}`, { headers }); if (!user.ok) return null; return { user: await user.json(), nick: null, avatar: null }; } catch { return null; } }
 
 function ghHeaders(env) { const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "lmu-setups-worker" }; if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`; return headers; }
 function ghRepo(env) { return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`; }
