@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:56:39.808Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Qatar HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Qatar HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
