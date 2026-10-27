@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:40:39.088Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Isotta Silverstone HYMO.zip",
+  "vehicle": "Isotta Fraschini Tipo6-C",
+  "track": "Isotta Silverstone HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
