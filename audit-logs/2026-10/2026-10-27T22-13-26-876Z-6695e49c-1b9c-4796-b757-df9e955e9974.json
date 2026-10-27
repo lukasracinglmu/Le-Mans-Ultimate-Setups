@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:13:26.876Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Genesis Monza HYMO.zip",
+  "vehicle": "Genesis GMR-001",
+  "track": "Genesis Monza HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
