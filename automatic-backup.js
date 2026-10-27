@@ -117,8 +117,8 @@ async function createBackup(env,now=new Date(),force=false){
   const branchData=await branch.json(),sha=branchData.object?.sha;
   if(!sha)throw Error('GitHub main SHA fehlt.');
   const stamp=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now).map(x=>[x.type,x.value]));
-  const preferredTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}/${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
-  const safeTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}-${stamp.hour}-${stamp.minute}-${stamp.second}${force?`-${Date.now()}`:''}`;
+  const preferredTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}/${stamp.hour}-${stamp.minute}-${stamp.second}`;
+  const safeTag=`backup-${stamp.year}-${stamp.day}-${stamp.month}-${stamp.hour}-${stamp.minute}-${stamp.second}`;
   let tag=preferredTag;
   let response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});
   if(!response.ok&&response.status!==422){tag=safeTag;response=await fetch(`${GITHUB_API}/repos/${repo}/git/refs`,{method:'POST',headers:headers(env),body:JSON.stringify({ref:`refs/tags/${tag}`,sha})});}
