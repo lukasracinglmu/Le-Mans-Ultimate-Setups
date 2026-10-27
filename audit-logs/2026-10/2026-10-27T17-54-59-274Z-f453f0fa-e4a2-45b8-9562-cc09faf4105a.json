@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T17:54:59.274Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Red Star",
+  "discordUserId": "711862720567312455",
+  "setup": "GO V1.4.2 499P HYP DTN.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "GO V1.4.2 499P HYP DTN",
+  "manufacturer": "GO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
