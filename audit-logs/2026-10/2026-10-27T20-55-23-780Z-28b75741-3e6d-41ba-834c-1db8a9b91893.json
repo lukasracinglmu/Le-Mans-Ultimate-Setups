@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-27T20:55:23.780Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "bA2_Bundle_A424_BAR.zip",
+  "vehicle": "Alpine A424",
+  "track": "bA2 Bundle A424 BAR",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
