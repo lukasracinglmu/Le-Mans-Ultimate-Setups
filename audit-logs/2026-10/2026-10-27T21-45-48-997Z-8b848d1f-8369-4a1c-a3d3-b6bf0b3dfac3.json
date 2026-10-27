@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:45:48.997Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "GO V1.4.3 SCG007 HYP BAR.zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "GO V1.4.3 SCG007 HYP BAR",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
