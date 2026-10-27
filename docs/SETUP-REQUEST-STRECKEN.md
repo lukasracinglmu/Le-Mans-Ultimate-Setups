@@ -1,6 +1,6 @@
 # Streckenvorschläge für Setup Requests
 
-Die bestätigte Liste enthält 32 Strecken und Layouts. Die einzige Datenquelle ist
+Die bestätigte Liste enthält 33 Strecken und Layouts. Die einzige Datenquelle ist
 `discord-presence/request-tracks.js`; Website und Bot verwenden dieselben Namen und Kurzformen.
 
 ## Website
@@ -28,6 +28,10 @@ Es werden höchstens 25 passende Vorschläge je Antwort angezeigt. Die Suche
 funktioniert auch, wenn das andere Pflichtfeld noch nicht ausgefüllt ist.
 Discord erlaubt trotz Autovervollständigung Freitext; deshalb prüft der Bot die
 Strecke vor dem Senden erneut.
+
+**Paul Ricard** ist der eigene Default-Eintrag. Die Layouts **1A**, **1A V2**,
+**1A V2 Short** und **3A** bleiben separat. Ein Dateiname ohne Layout-Zusatz
+wird dem Default-Eintrag zugeordnet und blockiert keine Anfrage für diese Varianten.
 
 Die Vorhanden-Prüfung berücksichtigt kurze Dateinamen wie Spa, COTA und Le Mans
 sowie die erkennbaren Layout-Namen. Eine als National benannte Datei ersetzt

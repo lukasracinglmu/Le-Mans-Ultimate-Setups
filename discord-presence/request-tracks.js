@@ -194,10 +194,18 @@ export const REQUEST_TRACKS = Object.freeze([
     "curvagrande"
   ],
   [
+    "Paul Ricard",
+    [
+      "Circuit Paul Ricard",
+      "Paul Ricard Default",
+      "Paul Ricard Standard"
+    ],
+    "paulricard",
+    "default"
+  ],
+  [
     "Paul Ricard – 1A",
     [
-      "Paul Ricard",
-      "Circuit Paul Ricard",
       "Paul Ricard 1a"
     ],
     "paulricard",
@@ -336,7 +344,7 @@ export function requestTrackFromFilename(value) {
     paulricard:[['1av2short',/1av2short/],['1av2',/1av2/],['3a',/3a/],['1a',/1a/]],
     sebring:[['school',/school/]],silverstone:[['international',/international/],['national',/national/]]
   };
-  const layout=(layouts[family]||[]).find(([,pattern])=>pattern.test(compact))?.[0]||(family==='paulricard'?'1a':'default');
+  const layout=(layouts[family]||[]).find(([,pattern])=>pattern.test(compact))?.[0]||'default';
   return REQUEST_TRACKS.find(track=>track.family===family&&track.layout===layout)||null;
 }
 export function matchingRequestSetups(files,value) {

@@ -20,7 +20,7 @@ Unbekannte Strecken werden nicht abgeschickt.
 
 DATEIEN
 index.js: Präsenz, /request, Fahrzeug-/Streckensuche, Vorhanden-Prüfung und Bestätigungsbutton.
-request-tracks.js: gemeinsame Liste von 32 Strecken/Layout-Einträgen für Website und Bot.
+request-tracks.js: gemeinsame Liste von 33 Strecken/Layout-Einträgen für Website und Bot.
 bot.js: altes, reines Präsenz-Skript; verarbeitet keine Setup Requests.
 
 BESTEHENDE FUNKTIONEN

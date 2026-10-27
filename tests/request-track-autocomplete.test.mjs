@@ -6,9 +6,9 @@ import { REQUEST_TRACKS,searchRequestTracks,resolveRequestTrack,matchingRequestS
 import production from '../production-worker.js';
 import base from '../worker.js';
 
-test('Bestätigte 32 Einträge ohne die drei ausdrücklich entfernten Layouts',()=>{
-  assert.equal(REQUEST_TRACKS.length,32);
-  assert.equal(new Set(REQUEST_TRACKS.map(t=>t.name)).size,32);
+test('Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts',()=>{
+  assert.equal(REQUEST_TRACKS.length,33);
+  assert.equal(new Set(REQUEST_TRACKS.map(t=>t.name)).size,33);
   for(const omitted of ['Portimao ELMS','Spa Endurance','Le Mans Mulsanne No Chicanes'])assert.equal(resolveRequestTrack(omitted),null);
   assert.equal(searchRequestTracks('',100).length,25);
   assert.ok(REQUEST_TRACKS.every(t=>t.name.length<=100));
@@ -33,6 +33,18 @@ test('Vorhanden-Prüfung erkennt Kurzformen, aber verwechselt keine Layouts',()=
   assert.equal(matchingRequestSetups(files,'Paul Ricard – 1A V2').length,0);
   assert.equal(matchingRequestSetups(files,'Paul Ricard – 1A V2 Short').length,1);
   assert.deepEqual(matchingRequestSetups(files,'Silverstone').map(f=>f.name),['Toyota Silverstone HYMO.zip']);
+});
+
+
+test('Paul Ricard Default ist separat von allen vier benannten Layouts',()=>{
+  const names=['Paul Ricard','Paul Ricard – 1A','Paul Ricard – 1A V2','Paul Ricard – 1A V2 Short','Paul Ricard – 3A'];
+  assert.deepEqual(searchRequestTracks('Paul Ricard').map(track=>track.name),names);
+  assert.equal(resolveRequestTrack('Paul Ricard')?.layout,'default');
+  assert.equal(resolveRequestTrack('Circuit Paul Ricard')?.name,'Paul Ricard');
+  assert.equal(resolveRequestTrack('Paul Ricard Default')?.name,'Paul Ricard');
+  assert.equal(resolveRequestTrack('Paul Ricard 1A')?.layout,'1a');
+  const files=['BMW V8 Paul Ricard HYMO.zip','BMW V8 Paul Ricard 1A HYMO.zip','BMW V8 Paul Ricard 1A_V2 HYMO.zip','BMW V8 Paul Ricard 1A_V2_short HYMO.zip','BMW V8 Paul Ricard 3A HYMO.zip'].map(name=>({name}));
+  names.forEach((name,index)=>assert.deepEqual(matchingRequestSetups(files,name).map(file=>file.name),[files[index].name]));
 });
 
 test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord ab',async()=>{
@@ -64,7 +76,7 @@ test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf',async()
     assert.equal(response.status,200);
     assert.match(response.headers.get('content-type'),/^application\/json/);
     const body=await response.json();
-    assert.equal(body.tracks.length,32);
+    assert.equal(body.tracks.length,33);
     assert.equal(body.tracks.at(-1).name,'Spa-Francorchamps');
   }finally{globalThis.fetch=original}
 });
@@ -78,6 +90,8 @@ test('Browser findet Kurzformen und Layouts aus dem gelieferten Katalog',()=>{
   assert.equal(search.searchRequestTracks('silver').length,3);
   assert.equal(search.searchRequestTracks('Paul Ricard 1av2-short')[0].name,'Paul Ricard – 1A V2 Short');
   assert.equal(search.resolveRequestTrack('Portimao ELMS'),null);
+  assert.equal(search.resolveRequestTrack('Paul Ricard')?.name,'Paul Ricard');
+  assert.equal(search.searchRequestTracks('Paul Ricard').length,5);
 });
 
 class Builder {
