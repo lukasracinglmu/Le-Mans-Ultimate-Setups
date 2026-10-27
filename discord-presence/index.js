@@ -28,6 +28,7 @@ const githubOwner = process.env.GITHUB_OWNER?.trim() || 'lukasracinglmu';
 const githubRepo = process.env.GITHUB_REPO?.trim() || 'Le-Mans-Ultimate-Setups';
 const githubBranch = process.env.GITHUB_BRANCH?.trim() || 'main';
 const setupDownloadBaseUrl = process.env.SETUP_DOWNLOAD_BASE_URL?.trim() || 'https://le-mans-ultimate-setups.3peaks-database.workers.dev';
+const setupSupplyRoleId = process.env.DISCORD_UPLOAD_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
 
 if (!token || !clientId || !guildId || !requestChannelId || !requestRoleId) {
   console.error('ERROR: DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_SETUP_REQUEST_CHANNEL_ID und DISCORD_SETUP_REQUEST_ROLE_ID müssen gesetzt sein.');
@@ -144,6 +145,23 @@ function setupPageUrl(vehicle, setupName) {
   return `${setupDownloadBaseUrl}/?${params.toString()}`;
 }
 
+function requestVehicleUrl(embed) {
+  const fields = Object.fromEntries((embed?.fields || []).map(field => [String(field.name || '').toLowerCase(), String(field.value || '')]));
+  const vehicle = fields['fahrzeug'] || '';
+  const category = fields['klasse'] || '';
+  if (!vehicle || !category) return setupDownloadBaseUrl;
+  return `${setupDownloadBaseUrl}/?${new URLSearchParams({ category, vehicle }).toString()}`;
+}
+
+function requestField(embed, name) {
+  const field = (embed?.fields || []).find(item => String(item.name || '').toLowerCase() === name);
+  return String(field?.value || '');
+}
+
+function supplyRoleCanConfirm(interaction) {
+  return Boolean(setupSupplyRoleId && interaction.member?.roles?.cache?.has(setupSupplyRoleId));
+}
+
 async function registerCommands() {
   const rest = new REST({ version: '10' }).setToken(token);
   await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [requestCommand.toJSON()] });
@@ -167,6 +185,28 @@ client.on('interactionCreate', async interaction => {
       .slice(0, 25)
       .map(vehicle => ({ name: `${vehicle.name} (${vehicle.className})`, value: vehicle.name }));
     await interaction.respond(matches).catch(() => {});
+    return;
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith('setup_ready:')) {
+    if (!supplyRoleCanConfirm(interaction)) {
+      await interaction.reply({ content: 'Nur Mitglieder mit der Setup-Supply-Rolle können ein Setup als hochgeladen bestätigen.', flags: MessageFlags.Ephemeral });
+      return;
+    }
+    const requesterId = interaction.customId.slice('setup_ready:'.length);
+    const embed = interaction.message.embeds?.[0];
+    const vehicle = requestField(embed, 'fahrzeug');
+    const track = requestField(embed, 'strecke');
+    const pageUrl = requestVehicleUrl(embed);
+    await interaction.update({
+      embeds: embed ? [EmbedBuilder.from(embed).setColor(0x2b9b68).setFooter({ text: 'Setup als hochgeladen bestätigt' })] : [],
+      components: []
+    });
+    await interaction.channel.send({
+      content: `<@${requesterId}> Das Setup für **${vehicle || 'deine Anfrage'}**${track ? ` auf **${track}**` : ''} wurde hochgeladen und kann jetzt genutzt werden: ${pageUrl}`,
+      allowedMentions: { users: [requesterId] },
+      flags: MessageFlags.SuppressNotifications
+    });
     return;
   }
 
@@ -218,11 +258,18 @@ client.on('interactionCreate', async interaction => {
       )
       .setTimestamp();
 
+    const confirmRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`setup_ready:${interaction.user.id}`)
+        .setLabel('Setup wurde hochgeladen')
+        .setStyle(ButtonStyle.Success)
+    );
     await channel.send({
       content: `<@&${requestRoleId}>`,
       allowedMentions: { roles: [requestRoleId], users: [interaction.user.id] },
       flags: MessageFlags.SuppressNotifications,
-      embeds: [embed]
+      embeds: [embed],
+      components: [confirmRow]
     });
     await interaction.editReply('Die Setup-Anfrage wurde erfolgreich gesendet.');
   } catch (error) {
