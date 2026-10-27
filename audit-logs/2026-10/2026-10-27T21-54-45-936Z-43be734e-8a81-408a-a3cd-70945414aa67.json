@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:54:45.936Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "499P Daytona HYMO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
