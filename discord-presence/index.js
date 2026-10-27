@@ -258,6 +258,7 @@ client.on('interactionCreate', async interaction => {
       )
       .setTimestamp();
 
+    // Der Button bleibt für alle sichtbar; die Berechtigungsprüfung erfolgt beim Klick.
     const confirmRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`setup_ready:${interaction.user.id}`)
