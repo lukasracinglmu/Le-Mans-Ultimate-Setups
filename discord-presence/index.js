@@ -102,22 +102,30 @@ function normalizeSearch(value) {
 
 async function findExistingSetup(vehicle) {
   if (!githubToken) return null;
-  const path = `setups/${encodeURIComponent(vehicle.className)}/${encodeURIComponent(vehicle.name)}`;
-  const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}?ref=${encodeURIComponent(githubBranch)}`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${githubToken}`,
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'lmu-setup-discord-bot'
+  try {
+    const path = `setups/${encodeURIComponent(vehicle.className)}/${encodeURIComponent(vehicle.name)}`;
+    const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}?ref=${encodeURIComponent(githubBranch)}`, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${githubToken}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'lmu-setup-discord-bot'
+      }
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      console.warn(`GitHub-Setupprüfung fehlgeschlagen: HTTP ${response.status}. Der normale Request wird verwendet.`);
+      return null;
     }
-  });
-  if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`GitHub-Setupprüfung fehlgeschlagen: HTTP ${response.status}`);
-  const files = await response.json();
-  if (!Array.isArray(files)) return null;
-  return files
-    .filter(file => file?.type === 'file' && /\.zip$/i.test(file.name || ''))
-    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'de', { numeric: true, sensitivity: 'base' }));
+    const files = await response.json();
+    if (!Array.isArray(files)) return null;
+    return files
+      .filter(file => file?.type === 'file' && /\.zip$/i.test(file.name || ''))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'de', { numeric: true, sensitivity: 'base' }));
+  } catch (error) {
+    console.warn('GitHub-Setupprüfung nicht möglich. Der normale Request wird verwendet.');
+    return null;
+  }
 }
 
 function matchingSetups(files, track) {
