@@ -29,7 +29,7 @@ funktioniert auch, wenn das andere Pflichtfeld noch nicht ausgefüllt ist.
 Discord erlaubt trotz Autovervollständigung Freitext; deshalb prüft der Bot die
 Strecke vor dem Senden erneut.
 
-**Paul Ricard** ist der eigene Default-Eintrag. Die Layouts **1A**, **1A V2**,
+**Paul Ricard - Default** ist der eigene Default-Eintrag. Die Kurzform **Paul Ricard** wird ebenfalls erkannt. Die Layouts **1A**, **1A V2**,
 **1A V2 Short** und **3A** bleiben separat. Ein Dateiname ohne Layout-Zusatz
 wird dem Default-Eintrag zugeordnet und blockiert keine Anfrage für diese Varianten.
 

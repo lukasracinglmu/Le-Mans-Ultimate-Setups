@@ -194,8 +194,9 @@ export const REQUEST_TRACKS = Object.freeze([
     "curvagrande"
   ],
   [
-    "Paul Ricard",
+    "Paul Ricard - Default",
     [
+      "Paul Ricard",
       "Circuit Paul Ricard",
       "Paul Ricard Default",
       "Paul Ricard Standard"

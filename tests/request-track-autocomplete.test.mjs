@@ -37,11 +37,11 @@ test('Vorhanden-Prüfung erkennt Kurzformen, aber verwechselt keine Layouts',()=
 
 
 test('Paul Ricard Default ist separat von allen vier benannten Layouts',()=>{
-  const names=['Paul Ricard','Paul Ricard – 1A','Paul Ricard – 1A V2','Paul Ricard – 1A V2 Short','Paul Ricard – 3A'];
+  const names=['Paul Ricard - Default','Paul Ricard – 1A','Paul Ricard – 1A V2','Paul Ricard – 1A V2 Short','Paul Ricard – 3A'];
   assert.deepEqual(searchRequestTracks('Paul Ricard').map(track=>track.name),names);
   assert.equal(resolveRequestTrack('Paul Ricard')?.layout,'default');
-  assert.equal(resolveRequestTrack('Circuit Paul Ricard')?.name,'Paul Ricard');
-  assert.equal(resolveRequestTrack('Paul Ricard Default')?.name,'Paul Ricard');
+  assert.equal(resolveRequestTrack('Circuit Paul Ricard')?.name,'Paul Ricard - Default');
+  assert.equal(resolveRequestTrack('Paul Ricard Default')?.name,'Paul Ricard - Default');
   assert.equal(resolveRequestTrack('Paul Ricard 1A')?.layout,'1a');
   const files=['BMW V8 Paul Ricard HYMO.zip','BMW V8 Paul Ricard 1A HYMO.zip','BMW V8 Paul Ricard 1A_V2 HYMO.zip','BMW V8 Paul Ricard 1A_V2_short HYMO.zip','BMW V8 Paul Ricard 3A HYMO.zip'].map(name=>({name}));
   names.forEach((name,index)=>assert.deepEqual(matchingRequestSetups(files,name).map(file=>file.name),[files[index].name]));
@@ -90,7 +90,7 @@ test('Browser findet Kurzformen und Layouts aus dem gelieferten Katalog',()=>{
   assert.equal(search.searchRequestTracks('silver').length,3);
   assert.equal(search.searchRequestTracks('Paul Ricard 1av2-short')[0].name,'Paul Ricard – 1A V2 Short');
   assert.equal(search.resolveRequestTrack('Portimao ELMS'),null);
-  assert.equal(search.resolveRequestTrack('Paul Ricard')?.name,'Paul Ricard');
+  assert.equal(search.resolveRequestTrack('Paul Ricard')?.name,'Paul Ricard - Default');
   assert.equal(search.searchRequestTracks('Paul Ricard').length,5);
 });
 
