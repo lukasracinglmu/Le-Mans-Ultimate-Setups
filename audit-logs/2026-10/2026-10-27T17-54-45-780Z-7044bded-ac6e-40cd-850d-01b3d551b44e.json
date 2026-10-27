@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T17:54:45.780Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Alpine Le Mans GO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Le Mans GO",
+  "manufacturer": "GO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
