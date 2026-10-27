@@ -9,6 +9,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
   GatewayIntentBits,
   REST,
   Routes,
@@ -219,6 +220,7 @@ client.on('interactionCreate', async interaction => {
     await channel.send({
       content: `<@&${requestRoleId}>`,
       allowedMentions: { roles: [requestRoleId], users: [interaction.user.id] },
+      flags: MessageFlags.SuppressNotifications,
       embeds: [embed]
     });
     await interaction.editReply('Die Setup-Anfrage wurde erfolgreich gesendet.');
