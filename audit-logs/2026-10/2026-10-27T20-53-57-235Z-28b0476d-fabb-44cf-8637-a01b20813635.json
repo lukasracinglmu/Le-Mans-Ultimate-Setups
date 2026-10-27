@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:53:57.235Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Interlagos HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
