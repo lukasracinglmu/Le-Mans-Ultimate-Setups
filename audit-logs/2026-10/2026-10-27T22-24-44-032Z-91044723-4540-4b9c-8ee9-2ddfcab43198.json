@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:24:44.032Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Glick Sebring GO.zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "Glick Sebring GO",
+  "manufacturer": "GO",
+  "version": "V1.3.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
