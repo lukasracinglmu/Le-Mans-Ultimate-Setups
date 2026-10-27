@@ -56,16 +56,28 @@ test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
   }finally{base.fetch=oldBase;globalThis.fetch=oldFetch}
 });
 
-test('Browser-Listenmodul wird mit JavaScript-MIME ausgeliefert; keine weitere Such-API nötig',async()=>{
+test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf',async()=>{
   const original=globalThis.fetch;
-  const module=readFileSync(new URL('../discord-presence/request-tracks.js',import.meta.url),'utf8');
-  globalThis.fetch=async url=>{assert.match(String(url),/discord-presence\/request-tracks.js/);return new Response(module)};
+  globalThis.fetch=async()=>{throw Error('unexpected network request')};
   try{
-    const response=await production.fetch(new Request('https://example.test/request-tracks.js'),{});
+    const response=await production.fetch(new Request('https://example.test/api/request/tracks'),{});
     assert.equal(response.status,200);
-    assert.match(response.headers.get('content-type'),/^text\/javascript/);
-    assert.equal(await response.text(),module);
+    assert.match(response.headers.get('content-type'),/^application\/json/);
+    const body=await response.json();
+    assert.equal(body.tracks.length,32);
+    assert.equal(body.tracks.at(-1).name,'Spa-Francorchamps');
   }finally{globalThis.fetch=original}
+});
+
+test('Browser findet Kurzformen und Layouts aus dem gelieferten Katalog',()=>{
+  const html=readFileSync(new URL('../request.html',import.meta.url),'utf8');
+  const source=html.slice(html.indexOf('let REQUEST_TRACKS=[]'),html.indexOf('const form=')).replace('let REQUEST_TRACKS=[]','const REQUEST_TRACKS=tracks');
+  const search=vm.runInNewContext(source+';({searchRequestTracks,resolveRequestTrack})',{tracks:REQUEST_TRACKS});
+  assert.equal(search.resolveRequestTrack('portimao').name,'Algarve / Portimão');
+  assert.equal(search.searchRequestTracks('spa')[0].name,'Spa-Francorchamps');
+  assert.equal(search.searchRequestTracks('silver').length,3);
+  assert.equal(search.searchRequestTracks('Paul Ricard 1av2-short')[0].name,'Paul Ricard – 1A V2 Short');
+  assert.equal(search.resolveRequestTrack('Portimao ELMS'),null);
 });
 
 class Builder {

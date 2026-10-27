@@ -16,9 +16,10 @@ eingegebene Kurzformen werden beim Verlassen des Feldes bzw. Absenden in den
 Listennamen umgewandelt. Unbekannte Angaben werden auch serverseitig abgewiesen.
 Die Fahrzeugauswahl und das optionale Nachrichtenfeld behalten ihr Verhalten.
 
-Die unvertrauliche Listen-Datei wird als JavaScript-Modul unter
-`/request-tracks.js` ausgeliefert. Die Suche selbst läuft lokal ohne weitere
-Netzwerkanfragen pro Tastendruck.
+Die unvertrauliche Liste wird einmal unter `/api/request/tracks` als JSON geladen.
+Die Daten stammen direkt aus dem gebündelten Modul; dafür ist kein GitHub-Abruf
+notwendig. Die Suche selbst läuft danach lokal ohne weitere Netzwerkanfragen
+pro Tastendruck. Die Fahrzeugauswahl startet unabhängig von der Streckenliste.
 
 ## Discord
 

@@ -6,7 +6,7 @@ import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
 import { readUploadForm } from "./upload-storage.js";
-import { resolveRequestTrack } from "./discord-presence/request-tracks.js";
+import { REQUEST_TRACKS, resolveRequestTrack } from "./discord-presence/request-tracks.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
@@ -24,7 +24,7 @@ export default {
     const path = url.pathname;
 
     try {
-      if (request.method === "GET" && path === "/request-tracks.js") return serveRequestTrackModule(request, env);
+      if (request.method === "GET" && path === "/api/request/tracks") return json({success:true,tracks:REQUEST_TRACKS});
       if (request.method === "POST" && path === "/api/request") return createWebsiteRequest(request, env);
       if (request.method === "POST" && path === "/interactions/discord") return discordInteraction(request, env);
       if (request.method === "GET" && REPO_ASSETS.has(path)) return serveRepoAsset(request, env);
@@ -339,9 +339,3 @@ async function safeJson(response) { try { return await response.json(); } catch 
 function discordJson(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8" } }); }
 
 
-/* Nur dieses öffentliche, unvertrauliche Datenmodul wird unter dieser Route ausgeliefert. */
-async function serveRequestTrackModule(request,env) {
-  const response=await readSiteFile(request,env,'discord-presence/request-tracks.js');
-  if(!response.ok)return response;
-  return new Response(response.body,{status:200,headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-}
