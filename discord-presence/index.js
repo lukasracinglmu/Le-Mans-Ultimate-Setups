@@ -6,9 +6,7 @@ import {
   ChatInputCommandInteraction,
   Client,
   EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  AttachmentBuilder,
   MessageFlags,
   GatewayIntentBits,
   REST,
@@ -135,16 +133,23 @@ function matchingSetups(files, track) {
   return files.filter(file => normalizeSearch(file.name).includes(query));
 }
 
-function setupDownloadUrl(vehicle, setup) {
-  if (setup?.download_url) return setup.download_url;
+async function downloadSetupFile(file) {
+  if (!githubToken || !file?.url) return null;
 
-  const params = new URLSearchParams({
-    category: vehicle.className,
-    vehicle: vehicle.name,
-    name: setup.name
+  const response = await fetch(file.url, {
+    headers: {
+      Accept: 'application/vnd.github.raw',
+      Authorization: `Bearer ${githubToken}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'lmu-setup-discord-bot'
+    }
   });
 
-  return `${setupDownloadBaseUrl}/api/setups/download?${params.toString()}`;
+  if (!response.ok) {
+    throw new Error(`Setup-Datei konnte nicht geladen werden: HTTP ${response.status}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
 }
 
 async function registerCommands() {
@@ -190,17 +195,14 @@ client.on('interactionCreate', async interaction => {
     const matches = matchingSetups(availableFiles || [], track);
     if (matches.length > 0) {
       const first = matches[0];
-      const downloadUrl = setupDownloadUrl(vehicle, first);
+      const fileBuffer = await downloadSetupFile(first);
       const extra = matches.length > 1 ? ` Weitere passende Versionen: ${matches.length - 1}.` : '';
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel('Setup herunterladen')
-          .setStyle(ButtonStyle.Link)
-          .setURL(downloadUrl)
-      );
+
       await interaction.editReply({
         content: `Für **${vehicle.name}** auf **${track}** ist bereits ein Setup vorhanden: **${first.name}**.${extra}`,
-        components: [row]
+        files: fileBuffer
+          ? [new AttachmentBuilder(fileBuffer, { name: first.name })]
+          : []
       });
       return;
     }
