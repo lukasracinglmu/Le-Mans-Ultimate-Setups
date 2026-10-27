@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:12:51.184Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Daytona GO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Daytona GO",
+  "manufacturer": "GO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
