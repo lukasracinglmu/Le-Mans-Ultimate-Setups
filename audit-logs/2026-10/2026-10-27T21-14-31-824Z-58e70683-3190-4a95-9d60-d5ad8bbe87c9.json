@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:14:31.824Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Fuji beAlien.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Fuji beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
