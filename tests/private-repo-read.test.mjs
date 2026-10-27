@@ -58,13 +58,13 @@ test('failed or redirecting asset fallback returns 503 without Location',async()
   });
 });
 
-test('catalog denies anonymous and unprivileged users before any GitHub or asset read',async()=>{
+test('catalog denies anonymous users and reports unavailable role checks before reading files',async()=>{
   let reads=0;
   await withFetch(async()=>{reads++;throw Error('unexpected');},async()=>{
     const env={...envBase,ASSETS:{fetch(){reads++;throw Error('unexpected');}}};
     assert.equal((await runtime.fetch(request('/setups.json'),env,{})).status,401);
     const req=new Request('https://example.test/setups.json',{headers:{Cookie:await session('222222222222222222')}});
-    assert.equal((await runtime.fetch(req,env,{})).status,403);
+    assert.equal((await runtime.fetch(req,env,{})).status,503);
     assert.equal(reads,0);
   });
 });
@@ -107,4 +107,3 @@ test('private ZIP download streams authenticated content after permission valida
 test('private file path segments and branch are encoded independently',async()=>{
   await withFetch(async(url)=>{assert.ok(String(url).includes('/contents/setups/A%20B/a%23b.zip?ref=release%2Ftest'));return new Response('ok');},async()=>{assert.equal((await readRepoFile(envBase,'setups/A B/a#b.zip')).status,200);});
 });
-

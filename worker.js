@@ -1,6 +1,6 @@
 /* @file-notes: Basis-Worker für Authentifizierung, Discord-Login, Setup-APIs und grundlegende Website-Funktionen. */
 import { cleanSetupFileName } from "./setup-version.js";
-import { ownerUserId, resolvePermissions } from "./discord-permissions.js";
+import { ownerUserId, resolvePermissions, rolePermissions } from "./discord-permissions.js";
 import { readPreviousSetups, deleteGithubSetup } from "./setup-lifecycle.js";
 import { readRepoFile, readSiteFile } from "./repo-read.js";
 import { persistSetupFile, readUploadForm } from "./upload-storage.js";
@@ -142,7 +142,7 @@ async function fetchGuildMember(userId, env) {
 async function requireDatabaseAccess(request, env) {
   const session=await readSession(request,env.SESSION_SECRET);
   if (!session) return { error:json({success:false,error:"Nicht angemeldet."},401) };
-  const permission=await resolvePermissions(session.id,env,session.accessToken);
+  const permission=await resolvePermissions(session.id,env,session.accessToken,session.memberSnapshot);
   if (!permission.databaseAccess) return { error:json({success:false,error:permission.rolesAvailable?"Erforderliche Discord-Rolle fehlt.":"Discord-Rollenprüfung nicht verfügbar."},permission.rolesAvailable?403:503) };
   return { session };
 }
@@ -173,10 +173,16 @@ async function favoritesApi(request, env) {
 async function currentUser(request, env) {
   const session=await readSession(request,env.SESSION_SECRET);
   if (!session) return json({loggedIn:false,databaseAccess:false});
-  const permission=await resolvePermissions(session.id,env,session.accessToken);
+  const forceRefresh=new URL(request.url).searchParams.get("refresh")==="1";
+  const permission=await resolvePermissions(session.id,env,session.accessToken,forceRefresh?null:session.memberSnapshot);
   const avatar=session.avatar?`https://cdn.discordapp.com/avatars/${session.id}/${session.avatar}.png?size=64`:`https://cdn.discordapp.com/embed/avatars/${Number(BigInt(session.id)%6n)}.png`;
-  const {databaseAccess,rolesAvailable,...userPermissions}=permission;
-  return json({loggedIn:true,databaseAccess,rolesAvailable,user:{id:session.id,username:session.username,avatar,...userPermissions}});
+  const {databaseAccess,rolesAvailable,memberSnapshot,roleSource,roleCheckError,reauthorize,retryAfterMs,...userPermissions}=permission;
+  const response=json({loggedIn:true,databaseAccess,rolesAvailable,roleSource,roleCheckError,reauthorize,retryAfterMs,user:{id:session.id,username:session.username,avatar,...userPermissions}});
+  if(memberSnapshot&&memberSnapshot!==session.memberSnapshot){
+    const signed=await createSession({...session,memberSnapshot},env.SESSION_SECRET);
+    response.headers.append("Set-Cookie",cookie(SESSION_COOKIE,signed,Math.max(1,session.exp-Math.floor(Date.now()/1000))));
+  }
+  return response;
 }
 
 async function requireOwner(request, env) {
@@ -208,7 +214,7 @@ async function discordRoleStatus(request, env) {
   const configured={team:env.DISCORD_DATABASE_ROLE_ID,setupSupply:env.DISCORD_UPLOAD_ROLE_ID||env.DISCORD_ROLE_ID,owner:env.DISCORD_OWNER_ROLE_ID};
   const roles=Array.isArray(guildRoles.data)?guildRoles.data:[];
   const memberRoles=Array.isArray(member.data?.roles)?member.data.roles:[];
-  return json({success:true,bot:{status:identity.status,code:identity.code,applicationMatches:identity.data?String(identity.data.id)===String(env.DISCORD_CLIENT_ID):null},guild:{status:guildRoles.status,code:guildRoles.code,id:env.DISCORD_GUILD_ID},configuredRoles:Object.fromEntries(Object.entries(configured).map(([key,id])=>[key,{id,exists:roles.some(role=>role.id===id),name:roles.find(role=>role.id===id)?.name||null}])),member:{userId:targetId,status:member.status,code:member.code,roles:memberRoles},session:{memberScopeRequested:"guilds.members.read",hasMemberToken:Boolean(auth.session.accessToken)}});
+  return json({success:true,bot:{status:identity.status,code:identity.code,applicationMatches:identity.data?String(identity.data.id)===String(env.DISCORD_CLIENT_ID):null},guild:{status:guildRoles.status,code:guildRoles.code,id:env.DISCORD_GUILD_ID},configuredRoles:Object.fromEntries(Object.entries(configured).map(([key,id])=>[key,{id,exists:roles.some(role=>role.id===id),name:roles.find(role=>role.id===id)?.name||null}])),member:{userId:targetId,status:member.status,code:member.code,roles:memberRoles},withoutManualGrants:member.status===200?rolePermissions(targetId,memberRoles,env):null,session:{memberScopeRequested:"guilds.members.read",hasMemberToken:Boolean(auth.session.accessToken)}});
 }
 
 async function listUploadAccess(request, env) { const auth = await requireOwner(request, env); if (auth.error) return auth.error; if (!env.ACCESS_DB) return json({ success: false, error: "Rechte-Datenbank nicht konfiguriert." }, 503); const result = await env.ACCESS_DB.prepare("SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC").all(); return json({ success: true, grants: result.results || [] }); }
@@ -225,7 +231,7 @@ function normalizeName(name) { return safe(String(name || "").slice(0, 180)); }
 function clean(v,max=1000){return String(v||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,max)}
 function classifySetup(name, vehicle) { const file = String(name || ""), v = String(vehicle || ""); const variant = /(^|[^a-z0-9])evo([^a-z0-9]|$)/i.test(file) ? "EVO" : "Standard"; let series = null; if (/oreca\s*0?7/i.test(v)) { if (/(^|[^a-z0-9])elms([^a-z0-9]|$)/i.test(file)) series = "ELMS"; else if (/(^|[^a-z0-9])wec([^a-z0-9]|$)/i.test(file)) series = "WEC"; else series = "Other"; } return { variant, series }; }
 async function listSetups(request, env) { const a=await requireDatabaseAccess(request,env);if(a.error)return a.error;const u=new URL(request.url),cat=safe(u.searchParams.get("category")),veh=safe(u.searchParams.get("vehicle"));if(!cat||!veh)return json({success:false,error:"Fahrzeug fehlt."},400);const path=`/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}?ref=${encodeURIComponent(ghBranch(env))}`;const r=await ghReq(path,{},env);if(r.status===404)return json({success:true,setups:[]});if(!r.ok)return json({success:false,error:"Setups konnten nicht geladen werden."},502);const items=await r.json();const setups=(Array.isArray(items)?items:[]).filter(i=>i.type==="file"&&/\.zip$/i.test(i.name)).map(i=>({name:i.name,sha:i.sha,download:`/api/setups/download?category=${encodeURIComponent(cat)}&vehicle=${encodeURIComponent(veh)}&name=${encodeURIComponent(i.name)}`,...classifySetup(i.name,veh)})).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true,sensitivity:"base"}));return json({success:true,setups}); }
-async function downloadSetup(request, env) { const u=new URL(request.url),cat=safe(u.searchParams.get("category")),veh=safe(u.searchParams.get("vehicle")),name=safe(u.searchParams.get("name"));if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültiger Download."},400);const raw=await readRepoFile(env,`setups/${cat}/${veh}/${name}`);if(raw.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!raw.ok)return json({success:false,error:"Download fehlgeschlagen."},502);const h=securityHeaders(new Headers(raw.headers));h.set("Content-Type","application/zip");h.set("Content-Disposition",`attachment; filename*=UTF-8''${encodeURIComponent(cleanSetupFileName(name))}`);h.set("Cache-Control","private, no-store");return new Response(raw.body,{status:200,headers:h}); }
+async function downloadSetup(request, env) { const auth=await requireDatabaseAccess(request,env);if(auth.error)return auth.error;const u=new URL(request.url),cat=safe(u.searchParams.get("category")),veh=safe(u.searchParams.get("vehicle")),name=safe(u.searchParams.get("name"));if(!cat||!veh||!name||!/\.zip$/i.test(name))return json({success:false,error:"Ungültiger Download."},400);const raw=await readRepoFile(env,`setups/${cat}/${veh}/${name}`);if(raw.status===404)return json({success:false,error:"Setup nicht gefunden."},404);if(!raw.ok)return json({success:false,error:"Download fehlgeschlagen."},502);const h=securityHeaders(new Headers(raw.headers));h.set("Content-Type","application/zip");h.set("Content-Disposition",`attachment; filename*=UTF-8''${encodeURIComponent(cleanSetupFileName(name))}`);h.set("Cache-Control","private, no-store");return new Response(raw.body,{status:200,headers:h}); }
 async function uploadSetups(request, env, suppliedForm) {
   const sizeError = validateRequestSize(request);
   if (sizeError) return sizeError;

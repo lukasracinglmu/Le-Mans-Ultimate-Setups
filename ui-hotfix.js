@@ -110,6 +110,8 @@ const HOTFIX_JS = `<script>
     const login=document.getElementById('loginButton');
     if(mode==='checking'){box.innerHTML='<h2>Setup Database</h2><p>Zugriff wird geprüft…</p>';return;}
     if(mode==='login'){box.innerHTML='<h2>Setup Database</h2><p>Melde dich mit Discord an, um auf die Setup Database zuzugreifen.</p><a class="discord-button" href="/auth/discord">Mit Discord anmelden</a>';if(login)login.classList.remove('hidden');return;}
+    if(mode==='reauthorize'){box.innerHTML='<h2>Discord-Zugriff erneuern</h2><p>Bitte melde dich erneut mit Discord an und erlaube das Lesen deiner Server-Mitgliedschaft. Danach werden deine Rollen automatisch übernommen.</p><a class="discord-button" href="/auth/discord">Mit Discord erneut anmelden</a>';return;}
+    if(mode==='unavailable'){box.innerHTML='<h2>Rollenprüfung momentan nicht verfügbar</h2><p>Discord konnte gerade nicht erreicht werden. Dein Zugriff wurde deshalb noch nicht bestätigt. Bitte versuche es erneut.</p><button type="button" id="retryRoleCheck" style="margin-top:16px">Erneut prüfen</button>';document.getElementById('retryRoleCheck').addEventListener('click',()=>authorize(true));return;}
     box.innerHTML='<h2>Setup Database</h2><p>Du hast aktuell nicht die erforderliche Discord-Rolle für den Zugriff auf die Setup Database.</p>';
   };
 
@@ -126,32 +128,35 @@ const HOTFIX_JS = `<script>
   const renderVendorSetups=(setups)=>{const list=document.getElementById('setupList');if(!list||document.documentElement.dataset.dbAccess!=='authorized')return;list.innerHTML='';const mfr=currentMfr();const track=(typeof trackSearchVal==='string'?trackSearchVal:'').trim().toLowerCase();const filtered=setups.filter(s=>{const vendor=classify(s.name);if(mfr&&vendor!==mfr)return false;if(track&&!String((s.displayName||'')+' '+displaySetupFileName(s.name)+' '+s.name).toLowerCase().includes(track))return false;return true;});if(!filtered.length){list.innerHTML='<div class="empty">'+(setups.length?'Keine Setups für diesen Filter.':'Noch keine Setups für dieses Fahrzeug verfügbar.')+'</div>';return;}const visibleVendors=mfr?[mfr]:vendors;for(const vendor of visibleVendors){const vendorItems=filtered.filter(s=>classify(s.name)===vendor);if(!vendorItems.length)continue;const section=document.createElement('section');section.className='vendor-section';const vendorTitle=document.createElement('div');vendorTitle.className='vendor-section-title '+vendor;vendorTitle.textContent=vendor;section.appendChild(vendorTitle);for(const [group,items] of groupSetups(vendorItems)){const wrap=document.createElement('section');wrap.className='setup-group';const title=document.createElement('div');title.className='setup-group-title';title.textContent=group;wrap.appendChild(title);items.forEach(s=>wrap.appendChild(buildSetup(s)));section.appendChild(wrap);}list.appendChild(section);}const unclassified=filtered.filter(s=>!classify(s.name));if(!mfr&&unclassified.length){for(const [group,items] of groupSetups(unclassified)){const wrap=document.createElement('section');wrap.className='setup-group';const title=document.createElement('div');title.className='setup-group-title';title.textContent=group;wrap.appendChild(title);items.forEach(s=>wrap.appendChild(buildSetup(s)));list.appendChild(wrap);}}};
   const countFor=(setups)=>{const mfr=currentMfr();return setups.filter(s=>!mfr||classify(s.name)===mfr).length;};
   let countRun=0;
-  const refreshVehicleCounts=async()=>{if(document.documentElement.dataset.dbAccess!=='authorized'||typeof getCarSetups!=='function')return;const run=++countRun;const cards=[...document.querySelectorAll('#categories .vehicle')];let cursor=0;const worker=async()=>{while(cursor<cards.length){const card=cards[cursor++];if(run!==countRun)return;const vehicle=card.querySelector('.vehicle-name')?.textContent?.trim();const category=card.querySelector('.vehicle-class')?.textContent?.trim();if(!vehicle||!category)continue;let count=0;try{const key=setupCacheKey(category,vehicle);setupCache.delete(key);setupPending.delete(key);const data=await getCarSetups(category,vehicle);count=countFor(Array.isArray(data?.setups)?data.setups:[]);}catch{}if(run!==countRun)return;let label=card.querySelector('.vehicle-setup-count');if(!label){label=document.createElement('div');label.className='vehicle-setup-count';card.appendChild(label);}label.textContent='Verfügbare Setups: '+count;}};await Promise.all(Array.from({length:Math.min(4,cards.length)},worker));};
+  const refreshVehicleCounts=async()=>{if(document.documentElement.dataset.dbAccess!=='authorized'||typeof getCarSetups!=='function')return;const run=++countRun;const cards=[...document.querySelectorAll('#categories .vehicle')];let cursor=0;const worker=async()=>{while(cursor<cards.length){const card=cards[cursor++];if(run!==countRun)return;const vehicle=card.querySelector('.vehicle-name')?.textContent?.trim();const category=card.querySelector('.vehicle-class')?.textContent?.trim();if(!vehicle||!category)continue;let count=null;try{const data=await getCarSetups(category,vehicle);count=countFor(Array.isArray(data?.setups)?data.setups:[]);}catch{}if(run!==countRun)return;let label=card.querySelector('.vehicle-setup-count');if(!label){label=document.createElement('div');label.className='vehicle-setup-count';card.appendChild(label);}label.textContent='Verfügbare Setups: '+(count===null?'nicht abrufbar':count);}};await Promise.all(Array.from({length:Math.min(4,cards.length)},worker));};
   window.refreshVehicleCounts=refreshVehicleCounts;
 
-  const authorize=async()=>{
+  const authorize=async(forceRefresh=false)=>{
     setLoginControls(false);
     showAccessState('checking');
     try{
-      let d=null;
+      let d=null,responseOk=false;
       for(let attempt=0;attempt<3;attempt++){
-        const r=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'});
+        const r=await fetch(forceRefresh?'/api/me?refresh=1':'/api/me',{cache:'no-store',credentials:'same-origin'});
         d=await r.json().catch(()=>null);
-        if(d?.loggedIn && (d.databaseAccess || d.rolesAvailable!==false))break;
+        responseOk=r.ok&&typeof d?.loggedIn==='boolean';
+        if(responseOk&&(!d.loggedIn||d.databaseAccess||d.rolesAvailable!==false))break;
+        if(d?.roleCheckError==='RATE_LIMITED')break;
         if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
       }
+      if(!responseOk){showAccessState('unavailable');return;}
       if(!d?.loggedIn){currentUser=null;setLoginControls(false);showAccessState('login');return;}
       currentUser=d.user||null;
       setLoginControls(true);
       const login=document.getElementById('loginButton');const account=document.getElementById('account');const accountName=document.getElementById('accountName');const accountAvatar=document.getElementById('accountAvatar');
       if(login)login.classList.add('hidden');if(account)account.style.display='flex';if(accountName)accountName.textContent=d.user?.username||'';if(accountAvatar&&d.user?.avatar){accountAvatar.src=d.user.avatar;accountAvatar.style.display='block';}
-      if(!d.databaseAccess){showAccessState('forbidden',d.user);return;}
+      if(!d.databaseAccess){showAccessState(d.rolesAvailable===false?(d.reauthorize?'reauthorize':'unavailable'):'forbidden',d.user);return;}
       showAccessState('authorized',d.user);
       if(typeof loadData==='function')await loadData();
       // The URL is the route: a plain home link must never restore a saved car.
       if(typeof openSetupFromQuery==='function')await openSetupFromQuery();
       syncCarFilter();initVersionEditor();setTimeout(refreshVehicleCounts,0);
-    }catch{setLoginControls(false);showAccessState('login');}
+    }catch{setLoginControls(false);showAccessState('unavailable');}
   };
 
   const init=()=>{

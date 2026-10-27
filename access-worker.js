@@ -117,9 +117,8 @@ export default {
     }
 
     if ((path === "/api/setups" || path === "/api/setups/download") && method === "GET") {
-      const me = await getBaseMe(request, env, ctx);
-      if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
-      if (!me.databaseAccess) return json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Kein Zugriff auf die Setup Database."},me.rolesAvailable===false?503:403);
+      // worker.js validates the signed session and database access for both routes.
+      // Do not repeat that same Discord/D1 check in every wrapping layer.
       return uiWorker.fetch(request, env, ctx);
     }
 
@@ -136,8 +135,8 @@ export default {
   }
 };
 
-async function getBaseMe(request, env, ctx) {
-  const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
+async function getBaseMe(request, env, ctx, freshRoles=false) {
+  const meRequest = new Request(new URL(freshRoles?"/api/me?refresh=1":"/api/me", request.url), { method: "GET", headers: request.headers });
   const response = await uiWorker.fetch(meRequest, env, ctx);
   return safeJson(response);
 }
@@ -157,7 +156,7 @@ async function ensureAccessSchema(env) {
 }
 
 async function requireOwner(request, env, ctx, capability="canManageDatabaseAccess") {
-  const me=await getBaseMe(request,env,ctx);
+  const me=await getBaseMe(request,env,ctx,true);
   if (!me?.loggedIn) return {error:json({success:false,error:"Nicht angemeldet."},401)};
   if (!me.user?.[capability]) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Admin-Berechtigung."},me.rolesAvailable===false?503:403)};
   return {user:me.user};
@@ -169,7 +168,7 @@ async function hasUploadGrant(userId, env) {
   catch { return false; }
 }
 async function requireUploadDeleteAccess(request, env, ctx) {
-  const me=await getBaseMe(request,env,ctx);
+  const me=await getBaseMe(request,env,ctx,true);
   if (!me?.loggedIn || !me.user?.id) return {error:json({success:false,error:"Nicht angemeldet."},401)};
   if (!me.user.canUpload) return {error:json({success:false,error:me.rolesAvailable===false?"Discord-Rollenprüfung nicht verfügbar.":"Keine Upload/Delete-Berechtigung.",retryable:me.rolesAvailable===false},me.rolesAvailable===false?503:403)};
   return {user:me.user};
@@ -309,5 +308,3 @@ function injectAdminUi(html) {
 }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
 function json(data, status=200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } }); }
-
-

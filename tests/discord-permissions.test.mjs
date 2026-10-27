@@ -38,7 +38,7 @@ async function harness(roles,run,{id=userId,grants={},discordStatus=200}={}){
   const env={...envBase,ACCESS_DB:{async batch(statements){return Promise.all(statements.map(s=>s.run()));},prepare(sql){return {bind(...params){return {
     async first(){return ((sql.includes('FROM upload_access')&&grants.upload)||(sql.includes('FROM database_access')&&grants.database))?{user_id:params[0]}:null;},
     async all(){return {results:[]};},async run(){writes.push({sql,params});return {success:true};}
-  };},async all(){return {results:[]};}};}}};
+  };},async all(){return {results:[]};},async run(){return {success:true};}};}}};
   globalThis.fetch=async(url,options={})=>{
     if(String(url).startsWith('https://discord.com/api/v10/guilds/')){
       assert.ok(String(url).startsWith('https://discord.com/api/v10/guilds/'+env.DISCORD_GUILD_ID+'/members/'));
@@ -139,4 +139,3 @@ test('personal owner can still grant individual upload access',async()=>{
     assert.ok(writes.some(w=>w.sql.includes('INSERT INTO upload_access')&&w.params[0]===targetId));
   },{id:envBase.DISCORD_OWNER_USER_ID});
 });
-
