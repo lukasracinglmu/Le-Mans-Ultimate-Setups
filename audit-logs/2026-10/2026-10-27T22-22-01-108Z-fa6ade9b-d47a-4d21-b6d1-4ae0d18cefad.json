@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:22:01.108Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Glick Spa GO.zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "Glick Spa GO",
+  "manufacturer": "GO",
+  "version": "V1.2.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
