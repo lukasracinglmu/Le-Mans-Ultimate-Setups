@@ -266,8 +266,9 @@ client.on('interactionCreate', async interaction => {
         .setStyle(ButtonStyle.Success)
     );
     await channel.send({
-      content: 'Neue Setup-Anfrage',
-      allowedMentions: { users: [interaction.user.id] },
+      content: `<@&${requestRoleId}> Neue Setup-Anfrage`,
+      // Die Rolle wird angezeigt, aber wegen allowedMentions.roles nicht gepingt.
+      allowedMentions: { roles: [], users: [interaction.user.id] },
       flags: MessageFlags.SuppressNotifications,
       embeds: [embed],
       components: [confirmRow]
