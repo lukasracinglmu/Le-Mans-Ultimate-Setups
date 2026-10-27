@@ -1,5 +1,6 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import 'dotenv/config';
+import { readFile } from 'node:fs/promises';
 import {
   ActivityType,
   ChatInputCommandInteraction,
@@ -16,7 +17,8 @@ const clientId = process.env.DISCORD_CLIENT_ID?.trim();
 const guildId = process.env.DISCORD_GUILD_ID?.trim();
 const requestChannelId = process.env.DISCORD_SETUP_REQUEST_CHANNEL_ID?.trim() || process.env.DISCORD_CHANNEL_ID?.trim();
 const requestRoleId = process.env.DISCORD_SETUP_REQUEST_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
-const setupsUrl = process.env.SETUPS_SOURCE_URL?.trim() || 'https://raw.githubusercontent.com/lukasracinglmu/Le-Mans-Ultimate-Setups/main/setups.json';
+const setupsFile = process.env.SETUPS_FILE?.trim() || './setups.json';
+const setupsUrl = process.env.SETUPS_SOURCE_URL?.trim();
 
 if (!token || !clientId || !guildId || !requestChannelId || !requestRoleId) {
   console.error('ERROR: DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_SETUP_REQUEST_CHANNEL_ID und DISCORD_SETUP_REQUEST_ROLE_ID müssen gesetzt sein.');
@@ -56,9 +58,25 @@ function applyPresence() {
 }
 
 async function loadVehicles() {
-  const response = await fetch(setupsUrl);
-  if (!response.ok) throw new Error(`Fahrzeugdaten konnten nicht geladen werden: HTTP ${response.status}`);
-  const data = await response.json();
+  let data;
+
+  try {
+    data = JSON.parse(await readFile(setupsFile, 'utf8'));
+    console.log(`Fahrzeugdaten lokal geladen: ${setupsFile}`);
+  } catch (localError) {
+    if (!setupsUrl) {
+      throw new Error(`Die Datei ${setupsFile} fehlt auf Wispbyte.`);
+    }
+
+    const response = await fetch(setupsUrl);
+    if (!response.ok) {
+      throw new Error(`Fahrzeugdaten konnten nicht geladen werden: HTTP ${response.status}`);
+    }
+
+    data = await response.json();
+    console.log('Fahrzeugdaten über die konfigurierte URL geladen.');
+  }
+
   vehicles = Object.entries(data).flatMap(([className, entries]) =>
     (Array.isArray(entries) ? entries : [])
       .map(entry => ({ name: String(entry?.name || '').trim(), className }))
