@@ -70,7 +70,7 @@ async function removeBackupIndex(env,tag){
   const current=await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=${encodeURIComponent(backupBranch(env))}`,{headers:headers(env)});
   if(!current.ok)return;
   const data=await current.json();
-  await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:'main'})});
+  await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:backupBranch(env)})});
 }
 function backupTagDate(tag){
   const current=String(tag||'').match(/^backup-(\\d{2})-(\\d{2})-(\\d{4})-(\\d{2})-(\\d{2})-(\\d{2})(?:-|$)/);
