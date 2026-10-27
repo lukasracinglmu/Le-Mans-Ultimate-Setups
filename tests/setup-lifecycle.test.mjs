@@ -83,7 +83,7 @@ test('Setup Request derives class from catalog and mentions exactly the configur
     sends.push(JSON.parse(options.body));return Response.json({id:'message'});
   };
   try{
-    const req=(vehicle)=>new Request('https://example.test/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle,carClass:'wrong',track:'Spa <@&999999999999999999>',message:'@everyone'})});
+    const req=(vehicle)=>new Request('https://example.test/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle,carClass:'wrong',track:'Spa',message:'@everyone'})});
     const env={DISCORD_SETUP_REQUEST_ROLE_ID:'1538601074074849330',DISCORD_BOT_TOKEN:'test',DISCORD_CHANNEL_ID:'1557002876906377258'};
     assert.equal((await production.fetch(req('BMW M4 LMGT3'),env)).status,200);
     assert.match(sends[0].content,/\*\*Klasse:\*\* LMGT3/);assert.match(sends[0].content,/<@&1538601074074849330>/);

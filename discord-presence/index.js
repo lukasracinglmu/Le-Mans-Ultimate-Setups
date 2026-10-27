@@ -1,5 +1,6 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import 'dotenv/config';
+import { searchRequestTracks, resolveRequestTrack, matchingRequestSetups } from './request-tracks.js';
 import { readFile } from 'node:fs/promises';
 import {
   ActivityType,
@@ -57,7 +58,8 @@ const requestCommand = new SlashCommandBuilder()
     .setRequired(true))
   .addStringOption(option => option
     .setName('strecke')
-    .setDescription('Gewünschte Strecke')
+    .setDescription('Strecke aus der Liste auswählen')
+    .setAutocomplete(true)
     .setRequired(true)
     .setMaxLength(100))
   .addStringOption(option => option
@@ -139,9 +141,7 @@ async function findExistingSetup(vehicle) {
 }
 
 function matchingSetups(files, track) {
-  const query = normalizeSearch(track);
-  if (!query) return [];
-  return files.filter(file => normalizeSearch(file.name).includes(query));
+  return matchingRequestSetups(files, track);
 }
 
 function setupPageUrl(vehicle, setupName) {
@@ -188,12 +188,17 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
     if (interaction.commandName !== 'request') return;
-    const query = interaction.options.getString('fahrzeug')?.toLowerCase().trim() || '';
-    const matches = vehicles
-      .filter(vehicle => !query || vehicle.name.toLowerCase().includes(query))
-      .slice(0, 25)
-      .map(vehicle => ({ name: `${vehicle.name} (${vehicle.className})`, value: vehicle.name }));
-    await interaction.respond(matches).catch(() => {});
+    const focused=interaction.options.getFocused(true);
+    // Fahrzeug und Strecke werden unabhängig voneinander vorgeschlagen.
+    if(focused.name==='strecke'){
+      await interaction.respond(searchRequestTracks(focused.value,25).map(track=>({name:track.name,value:track.name}))).catch(()=>{});
+    }else if(focused.name==='fahrzeug'){
+      const query=String(focused.value||'').toLowerCase().trim();
+      const matches=vehicles.filter(vehicle=>!query||vehicle.name.toLowerCase().includes(query)).slice(0,25).map(vehicle=>({name:`${vehicle.name} (${vehicle.className})`,value:vehicle.name}));
+      await interaction.respond(matches).catch(()=>{});
+    }else{
+      await interaction.respond([]).catch(()=>{});
+    }
     return;
   }
 
@@ -221,12 +226,18 @@ client.on('interactionCreate', async interaction => {
 
   if (!interaction.isChatInputCommand() || interaction.commandName !== 'request') return;
   const vehicleName = interaction.options.getString('fahrzeug', true);
-  const track = interaction.options.getString('strecke', true).trim();
+  const selectedTrack = resolveRequestTrack(interaction.options.getString('strecke', true));
+  const track = selectedTrack?.name || '';
   const moreInfo = interaction.options.getString('weitere_infos')?.trim() || 'Keine weiteren Informationen angegeben.';
   const vehicle = vehicles.find(item => item.name === vehicleName);
 
   if (!vehicle) {
     await interaction.reply({ content: 'Das Fahrzeug konnte nicht gefunden werden. Bitte nutze die Vorschläge.', ephemeral: true });
+    return;
+  }
+
+  if (!selectedTrack) {
+    await interaction.reply({content:'Die Strecke konnte nicht gefunden werden. Bitte nutze die Vorschläge.',flags:MessageFlags.Ephemeral});
     return;
   }
 
