@@ -47,7 +47,7 @@ async function notifyOwner(env,tag,now,size){
   await fetch(`https://discord.com/api/v10/channels/${data.id}/messages`,{method:'POST',headers,body:JSON.stringify({embeds:[embed]})});
 }
 async function backupIndexFile(env,tag){
-  const match=String(tag).match(/^backup-(?:\\d{4}-\\d{2}-\\d{2}|\\d{4}-\\d{2}-\\d{2}\\/\\d{2}-\\d{2}-\\d{2})/);
+  const match=String(tag).match(/^backup-(?:\d{4}-\d{2}-\d{2}|\d{4}-\d{2}-\d{2}\/\d{2}-\d{2}-\d{2})/);
   const date=match?match[0].slice(7):'unknown-date';
   return `backups/${date}/${tag}.md`;
 }
@@ -73,7 +73,7 @@ async function removeBackupIndex(env,tag){
   await fetch(`${GITHUB_API}/repos/${repo}/contents/${path}`,{method:'DELETE',headers:headers(env),body:JSON.stringify({message:`Remove expired backup ${tag} from index`,sha:data.sha,branch:backupBranch(env)})});
 }
 function backupTagDate(tag){
-  const current=String(tag||'').match(/^backup-(\\d{4})-(\\d{2})-(\\d{2})\\/(\\d{2})-(\\d{2})-(\\d{2})(?:-|$)/);
+  const current=String(tag||'').match(/^backup-(\d{4})-(\d{2})-(\d{2})\/(\d{2})-(\d{2})-(\d{2})(?:-|$)/);
   if(current){const date=new Date(Date.UTC(Number(current[1]),Number(current[3])-1,Number(current[2]),Number(current[4]),Number(current[5]),Number(current[6])));return Number.isNaN(date.getTime())?null:date;}
   const legacy=String(tag||'').match(/^backup-(\\d{4})-(\\d{2})-(\\d{2})(?:-|$)/);
   if(!legacy)return null;
