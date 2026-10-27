@@ -6,7 +6,9 @@ import {
   ChatInputCommandInteraction,
   Client,
   EmbedBuilder,
-  AttachmentBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   MessageFlags,
   GatewayIntentBits,
   REST,
@@ -133,23 +135,13 @@ function matchingSetups(files, track) {
   return files.filter(file => normalizeSearch(file.name).includes(query));
 }
 
-async function downloadSetupFile(file) {
-  if (!githubToken || !file?.url) return null;
-
-  const response = await fetch(file.url, {
-    headers: {
-      Accept: 'application/vnd.github.raw',
-      Authorization: `Bearer ${githubToken}`,
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'lmu-setup-discord-bot'
-    }
+function setupPageUrl(vehicle, setupName) {
+  const params = new URLSearchParams({
+    category: vehicle.className,
+    vehicle: vehicle.name,
+    setup: setupName
   });
-
-  if (!response.ok) {
-    throw new Error(`Setup-Datei konnte nicht geladen werden: HTTP ${response.status}`);
-  }
-
-  return Buffer.from(await response.arrayBuffer());
+  return `${setupDownloadBaseUrl}/?${params.toString()}`;
 }
 
 async function registerCommands() {
@@ -195,14 +187,18 @@ client.on('interactionCreate', async interaction => {
     const matches = matchingSetups(availableFiles || [], track);
     if (matches.length > 0) {
       const first = matches[0];
-      const fileBuffer = await downloadSetupFile(first);
+      const pageUrl = setupPageUrl(vehicle, first.name);
       const extra = matches.length > 1 ? ` Weitere passende Versionen: ${matches.length - 1}.` : '';
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('Setup auf der Website öffnen')
+          .setStyle(ButtonStyle.Link)
+          .setURL(pageUrl)
+      );
 
       await interaction.editReply({
-        content: `Für **${vehicle.name}** auf **${track}** ist bereits ein Setup vorhanden: **${first.name}**.${extra}`,
-        files: fileBuffer
-          ? [new AttachmentBuilder(fileBuffer, { name: first.name })]
-          : []
+        content: `Für **${vehicle.name}** auf **${track}** ist bereits ein Setup vorhanden: **${first.name}**.${extra} Die Fahrzeugseite wird direkt beim Setup geöffnet.`,
+        components: [row]
       });
       return;
     }
