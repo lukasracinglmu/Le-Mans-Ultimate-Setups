@@ -25,3 +25,9 @@ setup-lifecycle.js
 
 setup-display-name.js
 bug-reports.js
+audit-logs
+audit-logs/**
+tests
+tests/**
+discord-presence
+discord-presence/**
