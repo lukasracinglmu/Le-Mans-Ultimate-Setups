@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:56:16.422Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "499P Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
