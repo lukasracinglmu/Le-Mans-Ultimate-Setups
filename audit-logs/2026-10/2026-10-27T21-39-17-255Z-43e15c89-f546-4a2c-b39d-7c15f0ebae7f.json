@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T21:39:17.255Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "BMW V8 Le Mans HYMO.zip",
+  "vehicle": "BMW M Hybrid V8",
+  "track": "BMW V8 Le Mans HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
