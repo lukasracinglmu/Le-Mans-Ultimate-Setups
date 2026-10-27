@@ -6,6 +6,9 @@ import {
   ChatInputCommandInteraction,
   Client,
   EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   GatewayIntentBits,
   REST,
   Routes,
@@ -19,6 +22,11 @@ const requestChannelId = process.env.DISCORD_SETUP_REQUEST_CHANNEL_ID?.trim() ||
 const requestRoleId = process.env.DISCORD_SETUP_REQUEST_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
 const setupsFile = process.env.SETUPS_FILE?.trim() || './setups.json';
 const setupsUrl = process.env.SETUPS_SOURCE_URL?.trim();
+const githubToken = process.env.GITHUB_TOKEN?.trim();
+const githubOwner = process.env.GITHUB_OWNER?.trim() || 'lukasracinglmu';
+const githubRepo = process.env.GITHUB_REPO?.trim() || 'Le-Mans-Ultimate-Setups';
+const githubBranch = process.env.GITHUB_BRANCH?.trim() || 'main';
+const setupDownloadBaseUrl = process.env.SETUP_DOWNLOAD_BASE_URL?.trim() || 'https://le-mans-ultimate-setups.3peaks-database.workers.dev';
 
 if (!token || !clientId || !guildId || !requestChannelId || !requestRoleId) {
   console.error('ERROR: DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_SETUP_REQUEST_CHANNEL_ID und DISCORD_SETUP_REQUEST_ROLE_ID müssen gesetzt sein.');
@@ -84,6 +92,49 @@ async function loadVehicles() {
   );
 }
 
+function normalizeSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+async function findExistingSetup(vehicle) {
+  if (!githubToken) return null;
+  const path = `setups/${encodeURIComponent(vehicle.className)}/${encodeURIComponent(vehicle.name)}`;
+  const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}?ref=${encodeURIComponent(githubBranch)}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${githubToken}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'lmu-setup-discord-bot'
+    }
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`GitHub-Setupprüfung fehlgeschlagen: HTTP ${response.status}`);
+  const files = await response.json();
+  if (!Array.isArray(files)) return null;
+  return files
+    .filter(file => file?.type === 'file' && /\.zip$/i.test(file.name || ''))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'de', { numeric: true, sensitivity: 'base' }));
+}
+
+function matchingSetups(files, track) {
+  const query = normalizeSearch(track);
+  if (!query) return [];
+  return files.filter(file => normalizeSearch(file.name).includes(query));
+}
+
+function setupDownloadUrl(vehicle, setupName) {
+  const params = new URLSearchParams({
+    category: vehicle.className,
+    vehicle: vehicle.name,
+    name: setupName
+  });
+  return `${setupDownloadBaseUrl}/api/setups/download?${params.toString()}`;
+}
+
 async function registerCommands() {
   const rest = new REST({ version: '10' }).setToken(token);
   await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [requestCommand.toJSON()] });
@@ -123,6 +174,25 @@ client.on('interactionCreate', async interaction => {
 
   await interaction.deferReply({ ephemeral: true });
   try {
+    const availableFiles = await findExistingSetup(vehicle);
+    const matches = matchingSetups(availableFiles || [], track);
+    if (matches.length > 0) {
+      const first = matches[0];
+      const downloadUrl = setupDownloadUrl(vehicle, first.name);
+      const extra = matches.length > 1 ? ` Weitere passende Versionen: ${matches.length - 1}.` : '';
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('Setup herunterladen')
+          .setStyle(ButtonStyle.Link)
+          .setURL(downloadUrl)
+      );
+      await interaction.editReply({
+        content: `Für **${vehicle.name}** auf **${track}** ist bereits ein Setup vorhanden: **${first.name}**.${extra}`,
+        components: [row]
+      });
+      return;
+    }
+
     const channel = await client.channels.fetch(requestChannelId);
     if (!channel?.isTextBased()) throw new Error('Der Setup-Request-Channel ist nicht erreichbar.');
 
