@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T20:52:15.441Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Imola GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Imola GO",
+  "manufacturer": "GO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
