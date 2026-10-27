@@ -53,6 +53,9 @@
     "GITHUB_OWNER": "lukasracinglmu",
     "GITHUB_REPO": "Le-Mans-Ultimate-Setups",
     "GITHUB_BRANCH": "main",
+    "BACKUP_GITHUB_OWNER": "lukasracinglmu",
+    "BACKUP_GITHUB_REPO": "LMU-Database-Backups",
+    "BACKUP_GITHUB_BRANCH": "KNOWN_GOOD_ROLLBACK",
     "DISCORD_OWNER_ROLE_ID": "1464926567401652423",
     "DISCORD_OWNER_USER_ID": "1033453785416208564"
   }
