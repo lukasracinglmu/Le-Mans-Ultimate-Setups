@@ -3,7 +3,7 @@ const GITHUB_API='https://api.github.com';
 
 function backupOwner(env){return env.BACKUP_GITHUB_OWNER||env.GITHUB_OWNER||'lukasracinglmu';}
 function backupRepoName(env){return env.BACKUP_GITHUB_REPO||'LMU-Database-Backups';}
-function backupBranch(env){return env.BACKUP_GITHUB_BRANCH||'KNOWN_GOOD_ROLLBACK';}
+function backupBranch(env){return env.BACKUP_GITHUB_BRANCH||'main';}
 function headers(env){
   const token=env.BACKUP_GITHUB_TOKEN||env.GITHUB_TOKEN;
   return {Accept:'application/vnd.github+json','Content-Type':'application/json','User-Agent':'lmu-automatic-backup','X-GitHub-Api-Version':'2022-11-28',Authorization:`Bearer ${token}`};
