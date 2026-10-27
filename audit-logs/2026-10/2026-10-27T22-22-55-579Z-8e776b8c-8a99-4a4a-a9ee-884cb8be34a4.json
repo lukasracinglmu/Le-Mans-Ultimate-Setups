@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-27T22:22:55.579Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Glick Silverstone GO.zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "Glick Silverstone GO",
+  "manufacturer": "GO",
+  "version": "V1.2.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
