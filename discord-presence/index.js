@@ -135,12 +135,15 @@ function matchingSetups(files, track) {
   return files.filter(file => normalizeSearch(file.name).includes(query));
 }
 
-function setupDownloadUrl(vehicle, setupName) {
+function setupDownloadUrl(vehicle, setup) {
+  if (setup?.download_url) return setup.download_url;
+
   const params = new URLSearchParams({
     category: vehicle.className,
     vehicle: vehicle.name,
-    name: setupName
+    name: setup.name
   });
+
   return `${setupDownloadBaseUrl}/api/setups/download?${params.toString()}`;
 }
 
@@ -187,7 +190,7 @@ client.on('interactionCreate', async interaction => {
     const matches = matchingSetups(availableFiles || [], track);
     if (matches.length > 0) {
       const first = matches[0];
-      const downloadUrl = setupDownloadUrl(vehicle, first.name);
+      const downloadUrl = setupDownloadUrl(vehicle, first);
       const extra = matches.length > 1 ? ` Weitere passende Versionen: ${matches.length - 1}.` : '';
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
