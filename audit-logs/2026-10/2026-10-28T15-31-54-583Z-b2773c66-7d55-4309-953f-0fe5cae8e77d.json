@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:31:54.583Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Corvette Le Mans HYMO.zip",
+  "vehicle": "Chevrolet Corvette Z06 LMGT3.R",
+  "track": "Corvette Le Mans HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
