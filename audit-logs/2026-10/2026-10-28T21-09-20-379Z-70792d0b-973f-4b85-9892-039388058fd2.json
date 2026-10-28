@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T21:09:20.379Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "720S Qatar HYMO.zip",
+  "vehicle": "McLaren 720S LMGT3",
+  "track": "720S Qatar HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
