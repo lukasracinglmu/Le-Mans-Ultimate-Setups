@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:24:52.204Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Daytona HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
