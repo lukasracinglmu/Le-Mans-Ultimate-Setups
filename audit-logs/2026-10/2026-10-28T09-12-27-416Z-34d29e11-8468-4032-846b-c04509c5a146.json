@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:12:27.416Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
