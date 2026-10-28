@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T18:27:57.801Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "720S Le Mans HYMO.zip",
+  "vehicle": "McLaren 720S LMGT3",
+  "track": "720S Le Mans HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
