@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:53:02.144Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Oreca 07 ELMS Portimao HYMO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 ELMS Portimao HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
