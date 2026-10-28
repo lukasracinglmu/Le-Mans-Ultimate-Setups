@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:19:40.855Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ginetta Daytona HYMO.zip",
+  "vehicle": "Ginetta G61-LT-P325",
+  "track": "Ginetta Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
