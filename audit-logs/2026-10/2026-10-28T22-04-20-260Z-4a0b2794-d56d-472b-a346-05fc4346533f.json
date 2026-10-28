@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T22:04:20.260Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "911 Portimao HYMO.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Portimao HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
