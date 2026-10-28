@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:29:59.522Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "BMW M4 Barcelona beAlien.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Barcelona beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
