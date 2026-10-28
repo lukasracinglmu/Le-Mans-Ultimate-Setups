@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:22:16.727Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Huracan COTA GO.zip",
+  "vehicle": "Lamborghini Huracán LMGT3",
+  "track": "Huracan COTA GO",
+  "manufacturer": "GO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
