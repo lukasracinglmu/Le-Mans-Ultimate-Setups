@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:26:10.269Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Huracan Bahrain HYMO.zip",
+  "vehicle": "Lamborghini Huracán LMGT3",
+  "track": "Huracan Bahrain HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
