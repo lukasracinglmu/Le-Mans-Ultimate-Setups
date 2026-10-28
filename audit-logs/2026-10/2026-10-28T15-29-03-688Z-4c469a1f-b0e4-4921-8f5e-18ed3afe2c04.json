@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:29:03.688Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "BMW M4 Long Beach GO.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Long Beach GO",
+  "manufacturer": "GO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
