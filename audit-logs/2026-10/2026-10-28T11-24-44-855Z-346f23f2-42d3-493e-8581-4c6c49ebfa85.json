@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:24:44.855Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Spa HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Spa HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
