@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:28:13.324Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Spa beAlien.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Spa beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
