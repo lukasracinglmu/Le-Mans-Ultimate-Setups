@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:25:48.031Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Imola HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Imola HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
