@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:15:22.516Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Duqueine Qatar HYMO.zip",
+  "vehicle": "Duqueine D09",
+  "track": "Duqueine Qatar HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
