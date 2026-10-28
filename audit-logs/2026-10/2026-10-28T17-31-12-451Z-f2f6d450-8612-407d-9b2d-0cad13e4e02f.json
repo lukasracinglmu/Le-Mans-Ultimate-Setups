@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:31:12.451Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Silverstone National HYMO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Silverstone National HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
