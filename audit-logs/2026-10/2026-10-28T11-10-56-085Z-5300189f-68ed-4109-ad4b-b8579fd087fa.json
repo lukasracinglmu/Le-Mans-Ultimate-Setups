@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:10:56.085Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Adess Road Atlanta HYMO.zip",
+  "vehicle": "Adess AD25",
+  "track": "Adess Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
