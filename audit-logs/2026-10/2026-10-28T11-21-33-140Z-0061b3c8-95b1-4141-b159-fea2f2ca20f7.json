@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:21:33.140Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ginetta Paul Ricard HYMO.zip",
+  "vehicle": "Ginetta G61-LT-P325",
+  "track": "Ginetta Paul Ricard HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
