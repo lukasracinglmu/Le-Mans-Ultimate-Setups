@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:27:29.335Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
