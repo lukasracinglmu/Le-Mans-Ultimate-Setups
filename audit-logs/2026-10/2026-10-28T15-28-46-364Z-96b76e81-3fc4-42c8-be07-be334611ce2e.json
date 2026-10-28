@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:28:46.364Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "BMW M4 Qatar Short HYMO.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Qatar Short HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
