@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:49:47.567Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "9X8 Evo Paul Ricard HYMO.zip",
+  "vehicle": "Peugeot 9X8 Evo",
+  "track": "9X8 Evo Paul Ricard HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
