@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T22:03:59.563Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "911 Fuji beAlien.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Fuji beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
