@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T14:55:09.876Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage Spa GO.zip",
+  "vehicle": "Aston Martin Vantage AMR LMGT3",
+  "track": "Vantage Spa GO",
+  "manufacturer": "GO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
