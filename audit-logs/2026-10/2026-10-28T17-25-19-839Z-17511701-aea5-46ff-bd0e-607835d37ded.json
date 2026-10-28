@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:25:19.839Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Huracan Road Atlanta HYMO.zip",
+  "vehicle": "Lamborghini Huracán LMGT3",
+  "track": "Huracan Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
