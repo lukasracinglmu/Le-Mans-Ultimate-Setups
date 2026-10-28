@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T14:58:25.427Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage Daytona HYMO.zip",
+  "vehicle": "Aston Martin Vantage AMR LMGT3",
+  "track": "Vantage Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
