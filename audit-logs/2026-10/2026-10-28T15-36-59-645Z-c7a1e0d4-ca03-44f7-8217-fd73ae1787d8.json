@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:36:59.645Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "296 Monza HYMO.zip",
+  "vehicle": "Ferrari 296 LMGT3",
+  "track": "296 Monza HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
