@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:19:33.458Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ginetta Spa HYMO.zip",
+  "vehicle": "Ginetta G61-LT-P325",
+  "track": "Ginetta Spa HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
