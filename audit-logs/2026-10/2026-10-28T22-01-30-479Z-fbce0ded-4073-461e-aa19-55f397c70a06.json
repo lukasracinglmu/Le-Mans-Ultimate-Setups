@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T22:01:30.479Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "911 Daytona HYMO.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
