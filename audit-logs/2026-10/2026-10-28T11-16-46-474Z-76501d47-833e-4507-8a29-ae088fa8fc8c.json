@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:16:46.474Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Duqueine Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Duqueine D09",
+  "track": "Duqueine Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
