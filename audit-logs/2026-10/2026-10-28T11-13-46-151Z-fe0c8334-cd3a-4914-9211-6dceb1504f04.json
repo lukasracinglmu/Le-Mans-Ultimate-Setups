@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:13:46.151Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Duqueine Laguna Seca GO.zip",
+  "vehicle": "Duqueine D09",
+  "track": "Duqueine Laguna Seca GO",
+  "manufacturer": "GO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
