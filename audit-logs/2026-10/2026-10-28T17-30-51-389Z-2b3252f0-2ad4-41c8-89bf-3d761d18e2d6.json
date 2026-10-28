@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:30:51.389Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Le Mans GO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Le Mans GO",
+  "manufacturer": "GO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
