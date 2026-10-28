@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:27:14.624Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Long Beach HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
