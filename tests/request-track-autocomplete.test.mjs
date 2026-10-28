@@ -170,3 +170,26 @@ test('Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrz
   assert.match(reply.content,/bereits ein Setup vorhanden/);
   assert.match(reply.components[0].data.components[0].data.url,/vehicle=Toyota\+GR010/);
 });
+
+
+test('Paul bleibt Paul Ricard; Aliase treffen keine beliebigen Wortfragmente',()=>{
+  const html=readFileSync(new URL('../request.html',import.meta.url),'utf8');
+  const source=html.slice(html.indexOf('let REQUEST_TRACKS=[]'),html.indexOf('const form=')).replace('let REQUEST_TRACKS=[]','const REQUEST_TRACKS=tracks');
+  const browser=vm.runInNewContext(source+';({searchRequestTracks,resolveRequestTrack})',{tracks:REQUEST_TRACKS});
+  for(const search of [searchRequestTracks,browser.searchRequestTracks]){
+    assert.ok(search('Pa').every(track=>track.name!=='Interlagos'));
+    for(const query of ['Pau','Paul','paul ric','Ricard']){
+      const hits=search(query);
+      assert.equal(hits.length,5,query);
+      assert.ok(hits.every(track=>track.family==='paulricard'),query);
+    }
+    for(const query of ['Sao','São Paulo','Paulo','Inter','Jose Carlos Pace']){
+      assert.ok(search(query).some(track=>track.name==='Interlagos'),query);
+    }
+    assert.equal(search('carlos')[0]?.name,'Interlagos');
+    assert.equal(search('arlos').length,0);
+    assert.equal(search('qatar')[0]?.name,'Lusail');
+    assert.equal(search('port')[0]?.name,'Algarve / Portimão');
+    assert.equal(search('short').length,2);
+  }
+});
