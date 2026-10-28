@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:09:36.875Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Adess Interlagos HYMO.zip",
+  "vehicle": "Adess AD25",
+  "track": "Adess Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
