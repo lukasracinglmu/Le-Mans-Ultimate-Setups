@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:12:34.393Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Fuji HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Fuji HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
