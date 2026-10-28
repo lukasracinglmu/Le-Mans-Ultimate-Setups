@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T21:09:27.130Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "720S Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "McLaren 720S LMGT3",
+  "track": "720S Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
