@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:00:38.015Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage Qatar Short HYMO.zip",
+  "vehicle": "Aston Martin Vantage AMR LMGT3",
+  "track": "Vantage Qatar Short HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
