@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:46:00.741Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Oreca 07 ELMS Spa HYMO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 ELMS Spa HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
