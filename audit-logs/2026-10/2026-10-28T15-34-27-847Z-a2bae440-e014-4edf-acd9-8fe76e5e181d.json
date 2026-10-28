@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:34:27.847Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Corvette Road Atlanta HYMO.zip",
+  "vehicle": "Chevrolet Corvette Z06 LMGT3.R",
+  "track": "Corvette Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
