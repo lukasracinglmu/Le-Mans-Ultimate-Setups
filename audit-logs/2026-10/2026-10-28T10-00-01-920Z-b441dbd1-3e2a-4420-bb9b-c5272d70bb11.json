@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:00:01.920Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "963 Fuji beAlien.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Fuji beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
