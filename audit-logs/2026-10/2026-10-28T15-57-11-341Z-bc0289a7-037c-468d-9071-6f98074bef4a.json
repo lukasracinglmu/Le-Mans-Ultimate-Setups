@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:57:11.341Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Mustang Road Atlanta HYMO.zip",
+  "vehicle": "Ford Mustang LMGT3",
+  "track": "Mustang Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
