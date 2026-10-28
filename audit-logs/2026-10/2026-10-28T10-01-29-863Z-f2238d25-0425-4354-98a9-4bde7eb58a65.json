@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:01:29.863Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "963 Qatar Short HYMO.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Qatar Short HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
