@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:59:55.024Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "963 Fuji HYMO.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Fuji HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
