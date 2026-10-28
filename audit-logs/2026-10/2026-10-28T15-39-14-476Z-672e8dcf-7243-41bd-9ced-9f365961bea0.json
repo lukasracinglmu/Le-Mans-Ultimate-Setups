@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:39:14.476Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "296 Silverstone National HYMO.zip",
+  "vehicle": "Ferrari 296 LMGT3",
+  "track": "296 Silverstone National HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
