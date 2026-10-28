@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T22:05:42.561Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "911 Silverstone National HYMO.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Silverstone National HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
