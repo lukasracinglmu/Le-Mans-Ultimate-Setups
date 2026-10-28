@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:31:05.502Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Qatar Short HYMO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Qatar Short HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
