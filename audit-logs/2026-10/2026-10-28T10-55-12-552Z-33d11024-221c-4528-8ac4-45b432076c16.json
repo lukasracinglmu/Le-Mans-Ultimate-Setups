@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:55:12.552Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Oreca 07 WEC Road Atlanta GO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 WEC Road Atlanta GO",
+  "manufacturer": "GO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
