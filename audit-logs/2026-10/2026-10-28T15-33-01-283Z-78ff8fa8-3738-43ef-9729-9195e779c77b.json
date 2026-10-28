@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T15:33:01.283Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Corvette Qatar HYMO.zip",
+  "vehicle": "Chevrolet Corvette Z06 LMGT3.R",
+  "track": "Corvette Qatar HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
