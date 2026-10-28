@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:09:21.944Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Adess Paul Ricard HYMO.zip",
+  "vehicle": "Adess AD25",
+  "track": "Adess Paul Ricard HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
