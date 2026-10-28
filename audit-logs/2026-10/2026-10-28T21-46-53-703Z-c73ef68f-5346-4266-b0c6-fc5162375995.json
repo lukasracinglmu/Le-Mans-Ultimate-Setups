@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T21:46:53.703Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Benz Qatar Short HYMO.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Qatar Short HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
