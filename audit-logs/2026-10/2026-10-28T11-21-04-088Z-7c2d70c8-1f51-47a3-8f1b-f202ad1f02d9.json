@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:21:04.088Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ginetta Imola HYMO.zip",
+  "vehicle": "Ginetta G61-LT-P325",
+  "track": "Ginetta Imola HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
