@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:19:25.081Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ginetta Laguna Seca GO.zip",
+  "vehicle": "Ginetta G61-LT-P325",
+  "track": "Ginetta Laguna Seca GO",
+  "manufacturer": "GO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
