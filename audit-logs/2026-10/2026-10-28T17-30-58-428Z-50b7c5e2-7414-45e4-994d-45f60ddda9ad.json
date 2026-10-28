@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:30:58.428Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Road Atlanta HYMO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
