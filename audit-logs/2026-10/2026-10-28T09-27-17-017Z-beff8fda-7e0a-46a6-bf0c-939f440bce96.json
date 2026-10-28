@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:27:17.017Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "9X8 Le Mans HYMO.zip",
+  "vehicle": "Peugeot 9X8",
+  "track": "9X8 Le Mans HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
