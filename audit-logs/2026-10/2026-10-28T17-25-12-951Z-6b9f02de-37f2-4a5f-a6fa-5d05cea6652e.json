@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:25:12.951Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Huracan Long Beach HYMO.zip",
+  "vehicle": "Lamborghini Huracán LMGT3",
+  "track": "Huracan Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
