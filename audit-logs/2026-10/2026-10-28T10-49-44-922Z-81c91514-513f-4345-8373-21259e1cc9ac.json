@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T10:49:44.922Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Oreca 07 ELMS Silverstone GO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 ELMS Silverstone GO",
+  "manufacturer": "GO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
