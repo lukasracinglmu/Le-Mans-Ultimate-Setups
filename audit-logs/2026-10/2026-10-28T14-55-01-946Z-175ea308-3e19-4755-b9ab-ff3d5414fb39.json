@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T14:55:01.946Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage Paul Ricard 1A_V2 HYMO.zip",
+  "vehicle": "Aston Martin Vantage AMR LMGT3",
+  "track": "Vantage Paul Ricard 1A V2 HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
