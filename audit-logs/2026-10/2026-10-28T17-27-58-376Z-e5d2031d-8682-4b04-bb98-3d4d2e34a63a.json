@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T17:27:58.376Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Lexus Spa HYMO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Spa HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
