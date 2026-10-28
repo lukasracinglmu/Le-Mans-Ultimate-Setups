@@ -13,7 +13,9 @@ export async function readRepoFile(env, path) {
   };
   if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
   try {
-    return await fetch(url, { headers, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
+    // Workers supports manual/follow only. Keep redirects manual so credentials
+    // cannot follow a redirect to another host; callers reject non-2xx responses.
+    return await fetch(url, { headers, cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(15000) });
   } catch {
     return new Response("Repository momentan nicht erreichbar.", { status: 502 });
   }

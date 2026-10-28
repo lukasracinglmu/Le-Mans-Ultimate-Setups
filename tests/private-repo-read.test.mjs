@@ -24,7 +24,7 @@ test('private homepage uses authenticated raw Contents API without exposing cred
     assert.equal(String(url),'https://api.github.com/repos/lukasracinglmu/Le-Mans-Ultimate-Setups/contents/index.html?ref=release%2Ftest');
     assert.equal(opts.headers.Authorization,'Bearer '+envBase.GITHUB_TOKEN);
     assert.equal(opts.headers.Accept,'application/vnd.github.raw+json');
-    assert.equal(opts.redirect,'error');
+    assert.equal(opts.redirect,'manual');
     return new Response(home);
   },async()=>{
     const response=await runtime.fetch(request('/'),envBase,{});
@@ -106,4 +106,29 @@ test('private ZIP download streams authenticated content after permission valida
 
 test('private file path segments and branch are encoded independently',async()=>{
   await withFetch(async(url)=>{assert.ok(String(url).includes('/contents/setups/A%20B/a%23b.zip?ref=release%2Ftest'));return new Response('ok');},async()=>{assert.equal((await readRepoFile(envBase,'setups/A B/a#b.zip')).status,200);});
+});
+
+test('repository redirects stay manual and downloads reject them without leaking Location',async()=>{
+  for(const status of [301,302,303,307,308]){
+    const location='https://untrusted.example/test.zip';
+    let calls=0;
+    await withFetch(async(url,opts)=>{
+      calls++;
+      // Enforce the Workers redirect contract that Node fetch mocks otherwise miss.
+      if(!['manual','follow'].includes(opts.redirect))throw new TypeError('Unsupported Worker redirect mode');
+      assert.equal(opts.redirect,'manual');
+      assert.equal(new URL(url).hostname,'api.github.com');
+      return new Response(null,{status,headers:{Location:location}});
+    },async()=>{
+      const source=await readRepoFile(envBase,'setups/Hypercar/Test Car/test.zip');
+      assert.equal(source.status,status);
+      const req=new Request('https://example.test/api/setups/download?category=Hypercar&vehicle=Test%20Car&name=test.zip',{headers:{Cookie:await session()}});
+      const response=await runtime.fetch(req,envBase,{});
+      assert.equal(response.status,502);
+      assert.equal(response.headers.get('location'),null);
+      assert.equal(response.headers.get('content-disposition'),null);
+      assert.equal((await response.json()).error,'Download fehlgeschlagen.');
+      assert.equal(calls,2);
+    });
+  }
 });
