@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:16:11.403Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Silverstone National HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Silverstone National HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
