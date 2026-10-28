@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T09:15:42.762Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Long Beach HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
