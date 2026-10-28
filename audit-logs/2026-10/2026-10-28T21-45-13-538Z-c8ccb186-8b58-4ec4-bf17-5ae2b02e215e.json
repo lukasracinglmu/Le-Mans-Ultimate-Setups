@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T21:45:13.538Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Benz Le Mans beAlien.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Le Mans beAlien",
+  "manufacturer": "beAlien",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
