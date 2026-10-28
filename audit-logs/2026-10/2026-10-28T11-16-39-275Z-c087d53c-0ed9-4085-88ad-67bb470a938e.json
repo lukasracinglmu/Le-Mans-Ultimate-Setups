@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-28T11:16:39.275Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Duqueine Long Beach HYMO.zip",
+  "vehicle": "Duqueine D09",
+  "track": "Duqueine Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
