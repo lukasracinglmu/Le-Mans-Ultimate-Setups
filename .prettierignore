@@ -6,8 +6,7 @@ audit-logs/
 # Maintained by the changelog automation
 CHANGELOG.md
 
-# Worker layers rewrite index.html at runtime through exact string and regex
-# matches and inject the CSS and JavaScript those rewrites depend on.
-# Reformatting the file breaks the matches. Format it once the runtime
-# patches live in the page itself (issue #9).
+# Still contains the minified scripts and styles of the former runtime patches.
+# Format it when the inline scripts move into JS modules (issue #16), so the
+# page is not reformatted twice.
 public/index.html
