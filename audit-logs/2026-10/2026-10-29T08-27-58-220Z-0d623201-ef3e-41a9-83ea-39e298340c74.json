@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T08:27:58.220Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Glick Barcelona GO (Version 1.4.3).zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "Glick Barcelona GO (Version 1.4.3)",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
