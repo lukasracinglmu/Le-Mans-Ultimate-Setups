@@ -193,21 +193,32 @@ const HOTFIX_JS = `<script>
 })();
 </script>`;
 
-function applyHotfix(html){
-  let out=html;
-  out=out.replace(/loadTheme\(\);(?:initManufacturer\(\);)?checkLogin\(\);loadData\(\)(?:\.then\(openSetupFromQuery\))?;/g,'loadTheme();');
-  if(out.includes('</style>')) out=out.replace('</style>',HOTFIX_CSS+'\n</style>');
-  else out=out.replace('</head>','<style>'+HOTFIX_CSS+'</style></head>');
-  out=out.replace('</body>',HOTFIX_JS+'\n</body>');
+function applyHotfix(html) {
+  let out = html;
+  out = out.replace(
+    /loadTheme\(\);(?:initManufacturer\(\);)?checkLogin\(\);loadData\(\)(?:\.then\(openSetupFromQuery\))?;/g,
+    "loadTheme();",
+  );
+  if (out.includes("</style>")) out = out.replace("</style>", HOTFIX_CSS + "\n</style>");
+  else out = out.replace("</head>", "<style>" + HOTFIX_CSS + "</style></head>");
+  out = out.replace("</body>", HOTFIX_JS + "\n</body>");
   return out;
 }
 
 export default {
-  async fetch(request, env, ctx){
-    const response=await productionWorker.fetch(request,env,ctx);
-    const url=new URL(request.url);const type=response.headers.get('content-type')||'';
-    if(request.method!=='GET'||url.pathname!=='/'||!type.includes('text/html')) return response;
-    const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.delete('Content-Length');
-    return new Response(applyHotfix(await response.text()),{status:response.status,statusText:response.statusText,headers});
-  }
+  async fetch(request, env, ctx) {
+    const response = await productionWorker.fetch(request, env, ctx);
+    const url = new URL(request.url);
+    const type = response.headers.get("content-type") || "";
+    if (request.method !== "GET" || url.pathname !== "/" || !type.includes("text/html"))
+      return response;
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "no-store");
+    headers.delete("Content-Length");
+    return new Response(applyHotfix(await response.text()), {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  },
 };
