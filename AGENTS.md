@@ -31,6 +31,14 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 - Ein Merge auf `main` deployt den Worker automatisch (Cloudflare Workers Builds). Jeder PR bekommt eine Vorschau-URL im Check „Workers Builds“. Dort Änderungen vor dem Merge live prüfen.
 - HTML-Seiten sind mit dem Merge sofort live, weil der Worker sie aus `main` liest.
+- Der Bot läuft getrennt auf eigenem Host mit eigener `.env`, die hier nicht einsehbar ist. Änderungen am Bot dürfen keine neuen Variablen voraussetzen.
+
+### Konfiguration
+
+- IDs und Einstellungen nur über `src/config.js` aus `env` lesen, ohne Ersatzwerte im Code. Fehlt ein Wert, ist die Funktion aus (z. B. niemand ist Owner).
+- Neue Pflichtvariablen in `REQUIRED_VARS` eintragen, dann prüft sie `npm run check:deploy`.
+- Feste IDs, die Worker und Bot teilen (Whitelist, Rollen-Ersatzwert des Bots), stehen nur in `discord-presence/request-manufacturers.js`.
+- Werte in `CLOUDFLARE-VARIABLEN.md` aus `wrangler.jsonc` übernehmen, nicht umgekehrt.
 
 ### `public/index.html`
 
@@ -44,6 +52,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Mocks für D1, Discord und GitHub reagieren auf SQL-Text bzw. URLs. Neue Anweisungen oder Pfade brauchen passende Mocks. Anweisungen im Mock unterscheiden, nicht pauschal zählen.
 - Tests, die Quelltext per Textsuche lesen, formatierungsunabhängig halten: `\s*` statt fester Leerzeichen, Funktionen per Klammerzählung herauslösen.
 - Angepasste Tests per Gegenprobe absichern: Fehler im Code einbauen, der Test muss rot werden.
+- Test-Umgebungen setzen benötigte Variablen wie `DISCORD_OWNER_USER_ID` ausdrücklich. Es gibt keine Ersatzwerte mehr, auf die sich ein Test verlassen könnte.
 
 ### Repo-Pflege
 
@@ -51,3 +60,4 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Beim Verschieben von Dateien `area()` in `.github/changelog/update_changelog.py` mitziehen. Die Funktion ordnet Bereiche über Pfade zu.
 - Formatierungs-Commits rein mechanisch halten (AST-identisch) und in `.git-blame-ignore-revs` eintragen. Solche PRs als Merge-Commit mergen, nicht squashen.
 - CodeQL und Dependency Review brauchen in privaten Repos GitHub Code Security und laufen deshalb nur bei öffentlichem Repo.
+- Automatische Ersetzungen (Regex, `sed`, `perl`) danach per `git diff` prüfen. Ein `|` als Trennzeichen bei Mustern mit `||` macht daraus eine leere Alternative, und der Text landet am Dateianfang.
