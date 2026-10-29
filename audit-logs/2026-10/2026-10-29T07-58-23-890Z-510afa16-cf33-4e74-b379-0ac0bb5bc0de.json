@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T07:58:23.890Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Alpine Laguna Seca HYMO.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Laguna Seca HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
