@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-29T17:15:47.328Z",
+  "action": "SETUP_OUTDATED_REVERT",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "GO V1.4.1 GR010 HYP IMO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "GO V1.4.1 GR010 HYP IMO",
+  "manufacturer": "GO",
+  "oldValue": "VERALTET",
+  "newValue": "AKTUELL",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
