@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T09:03:53.418Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Glick Barcelona GO.zip",
+  "vehicle": "Glickenhaus SCG 007",
+  "track": "Glick Barcelona GO",
+  "manufacturer": "GO",
+  "version": "V1.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
