@@ -23,16 +23,8 @@ const audit = vm.runInNewContext(
   read("src/audit-log.js").match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +
     ";classifyManufacturer",
 );
-const hotfixContext = vm.createContext({});
-vm.runInContext(
-  read("src/ui-hotfix.js")
-    .replace(/^import .*;\s*/gm, "")
-    .replace("export default {", "const worker = {") + ";globalThis.script=HOTFIX_JS;",
-  hotfixContext,
-);
-const fallbackLine = hotfixContext.script
-  .split("\n")
-  .find((line) => line.trim().startsWith("const classify="));
+// The former ui-hotfix.js script with its fallback classifier now lives in index.html.
+const fallbackLine = source.split("\n").find((line) => line.trim().startsWith("const classify="));
 const fallback = vm.runInNewContext(fallbackLine + ";classify");
 const classifiers = [
   ["server lifecycle", setupManufacturer],

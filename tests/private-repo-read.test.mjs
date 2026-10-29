@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { readRepoFile, readSiteFile } from "../src/repo-read.js";
 import production from "../src/production-worker.js";
@@ -14,6 +15,8 @@ const envBase = {
   DISCORD_OWNER_USER_ID: "1033453785416208564",
 };
 const home = "<!doctype html><html><head></head><body><h1>LMU Setups</h1></body></html>";
+// The deployed home page already contains the former runtime enhancements.
+const deployedHome = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const request = (path) => new Request("https://example.test" + path);
 async function withFetch(mock, run) {
   const original = globalThis.fetch;
@@ -66,7 +69,7 @@ test("private homepage uses authenticated raw Contents API without exposing cred
 });
 
 for (const failure of ["private-404", "network-error"]) {
-  test("GitHub " + failure + " falls back to canonical asset root with enhancements", async () => {
+  test("GitHub " + failure + " falls back to the canonical asset root unchanged", async () => {
     const paths = [];
     const env = {
       ...repositoryEnv,
@@ -76,7 +79,7 @@ for (const failure of ["private-404", "network-error"]) {
           paths.push(new URL(req.url).pathname);
           return new URL(req.url).pathname === "/index.html"
             ? Response.redirect("https://example.test/", 307)
-            : new Response(home);
+            : new Response(deployedHome);
         },
       },
     };
@@ -89,7 +92,7 @@ for (const failure of ["private-404", "network-error"]) {
         const r = await production.fetch(request("/"), env, {});
         assert.equal(r.status, 200);
         assert.equal(r.headers.get("location"), null);
-        assert.match(await r.text(), /manufacturerPrev/);
+        assert.equal(await r.text(), deployedHome);
         assert.deepEqual(paths, ["/"]);
         const base = await worker.fetch(request("/"), env, {});
         assert.equal(base.status, 200);
