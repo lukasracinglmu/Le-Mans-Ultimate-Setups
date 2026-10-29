@@ -22,10 +22,10 @@ Die Abschlussmeldung authentifiziert GitHub mit einer kurzlebigen OIDC-Identitä
 
 ## Setup-Anfragen auf Website und Discord
 
-- Pflichtfelder: Fahrzeug, Strecke/Layout und Hersteller **GO**, **HYMO** oder **beAlien**. Die Nachricht bleibt optional. Beim Bot heißt die zusätzliche Auswahl `/request … hersteller:…`.
-- Die Vorhanden-Prüfung vergleicht Fahrzeugordner, Strecke/Layout **und Hersteller**. Ein HYMO-Setup verhindert keine GO-Anfrage. Verschiedene Streckenlayouts bleiben getrennt. Dateikürzel `bA`, `bA1`, `bA2` werden beAlien zugeordnet.
+- Pflichtfelder sind Fahrzeug und Strecke/Layout. Hersteller **GO**, **HYMO** oder **beAlien** sowie die Nachricht sind optional. Ohne Auswahl gilt **Egal – keine Präferenz**. Beim Bot kann `/request … hersteller:…` einfach weggelassen werden; auch das ältere Discord-Formular erlaubt ein leeres Herstellerfeld.
+- Die Vorhanden-Prüfung vergleicht Fahrzeugordner, Strecke/Layout **und Hersteller**. Ein HYMO-Setup verhindert keine GO-Anfrage. Ohne Herstellerwahl wird nach einem Setup beliebigen Herstellers für genau dieses Fahrzeug und Streckenlayout gesucht; ein vorhandener Treffer liefert weiterhin den direkten Link. Verschiedene Streckenlayouts bleiben getrennt. Dateikürzel `bA`, `bA1`, `bA2` werden beAlien zugeordnet.
 - Bei einem passenden vorhandenen Setup erscheint auf der Website ein direkter Link zum Fahrzeug/Setup, im Discord-Befehl eine nur für den Anfragenden sichtbare Antwort. Es wird keine neue Channel-Anfrage gepostet.
-- Neue Anfragen erscheinen über beide Wege als ein Embed mit Fahrzeug/Klasse, Strecke, Hersteller, Nachricht und getaggtem Anfragenden. Die Setup-Supply-Rolle steht darüber als sichtbarer Tag, bekommt dabei aber **keinen Rollen-Ping**.
+- Neue Anfragen erscheinen über beide Wege als ein Embed mit Fahrzeug/Klasse, Strecke, Hersteller (ohne Auswahl: **Egal**), Nachricht und getaggtem Anfragenden. Die Setup-Supply-Rolle steht darüber als sichtbarer Tag, bekommt dabei aber **keinen Rollen-Ping**.
 - Der Button **Setup wurde hochgeladen** ist für alle sichtbar. Nur die Setup-Supply-Rolle `1538601074074849330` oder die bereits freigegebenen IDs `771358435416473600`, `640948738445279261`, `198399938739175424`, `711862720567312455`, `646758275714514955`, `999265474078593164` können bestätigen.
 - Nach Bestätigung wird das Embed grün, erhält Datum/Uhrzeit, der Button verschwindet. Eine Channel-Nachricht informiert den ursprünglichen Anfragenden mit persönlichem Ping und Fahrzeuglink. Der Button ist eine manuelle Bestätigung; er lädt selbst keine Datei hoch.
 - Alte Discord-Nachrichten werden durch ein Deployment nicht rückwirkend neu aufgebaut. Neu erstellte Anfragen bekommen das vollständige Embed samt Button.

@@ -65,9 +65,9 @@ const requestCommand = new SlashCommandBuilder()
     .setMaxLength(100))
   .addStringOption(option => option
     .setName('hersteller')
-    .setDescription('Setup-Hersteller auswählen')
+    .setDescription('Optional: gewünschten Setup-Hersteller auswählen')
     .addChoices(...REQUEST_MANUFACTURERS.map(item=>({name:item.name,value:item.id})))
-    .setRequired(true))
+    .setRequired(false))
   .addStringOption(option => option
     .setName('weitere_infos')
     .setDescription('Weitere Informationen zur Anfrage')
@@ -217,7 +217,7 @@ client.on('interactionCreate', async interaction => {
     const embed = interaction.message.embeds?.[0];
     const vehicle = requestField(embed, 'fahrzeug');
     const track = requestField(embed, 'strecke');
-    const manufacturer = requestField(embed, 'setup-hersteller');
+    const manufacturer = resolveRequestManufacturer(requestField(embed, 'setup-hersteller'))?.name;
     const pageUrl = requestVehicleUrl(embed);
     await interaction.update({
       embeds: embed ? [EmbedBuilder.from(embed).setColor(0x2b9b68).setFooter({ text: 'Setup als hochgeladen bestätigt' })] : [],
@@ -235,7 +235,8 @@ client.on('interactionCreate', async interaction => {
   const vehicleName = interaction.options.getString('fahrzeug', true);
   const selectedTrack = resolveRequestTrack(interaction.options.getString('strecke', true));
   const track = selectedTrack?.name || '';
-  const manufacturer = resolveRequestManufacturer(interaction.options.getString('hersteller', true));
+  const requestedManufacturer = interaction.options.getString('hersteller')?.trim() || '';
+  const manufacturer = resolveRequestManufacturer(requestedManufacturer);
   const moreInfo = interaction.options.getString('weitere_infos')?.trim() || 'Keine weiteren Informationen angegeben.';
   const vehicle = vehicles.find(item => item.name === vehicleName);
 
@@ -244,7 +245,7 @@ client.on('interactionCreate', async interaction => {
     return;
   }
 
-  if (!manufacturer) {
+  if (requestedManufacturer && !manufacturer) {
     await interaction.reply({content:'Bitte GO, HYMO oder beAlien als Hersteller auswählen.',flags:MessageFlags.Ephemeral});
     return;
   }
@@ -257,7 +258,7 @@ client.on('interactionCreate', async interaction => {
   await interaction.deferReply({ ephemeral: true });
   try {
     const availableFiles = await findExistingSetup(vehicle);
-    const matches = matchingSetups(availableFiles || [], track, manufacturer.id);
+    const matches = matchingSetups(availableFiles || [], track, manufacturer?.id);
     if (matches.length > 0) {
       const first = matches[0];
       const pageUrl = setupPageUrl(vehicle, first.name);
@@ -270,7 +271,7 @@ client.on('interactionCreate', async interaction => {
       );
 
       await interaction.editReply({
-        content: `Für **${vehicle.name}** auf **${track}** von **${manufacturer.name}** ist bereits ein Setup vorhanden: **${first.name}**.${extra} Die Fahrzeugseite wird direkt beim Setup geöffnet.`,
+        content: `Für **${vehicle.name}** auf **${track}**${manufacturer ? ` von **${manufacturer.name}**` : ''} ist bereits ein Setup vorhanden: **${first.name}**.${extra} Die Fahrzeugseite wird direkt beim Setup geöffnet.`,
         components: [row]
       });
       return;
@@ -279,7 +280,7 @@ client.on('interactionCreate', async interaction => {
     const channel = await client.channels.fetch(requestChannelId);
     if (!channel?.isTextBased()) throw new Error('Der Setup-Request-Channel ist nicht erreichbar.');
 
-    const payload=setupRequestPayload({userId:interaction.user.id,vehicle:vehicle.name,carClass:vehicle.className,track,message:moreInfo,manufacturer:manufacturer.id},requestRoleId);
+    const payload=setupRequestPayload({userId:interaction.user.id,vehicle:vehicle.name,carClass:vehicle.className,track,message:moreInfo,manufacturer:manufacturer?.id||null},requestRoleId);
     const {allowed_mentions,...message}=payload;
     await channel.send({...message,allowedMentions:allowed_mentions});
     await interaction.editReply('Die Setup-Anfrage wurde erfolgreich gesendet.');

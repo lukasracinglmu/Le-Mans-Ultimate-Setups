@@ -83,8 +83,9 @@ export default {
 };
 
 async function normalizeSetupRequest(data,request,env) {
-  const manufacturer=resolveRequestManufacturer(data.manufacturer);
-  if(!manufacturer)return {error:json({success:false,error:"Bitte GO, HYMO oder beAlien als Setup-Hersteller auswählen."},400)};
+  const requestedManufacturer=String(data.manufacturer??'').trim();
+  const manufacturer=resolveRequestManufacturer(requestedManufacturer);
+  if(requestedManufacturer&&!manufacturer)return {error:json({success:false,error:"Bitte GO, HYMO oder beAlien als Setup-Hersteller auswählen."},400)};
   const selectedTrack=resolveRequestTrack(data.track);
   if(!selectedTrack)return {error:json({success:false,error:"Bitte eine Strecke aus den Vorschlägen auswählen."},400)};
   const catalogResponse=await readSiteFile(request,env,"setups.json");
@@ -92,7 +93,7 @@ async function normalizeSetupRequest(data,request,env) {
   const catalog=await catalogResponse.json().catch(()=>null);
   const match=Object.entries(catalog||{}).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===String(data.vehicle).toLowerCase());
   if(!match)return {error:json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400)};
-  return {data:{...data,vehicle:match.name,carClass:match.carClass,track:selectedTrack.name,manufacturer:manufacturer.id}};
+  return {data:{...data,vehicle:match.name,carClass:match.carClass,track:selectedTrack.name,manufacturer:manufacturer?.id||null}};
 }
 
 async function existingRequestSetups(data,env) {
@@ -114,7 +115,7 @@ function existingRequestResult(data,matches,env) {
   if(!matches.length)return null;
   const params=new URLSearchParams({category:data.carClass,vehicle:data.vehicle,setup:matches[0].name});
   return {success:true,alreadyExists:true,manufacturer:data.manufacturer,setupName:matches[0].name,setupUrl:new URL("/?"+params,env.SITE_URL||"https://le-mans-ultimate-setups.3peaks-database.workers.dev").toString(),
-    message:"Für "+data.vehicle+" auf "+data.track+" von "+data.manufacturer+" ist bereits ein Setup vorhanden."};
+    message:"Für "+data.vehicle+" auf "+data.track+(data.manufacturer?" von "+data.manufacturer:"")+" ist bereits ein Setup vorhanden."};
 }
 
 async function createWebsiteRequest(request,env) {
@@ -169,13 +170,14 @@ async function confirmDiscordRequest(interaction,env,ctx) {
   const fields=Object.fromEntries((embed?.fields||[]).map(field=>[String(field.name).toLowerCase(),String(field.value)]));
   if(!/^\d{16,22}$/.test(requesterId)||!embed||fields["angefragt von"]!=="<@"+requesterId+">")return discordJson({type:4,data:{content:"Ungültige Setup-Anfrage.",flags:64}});
   if(!interaction.message?.components?.length)return discordJson({type:4,data:{content:"Dieses Setup wurde bereits bestätigt.",flags:64}});
+  const manufacturer=resolveRequestManufacturer(fields["setup-hersteller"]);
   const date=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",dateStyle:"short",timeStyle:"short"}).format(new Date());
   const updated={...embed,color:0x2b9b68,footer:{text:"Setup als hochgeladen bestätigt · "+date}};
   const params=new URLSearchParams({category:fields.klasse||"",vehicle:fields.fahrzeug||""});
   const link=new URL("/?"+params,env.SITE_URL||"https://le-mans-ultimate-setups.3peaks-database.workers.dev").toString();
   const notify=fetch(DISCORD_API+"/channels/"+encodeURIComponent(interaction.channel_id)+"/messages",{
     method:"POST",headers:{Authorization:"Bot "+env.DISCORD_BOT_TOKEN,"Content-Type":"application/json"},
-    body:JSON.stringify({content:"<@"+requesterId+"> Das "+(fields["setup-hersteller"]?fields["setup-hersteller"]+"-":"")+"Setup für **"+(fields.fahrzeug||"deine Anfrage")+"** auf **"+(fields.strecke||"der angefragten Strecke")+"** wurde hochgeladen und kann jetzt genutzt werden: "+link,allowed_mentions:{parse:[],users:[requesterId],roles:[]},flags:4096}),
+    body:JSON.stringify({content:"<@"+requesterId+"> Das "+(manufacturer?manufacturer.name+"-":"")+"Setup für **"+(fields.fahrzeug||"deine Anfrage")+"** auf **"+(fields.strecke||"der angefragten Strecke")+"** wurde hochgeladen und kann jetzt genutzt werden: "+link,allowed_mentions:{parse:[],users:[requesterId],roles:[]},flags:4096}),
     signal:AbortSignal.timeout(15000)
   }).catch(()=>{});
   if(ctx?.waitUntil)ctx.waitUntil(notify);else await notify;
@@ -230,7 +232,7 @@ function requestModalResponse() {
         input("vehicle", "Fahrzeug", { maxLength: 100, placeholder: "z. B. Porsche 963" }),
         input("class", "Klasse", { maxLength: 80, placeholder: "z. B. Hypercar" }),
         input("track", "Strecke", { maxLength: 100, placeholder: "z. B. Le Mans" }),
-        input("manufacturer", "Setup-Hersteller", { maxLength: 20, placeholder: "GO, HYMO oder beAlien" }),
+        input("manufacturer", "Setup-Hersteller (optional)", { required: false, maxLength: 20, placeholder: "GO, HYMO oder beAlien; sonst leer lassen" }),
         input("message", "Weitere Informationen", { required: false, paragraph: true, maxLength: 500, placeholder: "Optional" })
       ]
     }

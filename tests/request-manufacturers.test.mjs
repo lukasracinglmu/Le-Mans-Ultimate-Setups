@@ -55,11 +55,14 @@ test('Website sendet GO-Request trotz vorhandenem HYMO-Setup und blockiert nur d
   const same=await website(['Toyota Spa HYMO.zip'],'HYMO');
   assert.equal(same.body.alreadyExists,true);assert.equal(same.sends.length,0);
   assert.equal(new URL(same.body.setupUrl).searchParams.get('setup'),'Toyota Spa HYMO.zip');
-  for(const value of [null,'unknown']){const invalid=await website([],value);assert.equal(invalid.status,400);assert.equal(invalid.sends.length,0);}
+  for(const value of ['unknown']){const invalid=await website([],value);assert.equal(invalid.status,400);assert.equal(invalid.sends.length,0);}
 });
-test('Formular bietet die drei Hersteller als Pflichtauswahl an',()=>{
+test('Formular bietet optionale Herstellerwahl mit zurücksetzbarer Egal-Option an',()=>{
   const html=readFileSync(new URL('../request.html',import.meta.url),'utf8');
-  assert.match(html,/<select id="manufacturer" required>/);
+  assert.match(html,/<select id="manufacturer">/);
+  assert.match(html,/<label for="manufacturer">Setup-Hersteller \(optional\)<\/label>/);
+  assert.match(html,/<option value="">Egal – keine Präferenz<\/option>/);
+  assert.doesNotMatch(html,/<select id="manufacturer"[^>]*required|<option value=""[^>]*disabled/);
   for(const manufacturer of REQUEST_MANUFACTURERS)assert.ok(html.includes('<option value="'+manufacturer.id+'">'+manufacturer.name+'</option>'));
   assert.match(html,/manufacturer:manufacturer.value/);
 });
@@ -86,3 +89,19 @@ test('Signierte HTTP-Buttons bestätigen nur berechtigte Nutzer und aktualisiere
   }finally{globalThis.fetch=original}
 });
 
+
+test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhandene Treffer bleiben korrekt',async()=>{
+  for(const manufacturer of [undefined,null,'','   ']){
+    const created=await website([],manufacturer);
+    assert.equal(created.status,200);assert.equal(created.body.alreadyExists,false);assert.equal(created.sends.length,1);
+    assert.equal(created.sends[0].embeds[0].fields.find(f=>f.name==='Setup-Hersteller').value,'Egal');
+    assert.equal(created.sends[0].components[0].components[0].label,'Setup wurde hochgeladen');
+    assert.deepEqual(created.sends[0].allowed_mentions,{parse:[],roles:[],users:[]});
+    const existing=await website(['Toyota Spa HYMO.zip'],manufacturer);
+    assert.equal(existing.body.alreadyExists,true);assert.equal(existing.sends.length,0);
+    assert.equal(new URL(existing.body.setupUrl).searchParams.get('setup'),'Toyota Spa HYMO.zip');
+    assert.doesNotMatch(existing.body.message,/undefined|null|von Egal/);
+  }
+  assert.equal(matchingRequestSetups([{name:'Toyota Paul Ricard 1A GO.zip'}],'Paul Ricard - Default').length,0);
+  assert.equal(matchingRequestSetups([{name:'Toyota Spa HYMO.zip'}],'Spa').length,1);
+});

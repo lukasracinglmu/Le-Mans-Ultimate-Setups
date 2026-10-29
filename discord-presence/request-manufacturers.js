@@ -21,7 +21,7 @@ export function canConfirmSetupRequest(userId,roles,roleId){
 export function setupRequestPayload(data,roleId,now=new Date()){
   const manufacturer=resolveRequestManufacturer(data.manufacturer);
   const userId=String(data.userId||'');
-  if(!manufacturer||!/^\d{16,22}$/.test(userId))throw Error('Ungültige Setup-Anfrage.');
+  if((String(data.manufacturer??'').trim()&&!manufacturer)||!/^\d{16,22}$/.test(userId))throw Error('Ungültige Setup-Anfrage.');
   const clean=(value,max)=>String(value||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
   return {
     content:/^\d{16,22}$/.test(String(roleId||''))?'<@&'+roleId+'>':'',
@@ -29,7 +29,7 @@ export function setupRequestPayload(data,roleId,now=new Date()){
       {name:'Fahrzeug',value:clean(data.vehicle,100),inline:true},
       {name:'Klasse',value:clean(data.carClass,80)||'Nicht angegeben',inline:true},
       {name:'Strecke',value:clean(data.track,100),inline:false},
-      {name:'Setup-Hersteller',value:manufacturer.name,inline:false},
+      {name:'Setup-Hersteller',value:manufacturer?.name||'Egal',inline:false},
       {name:'Weitere Informationen',value:clean(data.message,1000)||'Keine weiteren Informationen angegeben.',inline:false},
       {name:'Angefragt von',value:'<@'+userId+'>',inline:false}
     ],timestamp:now.toISOString()}],
