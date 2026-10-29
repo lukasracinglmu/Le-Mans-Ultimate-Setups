@@ -13,6 +13,7 @@ node_modules/**
 CHANGELOG.md
 README.md
 CLOUDFLARE-VARIABLEN.md
+AGENTS.md
 schema.sql
 worker.js
 production-worker.js
