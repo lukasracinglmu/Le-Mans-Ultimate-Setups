@@ -49,8 +49,15 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 ### `public/index.html`
 
-- `production-worker.js`, `ui-hotfix.js` und `access-worker.js` ändern die Seite zur Laufzeit per exakter String- und Regex-Suche und schleusen CSS/JS ein, von dem diese Änderungen abhängen. Markup und Inline-Scripts deshalb erst nach #9 umformatieren oder verschieben.
+- Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus. Lokal geöffnet sieht sie aus wie in Produktion. Ohne erreichbare API zeigt sie daher die Zugangsprüfung.
+- Die Markierung `<meta name="lmu-runtime-patches" content="inline">` hat keine Funktion mehr und kann mit #16 entfallen.
 - Änderungen über den Worker **und** direkt im Browser ohne Worker prüfen. Beides muss funktionieren.
+- `tests/home-scripts.test.mjs` prüft, dass jedes Inline-Script parsebar ist. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
+
+### Übergänge
+
+- Betrifft eine Änderung HTML und Worker-Code zugleich, in zwei PRs ausrollen. Die HTML ist mit dem Merge sofort live, der Worker erst nach dem Deploy. Zuerst den Worker so ändern, dass er beide Stände verträgt, erst nach dessen Deploy die HTML.
+- Prüfscripte, die den Worker lokal ausführen, brauchen die Variablen aus `wrangler.jsonc`. Sonst liefern sie die 503-Fehlerseite. Immer Status 200 und echten Inhalt prüfen, bevor Ausgaben verglichen werden.
 
 ### Tests
 

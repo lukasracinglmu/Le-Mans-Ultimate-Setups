@@ -73,7 +73,7 @@ export default defineConfig([
     files: ["public/index.html"],
     languageOptions: {
       globals: {
-        // Provided at runtime by the script that ui-hotfix.js injects.
+        // Set on window by another inline script in this file.
         refreshVehicleCounts: "readonly",
       },
     },

@@ -8,7 +8,6 @@ import {
 } from "./setup-lifecycle.js";
 import { githubBranch, setupRequestRoleId, setupSupplyRoleId } from "./config.js";
 import { githubRequest } from "./lib/github.js";
-import { hasInlinePatches } from "./lib/home-page.js";
 import { json, safeJson } from "./lib/http.js";
 import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
@@ -626,9 +625,7 @@ function hexToBytes(hex) {
 async function serveEnhancedHome(request, env) {
   const response = await readSiteFile(request, env, "index.html");
   if (!response.ok) return response;
-  const source = await response.text();
-  const html = hasInlinePatches(source) ? source : enhanceHome(source);
-  return new Response(html, {
+  return new Response(response.body, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
@@ -636,69 +633,6 @@ async function serveEnhancedHome(request, env) {
       "Referrer-Policy": "strict-origin-when-cross-origin",
     },
   });
-}
-
-function enhanceHome(source) {
-  let html = source;
-
-  html = html.replace(
-    /<link rel="preload" href="\/assets\/three-peaks-racing-logo\.webp" as="image" type="image\/webp">/,
-    '<link rel="preload" href="/assets/header-logo.webp" as="image" type="image/webp">\n<link rel="preload" href="/assets/bp-logo.webp?v=20261023-1" as="image" type="image/webp">',
-  );
-  html = html.replace(
-    /<img class="brand-logo"[^>]*>/,
-    '<img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing" width="96" height="48">',
-  );
-  html = html.replace(
-    "Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.",
-    "Setup Database für Three Peaks Racing",
-  );
-
-  html = html.replace(
-    /<div class="manufacturer-strip"><span>Setup Hersteller:<\/span><span id="manufacturerName" class="manufacturer-name">GO<\/span><\/div>/,
-    `<div class="manufacturer-strip manufacturer-carousel" aria-label="Setup Hersteller">
-      <span class="manufacturer-label">Setup Hersteller</span>
-      <button type="button" id="manufacturerPrev" class="manufacturer-nav" aria-label="Vorheriger Hersteller">‹</button>
-      <div class="manufacturer-visual"><img id="manufacturerImage" src="/assets/manufacturers/go-setups.webp" alt="GO Setups"><span id="manufacturerName" class="manufacturer-name" aria-hidden="true">GO</span></div>
-      <button type="button" id="manufacturerNext" class="manufacturer-nav" aria-label="Nächster Hersteller">›</button>
-    </div>`,
-  );
-
-  html = html.replace(/\s*<section id="upcoming" class="upcoming">[\s\S]*?<\/section>\s*/, "\n");
-  html = html.replace(/<div><label for="reqEvent">[\s\S]*?<\/div>/, "");
-  html = html.replace(/<div><label for="reqVariant">[\s\S]*?<\/div>/, "");
-  html = html.replace(
-    /,eventName:\$\("reqEvent"\)\.value\.trim\(\),variant:\$\("reqVariant"\)\.value\.trim\(\)/g,
-    "",
-  );
-  html = html.replace(/initManufacturer\(\);/g, "");
-  html = html.replace(/loadUpcoming\(\);/g, "");
-
-  const extraCss = `
-.brand-logo{width:96px!important;height:48px!important;object-fit:contain!important;display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto;position:relative;z-index:2}
-.layout{position:relative;isolation:isolate;display:flex;align-items:flex-start}
-.hero:after,.vehicle:after{display:none!important}
-body:before{content:"";position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,700px);height:min(36vw,460px);background:url('/assets/bp-logo.webp?v=20261023-1') center/contain no-repeat;opacity:.07;pointer-events:none;z-index:0}
-main{position:relative;z-index:1}
-.manufacturer-strip.manufacturer-carousel{display:flex;align-items:center;gap:9px;min-height:64px;margin-top:16px}.manufacturer-label{font-size:12px;color:var(--muted);white-space:nowrap}.manufacturer-visual{width:178px;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}.manufacturer-visual img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .22s ease}.manufacturer-name{display:none!important}.manufacturer-nav{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:19px;line-height:1;background:var(--surface)}
-@media(max-width:800px){.layout{display:block}.brand-logo{width:72px!important;height:38px!important}body:before{width:90vw;height:60vw;opacity:.05}main{padding-top:18px!important}.manufacturer-strip.manufacturer-carousel{flex-wrap:wrap}.manufacturer-label{width:100%}}
-`;
-  html = html.replace("</style>", extraCss + "\n</style>");
-
-  const extraJs = `<script>
-(() => {
-  const mfrs=[{name:'GO Setups',src:'/assets/manufacturers/go-setups.webp'},{name:'HYMO',src:'/assets/manufacturers/hymo-setups.webp'},{name:'beAlien',src:'/assets/manufacturers/bealien.webp'}];
-  let mIdx=0,mTimer=null;
-  const mImg=document.getElementById('manufacturerImage');
-  const renderMfr=i=>{if(!mImg)return;mIdx=(i+mfrs.length)%mfrs.length;const item=mfrs[mIdx];mImg.style.opacity='0';setTimeout(()=>{mImg.src=item.src;mImg.alt=item.name;mImg.style.opacity='1';},140);};
-  const restartMfr=()=>{if(mTimer)clearInterval(mTimer);mTimer=setInterval(()=>renderMfr(mIdx+1),5000);};
-  document.getElementById('manufacturerPrev')?.addEventListener('click',()=>{renderMfr(mIdx-1);restartMfr();});
-  document.getElementById('manufacturerNext')?.addEventListener('click',()=>{renderMfr(mIdx+1);restartMfr();});
-  renderMfr(0);restartMfr();
-})();
-</script>`;
-  html = html.replace("</body>", extraJs + "\n</body>");
-  return html;
 }
 
 async function serveRepoAsset(request, env) {

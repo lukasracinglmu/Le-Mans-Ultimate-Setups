@@ -2,14 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-const text = readFileSync(new URL("../src/ui-hotfix.js", import.meta.url), "utf8");
-const moduleContext = vm.createContext({});
-vm.runInContext(
-  text.replace(/^import .*;\s*/gm, "").replace("export default {", "const worker = {") +
-    ";globalThis.script=HOTFIX_JS;",
-  moduleContext,
-);
-const script = moduleContext.script;
+// The former ui-hotfix.js script with the access check now lives in index.html.
+const script = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const access = script.slice(
   script.indexOf("  const accessBox="),
   script.indexOf("  const syncCarFilter="),
