@@ -44,65 +44,63 @@ async function session(id = envBase.DISCORD_OWNER_USER_ID) {
 	return 'lmu_session=' + payload + '.' + sig;
 }
 
-test('private homepage uses authenticated raw Contents API without exposing credentials', async () => {
+test('data files use the authenticated raw Contents API', async () => {
 	await withFetch(
 		async (url, opts) => {
 			assert.equal(
 				String(url),
-				'https://api.github.com/repos/lukasracinglmu/Le-Mans-Ultimate-Setups/contents/public/index.html?ref=release%2Ftest'
+				'https://api.github.com/repos/lukasracinglmu/Le-Mans-Ultimate-Setups/contents/public/setups.json?ref=release%2Ftest'
 			);
 			assert.equal(opts.headers.Authorization, 'Bearer ' + envBase.GITHUB_TOKEN);
 			assert.equal(opts.headers.Accept, 'application/vnd.github.raw+json');
 			assert.equal(opts.redirect, 'manual');
-			return new Response(home);
+			return Response.json({ categories: [] });
 		},
 		async () => {
-			const response = await runtime.fetch(request('/'), envBase, {});
+			const response = await readSiteFile(request('/setups.json'), envBase, 'setups.json');
 			assert.equal(response.status, 200);
-			assert.equal(response.headers.get('location'), null);
-			assert.match(response.headers.get('content-type'), /text\/html/);
-			const html = await response.text();
-			assert.match(html, /LMU Setups/);
-			assert.ok(!html.includes(envBase.GITHUB_TOKEN));
+			assert.deepEqual(await response.json(), { categories: [] });
 		}
 	);
 });
 
-for (const failure of ['private-404', 'network-error']) {
-	test('GitHub ' + failure + ' falls back to the canonical asset root unchanged', async () => {
-		const paths = [];
-		const env = {
-			...repositoryEnv,
-			...envBase,
-			ASSETS: {
-				async fetch(req) {
-					paths.push(new URL(req.url).pathname);
-					return new URL(req.url).pathname === '/index.html'
-						? Response.redirect('https://example.test/', 307)
-						: new Response(deployedHome);
-				},
+// A page from GitHub main could reference scripts that are not deployed yet.
+test('pages come from the canonical asset root and never from GitHub', async () => {
+	const paths = [];
+	const github = [];
+	const env = {
+		...repositoryEnv,
+		...envBase,
+		ASSETS: {
+			async fetch(req) {
+				paths.push(new URL(req.url).pathname);
+				return new URL(req.url).pathname === '/index.html'
+					? Response.redirect('https://example.test/', 307)
+					: new Response(deployedHome);
 			},
-		};
-		await withFetch(
-			async () => {
-				if (failure === 'network-error') throw Error('offline');
-				return new Response('', { status: 404 });
-			},
-			async () => {
-				const r = await production.fetch(request('/'), env, {});
-				assert.equal(r.status, 200);
-				assert.equal(r.headers.get('location'), null);
-				assert.equal(await r.text(), deployedHome);
-				assert.deepEqual(paths, ['/']);
-				const base = await worker.fetch(request('/'), env, {});
-				assert.equal(base.status, 200);
-				assert.deepEqual(paths, ['/', '/']);
-			}
-		);
-	});
-}
+		},
+	};
+	await withFetch(
+		async (url) => {
+			github.push(String(url));
+			return new Response(home);
+		},
+		async () => {
+			const r = await production.fetch(request('/'), env, {});
+			assert.equal(r.status, 200);
+			assert.equal(r.headers.get('location'), null);
+			assert.equal(await r.text(), deployedHome);
+			assert.deepEqual(paths, ['/']);
+			const base = await worker.fetch(request('/'), env, {});
+			assert.equal(base.status, 200);
+			assert.equal(await base.text(), deployedHome);
+			assert.deepEqual(paths, ['/', '/']);
+			assert.deepEqual(github, []);
+		}
+	);
+});
 
-test('failed or redirecting asset fallback returns 503 without Location', async () => {
+test('failed or redirecting asset read returns 503 without Location', async () => {
 	await withFetch(
 		async () => new Response('', { status: 404 }),
 		async () => {

@@ -9,7 +9,7 @@ import {
 import { githubBranch, setupRequestRoleId, setupSupplyRoleId } from './config.js';
 import { githubRequest } from './lib/github.js';
 import { json, safeJson } from './lib/http.js';
-import { readSiteFile } from './repo-read.js';
+import { readPage, readSiteFile } from './repo-read.js';
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from './setup-version.js';
 
 import { readUploadForm } from './upload-storage.js';
@@ -623,7 +623,7 @@ function hexToBytes(hex) {
 }
 
 async function serveEnhancedHome(request, env) {
-	const response = await readSiteFile(request, env, 'index.html');
+	const response = await readPage(request, env, 'index.html');
 	if (!response.ok) return response;
 	return new Response(response.body, {
 		headers: {

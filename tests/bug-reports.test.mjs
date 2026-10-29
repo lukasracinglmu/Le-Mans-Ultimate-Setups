@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { submitBugReport, reportImage } from '../src/bug-reports.js';
 import runtime from '../src/runtime-worker.js';
+import { repositoryEnv } from './helpers/repository-env.mjs';
 const user = { id: '222222222222222222', username: 'Reporter' },
 	reportId = 'a'.repeat(25),
 	channelId = '333333333333333333',
@@ -291,13 +292,19 @@ async function databaseRoleCookie() {
 	).toString('base64url');
 	return 'lmu_session=' + payload + '.' + signature;
 }
-test('report page uses canonical asset fallback without a redirect loop during GitHub outage', async () => {
+test('report page comes from the canonical asset path without a redirect loop', async () => {
 	const original = globalThis.fetch;
-	globalThis.fetch = async () => new Response('', { status: 404 });
+	const repositoryReads = [];
+	globalThis.fetch = async (url) => {
+		if (String(url).includes('/contents/')) repositoryReads.push(String(url));
+		return new Response('', { status: 404 });
+	};
 	try {
 		const paths = [];
 		const env = {
 			...sessionEnv,
+			...repositoryEnv,
+			GITHUB_TOKEN: 'test',
 			ASSETS: {
 				fetch(req) {
 					paths.push(new URL(req.url).pathname);
@@ -316,6 +323,7 @@ test('report page uses canonical asset fallback without a redirect loop during G
 		assert.equal(response.headers.get('Location'), null);
 		assert.match(response.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
 		assert.deepEqual(paths, ['/bug-report']);
+		assert.deepEqual(repositoryReads, []);
 	} finally {
 		globalThis.fetch = original;
 	}
