@@ -1,5 +1,6 @@
 """Exercise the real Git transfer against temporary local bare repositories, never GitHub."""
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -53,7 +54,7 @@ class BackupTransfer(unittest.TestCase):
                 replacements = {"https://github.com/lukasracinglmu/Le-Mans-Ultimate-Setups.git": str(source), "https://github.com/" + backup.TARGET + ".git": str(bare)}
                 return real_git([replacements.get(arg, arg) for arg in args], **kwargs)
 
-            with patch.object(backup, "git", local_git), patch.dict(os.environ, GITHUB_REPOSITORY="lukasracinglmu/Le-Mans-Ultimate-Setups", GITHUB_TOKEN="fake-source", BACKUP_TOKEN="fake-destination"):
+            with patch.object(backup, "git", local_git), patch.object(backup, "urlopen", side_effect=lambda *args, **kwargs: io.BytesIO(b'{}')), patch.dict(os.environ, GITHUB_REPOSITORY="lukasracinglmu/Le-Mans-Ultimate-Setups", GITHUB_TOKEN="fake-source", BACKUP_TOKEN="fake-destination"):
                 backup.copy_snapshot(data)
                 self.assertEqual(git("rev-parse", "main", cwd=bare), original_head)
                 self.assertNotIn(data["tag"], git("tag", cwd=bare))

@@ -73,7 +73,7 @@ def validate_payload(data):
 def callback(data, success):
     audience = CALLBACK.split("/api/")[0]
     oidc_url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&" + urlencode({"audience": audience})
-    req = Request(oidc_url, headers={"Authorization": "Bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
+    req = Request(oidc_url, headers={"Authorization": "Bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"], "User-Agent": "LMU-Repository-Backup"})
     with urlopen(req, timeout=30) as response:
         token = json.load(response)["value"]
     # Only public identity metadata is logged; the bearer token is never logged.
@@ -81,7 +81,7 @@ def callback(data, success):
     claims = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
     print("Workflow identity:", json.dumps({k: claims.get(k) for k in ("repository", "ref", "workflow_ref", "event_name", "aud", "run_id")}))
     req = Request(CALLBACK, data=json.dumps({"job_id": data["job_id"], "success": success}).encode(),
-                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"}, method="POST")
+                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "LMU-Repository-Backup"}, method="POST")
     try:
         with urlopen(req, timeout=60) as response:
             result = json.load(response)
@@ -101,6 +101,13 @@ def copy_snapshot(data):
     backup_token = os.environ.get("BACKUP_TOKEN", "")
     if not backup_token:
         raise RuntimeError("BACKUP_REPO_TOKEN is not configured")
+    # Fail early with a useful error if the existing Actions secret was not updated.
+    check = Request("https://api.github.com/repos/" + TARGET, headers={"Authorization": "Bearer " + backup_token, "Accept": "application/vnd.github+json", "User-Agent": "LMU-Repository-Backup"})
+    try:
+        with urlopen(check, timeout=30) as response:
+            json.load(response)
+    except HTTPError as error:
+        raise RuntimeError("GitHub Actions secret BACKUP_REPO_TOKEN cannot access " + TARGET + " (HTTP " + str(error.code) + "). Update that existing secret with the backup-repository token.") from None
     source_url = "https://github.com/" + source_repo + ".git"
     target_url = "https://github.com/" + TARGET + ".git"
     sha, tag, folder = data["source_sha"], data["tag"], data["backup_path"]
