@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { REQUEST_TRACKS,searchRequestTracks,resolveRequestTrack,matchingRequestSetups } from '../discord-presence/request-tracks.js';
 import production from '../production-worker.js';
+import {REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload} from '../discord-presence/request-manufacturers.js';
 import base from '../worker.js';
 
 test('Best채tigte 33 Eintr채ge ohne die drei ausdr체cklich entfernten Layouts',()=>{
@@ -55,11 +56,11 @@ test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
     sends.push(JSON.parse(options.body));return Response.json({id:'test'});
   };
   const env={DISCORD_BOT_TOKEN:'fake',DISCORD_CHANNEL_ID:'1511795330176520193'};
-  const request=track=>new Request('https://example.test/api/request',{method:'POST',body:JSON.stringify({vehicle:'Toyota GR010',track})});
+  const request=track=>new Request('https://example.test/api/request',{method:'POST',body:JSON.stringify({vehicle:'Toyota GR010',track,manufacturer:'HYMO'})});
   try{
     const ok=await production.fetch(request('Spa'),env);
     assert.equal(ok.status,200);
-    assert.match(sends[0].content,/\*\*Strecke:\*\* Spa-Francorchamps/);
+    assert.equal(sends[0].embeds[0].fields.find(field=>field.name==='Strecke').value,'Spa-Francorchamps');
     assert.equal((await production.fetch(request('N체rburgring'),env)).status,400);
     assert.equal(sends.length,1);
     base.fetch=async()=>Response.json({loggedIn:false});
@@ -101,6 +102,7 @@ class Builder {
   setAutocomplete(v){this.data.autocomplete=v;return this}
   setRequired(v){this.data.required=v;return this}
   setMaxLength(v){this.data.max_length=v;return this}
+  addChoices(...values){this.data.choices=values;return this}
   addStringOption(fn){(this.data.options??=[]).push(fn(new Builder()).data);return this}
   toJSON(){return this.data}
   setColor(v){this.data.color=v;return this}
@@ -125,7 +127,7 @@ async function bot(){
   }
   class REST{setToken(){return this}async put(route,options){command=options.body[0]}}
   const source=readFileSync(new URL('../discord-presence/index.js',import.meta.url),'utf8').replace(/^import\s[^;]+;\s*/gm,'');
-  const context={Client,REST,EmbedBuilder:Builder,ActionRowBuilder:Builder,ButtonBuilder:Builder,SlashCommandBuilder:Builder,ButtonStyle:{Link:5,Success:3},GatewayIntentBits:{Guilds:1},ActivityType:{Playing:0},MessageFlags:{Ephemeral:64,SuppressNotifications:4096},Routes:{applicationGuildCommands:()=>'/commands'},readFile:async()=>JSON.stringify({Hypercar:[{name:'Toyota GR010'}]}),fetch:async()=>Response.json([]),searchRequestTracks,resolveRequestTrack,matchingRequestSetups,URLSearchParams,console:{log(){},warn(){},error(){}},process:{env:{DISCORD_BOT_TOKEN:'fake',DISCORD_CLIENT_ID:'1556978316404068452',DISCORD_GUILD_ID:'1464926567401652418',DISCORD_CHANNEL_ID:'1511795330176520193',DISCORD_ROLE_ID:'1538601074074849330',GITHUB_TOKEN:'fake'},on(){},exit(){throw Error('unexpected exit')}}};
+  const context={REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload,Client,REST,EmbedBuilder:Builder,ActionRowBuilder:Builder,ButtonBuilder:Builder,SlashCommandBuilder:Builder,ButtonStyle:{Link:5,Success:3},GatewayIntentBits:{Guilds:1},ActivityType:{Playing:0},MessageFlags:{Ephemeral:64,SuppressNotifications:4096},Routes:{applicationGuildCommands:()=>'/commands'},readFile:async()=>JSON.stringify({Hypercar:[{name:'Toyota GR010'}]}),fetch:async()=>Response.json([]),searchRequestTracks,resolveRequestTrack,matchingRequestSetups,URLSearchParams,console:{log(){},warn(){},error(){}},process:{env:{DISCORD_BOT_TOKEN:'fake',DISCORD_CLIENT_ID:'1556978316404068452',DISCORD_GUILD_ID:'1464926567401652418',DISCORD_CHANNEL_ID:'1511795330176520193',DISCORD_ROLE_ID:'1538601074074849330',GITHUB_TOKEN:'fake'},on(){},exit(){throw Error('unexpected exit')}}};
   vm.runInNewContext(source,context);
   await events.get('ready')();
   return {command,sends,handle:events.get('interactionCreate'),context};
@@ -135,7 +137,7 @@ function autocomplete(name,value){
 }
 function slash(track){
   const calls=[];
-  return {commandName:'request',user:{id:'1033453785416208564'},options:{getString:name=>({fahrzeug:'Toyota GR010',strecke:track,weitere_infos:'Test'}[name])},isAutocomplete:()=>false,isButton:()=>false,isChatInputCommand:()=>true,reply:async value=>calls.push(['reply',value]),deferReply:async value=>calls.push(['defer',value]),editReply:async value=>calls.push(['edit',value]),calls};
+  return {commandName:'request',user:{id:'1033453785416208564'},options:{getString:name=>({fahrzeug:'Toyota GR010',strecke:track,hersteller:'HYMO',weitere_infos:'Test'}[name])},isAutocomplete:()=>false,isButton:()=>false,isChatInputCommand:()=>true,reply:async value=>calls.push(['reply',value]),deferReply:async value=>calls.push(['defer',value]),editReply:async value=>calls.push(['edit',value]),calls};
 }
 
 test('Bot registriert beide Vorschlagsfelder und beantwortet das tats채chlich fokussierte Feld',async()=>{
@@ -155,8 +157,8 @@ test('Bot validiert die Strecke und beh채lt Button, Rollen-Tag und Ping-Unterdr�
   const valid=slash('Spa');await b.handle(valid);
   assert.equal(b.sends.length,1);
   const message=b.sends[0];
-  assert.equal(message.embeds[0].data.fields.find(f=>f.name==='Strecke').value,'Spa-Francorchamps');
-  assert.equal(message.components[0].data.components[0].data.custom_id,'setup_ready:1033453785416208564');
+  assert.equal(message.embeds[0].fields.find(f=>f.name==='Strecke').value,'Spa-Francorchamps');
+  assert.equal(message.components[0].components[0].custom_id,'setup_ready:1033453785416208564');
   assert.match(message.content,/<@&1538601074074849330>/);
   assert.equal(message.allowedMentions.roles.length,0);
   assert.equal(message.flags,4096);

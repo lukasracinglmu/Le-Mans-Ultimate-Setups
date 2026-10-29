@@ -1,83 +1,34 @@
-name: Daily Repository Backup
+name: Complete Repository Backup
 
 on:
-  schedule:
-    # Hourly because GitHub cron uses UTC and Berlin switches between CET and CEST.
-    - cron: "0 * * * *"
+  repository_dispatch:
+    types: [lmu-repository-backup]
   workflow_dispatch:
+    inputs:
+      request:
+        description: "JSON backup job supplied by the owner portal"
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
+  id-token: write
+
+concurrency:
+  group: lmu-repository-backups
+  cancel-in-progress: false
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
-      - name: Create organized backup in private backup repository
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Copy and verify all repository files
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
-          BACKUP_REPOSITORY: lukasracinglmu/LMU-Database-Backups
-        run: |
-          set -euo pipefail
-
-          if [ -z "${BACKUP_TOKEN:-}" ]; then
-            echo "BACKUP_REPO_TOKEN is not configured."
-            exit 1
-          fi
-
-          export TZ=Europe/Berlin
-          if [ "$(date +%H:%M)" != "00:00" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo "Not midnight in Europe/Berlin. Nothing to do."
-            exit 0
-          fi
-
-          TODAY="$(date +%Y-%m-%d)"
-          TAG="backup-$TODAY"
-          WORK="$(mktemp -d)"
-          trap 'rm -rf "$WORK"' EXIT
-          SOURCE_URL="https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
-          BACKUP_URL="https://x-access-token:$BACKUP_TOKEN@github.com/$BACKUP_REPOSITORY.git"
-
-          git clone --mirror "$SOURCE_URL" "$WORK/source.git"
-          git -C "$WORK/source.git" push "$BACKUP_URL" "refs/heads/main:refs/tmp/$TAG"
-          git -C "$WORK/source.git" tag -f "$TAG" "$(git -C "$WORK/source.git" rev-parse refs/heads/main)"
-          git -C "$WORK/source.git" push "$BACKUP_URL" "refs/tags/$TAG"
-          git push "$BACKUP_URL" ":refs/tmp/$TAG" || true
-
-          git clone "$BACKUP_URL" "$WORK/backup"
-          cd "$WORK/backup"
-          git config user.name "LMU Backup Bot"
-          git config user.email "actions@users.noreply.github.com"
-          mkdir -p "backups/$TODAY"
-          cat > "backups/$TODAY/$TAG.md" <<EOF
-          # LMU Backup
-
-          **Backup name:** \`$TAG\`
-          **Date:** \`$TODAY\`
-
-          [Download this complete backup as ZIP](https://github.com/$BACKUP_REPOSITORY/archive/refs/tags/$TAG.zip)
-          EOF
-          git add "backups/$TODAY/$TAG.md"
-          git commit -m "Add backup $TAG"
-          git push origin main
-
-          CUTOFF="$(date -d '5 days ago' +%Y-%m-%d)"
-          while read -r _ REF; do
-            OLD_TAG="${REF#refs/tags/}"
-            [[ "$OLD_TAG" == backup-* ]] || continue
-            OLD_DATE="${OLD_TAG#backup-}"
-            OLD_DATE="${OLD_DATE:0:10}"
-            if [[ "$OLD_DATE" < "$CUTOFF" ]]; then
-              git push "$BACKUP_URL" ":refs/tags/$OLD_TAG" || true
-              rm -f "backups/$OLD_DATE/$OLD_TAG.md"
-            fi
-          done < <(git ls-remote --tags "$BACKUP_URL" | awk '{print $2}' | sed 's#refs/tags/##' | grep -E '^backup-[0-9]{4}-[0-9]{2}-[0-9]{2}(-.*)?$' || true)
-
-          git add -A backups
-          if ! git diff --cached --quiet; then
-            git commit -m "Remove expired backups"
-            git push origin main
-          fi
-
-          echo "Backup $TAG created in $BACKUP_REPOSITORY/backups/$TODAY/"
+          BACKUP_REQUEST: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload) || inputs.request }}
+        run: python3 scripts/repository-backup.py

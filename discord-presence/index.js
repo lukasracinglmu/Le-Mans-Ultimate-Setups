@@ -1,5 +1,6 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import 'dotenv/config';
+import { REQUEST_MANUFACTURERS, resolveRequestManufacturer, setupRequestPayload } from './request-manufacturers.js';
 import { searchRequestTracks, resolveRequestTrack, matchingRequestSetups } from './request-tracks.js';
 import { readFile } from 'node:fs/promises';
 import {
@@ -29,7 +30,7 @@ const githubOwner = process.env.GITHUB_OWNER?.trim() || 'lukasracinglmu';
 const githubRepo = process.env.GITHUB_REPO?.trim() || 'Le-Mans-Ultimate-Setups';
 const githubBranch = process.env.GITHUB_BRANCH?.trim() || 'main';
 const setupDownloadBaseUrl = process.env.SETUP_DOWNLOAD_BASE_URL?.trim() || 'https://le-mans-ultimate-setups.3peaks-database.workers.dev';
-const setupSupplyRoleId = process.env.DISCORD_UPLOAD_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
+const setupSupplyRoleId = process.env.DISCORD_UPLOAD_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim() || '1538601074074849330';
 const setupConfirmationWhitelist = new Set([
   '771358435416473600',
   '640948738445279261',
@@ -63,6 +64,11 @@ const requestCommand = new SlashCommandBuilder()
     .setRequired(true)
     .setMaxLength(100))
   .addStringOption(option => option
+    .setName('hersteller')
+    .setDescription('Setup-Hersteller auswählen')
+    .addChoices(...REQUEST_MANUFACTURERS.map(item=>({name:item.name,value:item.id})))
+    .setRequired(true))
+  .addStringOption(option => option
     .setName('weitere_infos')
     .setDescription('Weitere Informationen zur Anfrage')
     .setRequired(false)
@@ -85,7 +91,7 @@ async function loadVehicles() {
     console.log(`Fahrzeugdaten lokal geladen: ${setupsFile}`);
   } catch (localError) {
     if (!setupsUrl) {
-      throw new Error(`Die Datei ${setupsFile} fehlt auf Wispbyte.`);
+      throw new Error(`Die Datei ${setupsFile} fehlt auf dem Bot-Host.`);
     }
 
     const response = await fetch(setupsUrl);
@@ -140,8 +146,8 @@ async function findExistingSetup(vehicle) {
   }
 }
 
-function matchingSetups(files, track) {
-  return matchingRequestSetups(files, track);
+function matchingSetups(files, track, manufacturer) {
+  return matchingRequestSetups(files, track, manufacturer);
 }
 
 function setupPageUrl(vehicle, setupName) {
@@ -211,13 +217,14 @@ client.on('interactionCreate', async interaction => {
     const embed = interaction.message.embeds?.[0];
     const vehicle = requestField(embed, 'fahrzeug');
     const track = requestField(embed, 'strecke');
+    const manufacturer = requestField(embed, 'setup-hersteller');
     const pageUrl = requestVehicleUrl(embed);
     await interaction.update({
       embeds: embed ? [EmbedBuilder.from(embed).setColor(0x2b9b68).setFooter({ text: 'Setup als hochgeladen bestätigt' })] : [],
       components: []
     });
     await interaction.channel.send({
-      content: `<@${requesterId}> Das Setup für **${vehicle || 'deine Anfrage'}**${track ? ` auf **${track}**` : ''} wurde hochgeladen und kann jetzt genutzt werden: ${pageUrl}`,
+      content: `<@${requesterId}> Das ${manufacturer ? manufacturer+'-' : ''}Setup für **${vehicle || 'deine Anfrage'}**${track ? ` auf **${track}**` : ''} wurde hochgeladen und kann jetzt genutzt werden: ${pageUrl}`,
       allowedMentions: { users: [requesterId] },
       flags: MessageFlags.SuppressNotifications
     });
@@ -228,11 +235,17 @@ client.on('interactionCreate', async interaction => {
   const vehicleName = interaction.options.getString('fahrzeug', true);
   const selectedTrack = resolveRequestTrack(interaction.options.getString('strecke', true));
   const track = selectedTrack?.name || '';
+  const manufacturer = resolveRequestManufacturer(interaction.options.getString('hersteller', true));
   const moreInfo = interaction.options.getString('weitere_infos')?.trim() || 'Keine weiteren Informationen angegeben.';
   const vehicle = vehicles.find(item => item.name === vehicleName);
 
   if (!vehicle) {
     await interaction.reply({ content: 'Das Fahrzeug konnte nicht gefunden werden. Bitte nutze die Vorschläge.', ephemeral: true });
+    return;
+  }
+
+  if (!manufacturer) {
+    await interaction.reply({content:'Bitte GO, HYMO oder beAlien als Hersteller auswählen.',flags:MessageFlags.Ephemeral});
     return;
   }
 
@@ -244,7 +257,7 @@ client.on('interactionCreate', async interaction => {
   await interaction.deferReply({ ephemeral: true });
   try {
     const availableFiles = await findExistingSetup(vehicle);
-    const matches = matchingSetups(availableFiles || [], track);
+    const matches = matchingSetups(availableFiles || [], track, manufacturer.id);
     if (matches.length > 0) {
       const first = matches[0];
       const pageUrl = setupPageUrl(vehicle, first.name);
@@ -257,7 +270,7 @@ client.on('interactionCreate', async interaction => {
       );
 
       await interaction.editReply({
-        content: `Für **${vehicle.name}** auf **${track}** ist bereits ein Setup vorhanden: **${first.name}**.${extra} Die Fahrzeugseite wird direkt beim Setup geöffnet.`,
+        content: `Für **${vehicle.name}** auf **${track}** von **${manufacturer.name}** ist bereits ein Setup vorhanden: **${first.name}**.${extra} Die Fahrzeugseite wird direkt beim Setup geöffnet.`,
         components: [row]
       });
       return;
@@ -266,33 +279,9 @@ client.on('interactionCreate', async interaction => {
     const channel = await client.channels.fetch(requestChannelId);
     if (!channel?.isTextBased()) throw new Error('Der Setup-Request-Channel ist nicht erreichbar.');
 
-    const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
-      .setTitle('Neue Setup-Anfrage')
-      .addFields(
-        { name: 'Fahrzeug', value: vehicle.name, inline: true },
-        { name: 'Klasse', value: vehicle.className, inline: true },
-        { name: 'Strecke', value: track, inline: false },
-        { name: 'Weitere Informationen', value: moreInfo, inline: false },
-        { name: 'Angefragt von', value: `<@${interaction.user.id}>`, inline: false }
-      )
-      .setTimestamp();
-
-    // Der Button bleibt für alle sichtbar; die Berechtigungsprüfung erfolgt beim Klick.
-    const confirmRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`setup_ready:${interaction.user.id}`)
-        .setLabel('Setup wurde hochgeladen')
-        .setStyle(ButtonStyle.Success)
-    );
-    await channel.send({
-      content: `<@&${requestRoleId}> Neue Setup-Anfrage`,
-      // Die Rolle wird angezeigt, aber wegen allowedMentions.roles nicht gepingt.
-      allowedMentions: { roles: [], users: [interaction.user.id] },
-      flags: MessageFlags.SuppressNotifications,
-      embeds: [embed],
-      components: [confirmRow]
-    });
+    const payload=setupRequestPayload({userId:interaction.user.id,vehicle:vehicle.name,carClass:vehicle.className,track,message:moreInfo,manufacturer:manufacturer.id},requestRoleId);
+    const {allowed_mentions,...message}=payload;
+    await channel.send({...message,allowedMentions:allowed_mentions});
     await interaction.editReply('Die Setup-Anfrage wurde erfolgreich gesendet.');
   } catch (error) {
     console.error('Setup-Request fehlgeschlagen:', error);

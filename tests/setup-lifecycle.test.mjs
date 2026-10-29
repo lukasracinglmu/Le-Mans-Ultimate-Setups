@@ -77,17 +77,17 @@ test('delete refuses a changed selected file without any DELETE',async()=>{
 
 test('Setup Request derives class from catalog and mentions exactly the configured role and requester',async()=>{
   const originalBase=base.fetch,originalFetch=globalThis.fetch,sends=[];
-  base.fetch=async()=>Response.json({loggedIn:true,user:{id:'1033453785416208564',username:'Lukas'}});
+  base.fetch=async()=>Response.json({loggedIn:true,databaseAccess:true,user:{id:'1033453785416208564',username:'Lukas'}});
   globalThis.fetch=async(url,options={})=>{
     if(String(url).includes('api.github.com'))return Response.json({Hypercar:[{name:'Alpine A424'}],LMGT3:[{name:'BMW M4 LMGT3'}]});
     sends.push(JSON.parse(options.body));return Response.json({id:'message'});
   };
   try{
-    const req=(vehicle)=>new Request('https://example.test/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle,carClass:'wrong',track:'Spa',message:'@everyone'})});
+    const req=(vehicle)=>new Request('https://example.test/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle,carClass:'wrong',track:'Spa',manufacturer:'GO',message:'@everyone'})});
     const env={DISCORD_SETUP_REQUEST_ROLE_ID:'1538601074074849330',DISCORD_BOT_TOKEN:'test',DISCORD_CHANNEL_ID:'1557002876906377258'};
     assert.equal((await production.fetch(req('BMW M4 LMGT3'),env)).status,200);
-    assert.match(sends[0].content,/\*\*Klasse:\*\* LMGT3/);assert.match(sends[0].content,/<@&1538601074074849330>/);
-    assert.deepEqual(sends[0].allowed_mentions,{parse:[],roles:['1538601074074849330'],users:['1033453785416208564']});
+    assert.equal(sends[0].embeds[0].fields.find(field=>field.name==='Klasse').value,'LMGT3');assert.match(sends[0].content,/<@&1538601074074849330>/);
+    assert.deepEqual(sends[0].allowed_mentions,{parse:[],roles:[],users:[]});
     assert.equal((await production.fetch(req('BMW'),env)).status,400);assert.equal(sends.length,1);
   }finally{base.fetch=originalBase;globalThis.fetch=originalFetch;}
 });

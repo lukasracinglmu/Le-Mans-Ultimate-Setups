@@ -6,7 +6,8 @@ import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
 import { readUploadForm } from "./upload-storage.js";
-import { REQUEST_TRACKS, resolveRequestTrack } from "./discord-presence/request-tracks.js";
+import { REQUEST_TRACKS, resolveRequestTrack, searchRequestTracks, matchingRequestSetups } from "./discord-presence/request-tracks.js";
+import { resolveRequestManufacturer, setupRequestPayload, canConfirmSetupRequest } from "./discord-presence/request-manufacturers.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
@@ -26,7 +27,7 @@ export default {
     try {
       if (request.method === "GET" && path === "/api/request/tracks") return json({success:true,tracks:REQUEST_TRACKS});
       if (request.method === "POST" && path === "/api/request") return createWebsiteRequest(request, env);
-      if (request.method === "POST" && path === "/interactions/discord") return discordInteraction(request, env);
+      if (request.method === "POST" && path === "/interactions/discord") return discordInteraction(request, env, ctx);
       if (request.method === "GET" && REPO_ASSETS.has(path)) return serveRepoAsset(request, env);
       if (request.method === "GET" && path === "/") return serveEnhancedHome(request, env);
 
@@ -81,108 +82,138 @@ export default {
   }
 };
 
-async function createWebsiteRequest(request, env) {
-  const meRequest = new Request(new URL("/api/me", request.url), { method: "GET", headers: request.headers });
-  const meResponse = await baseWorker.fetch(meRequest, env);
-  const me = await safeJson(meResponse);
-  if (!me?.loggedIn || !me?.user?.id || !me?.user?.username) return json({ success: false, error: "Nicht angemeldet." }, 401);
-  let body;
-  try { body = await request.json(); }
-  catch { return json({ success: false, error: "Ungültige Anfrage." }, 400); }
-  const data = {
-    userId: String(me.user.id),
-    username: me.user.username,
-    vehicle: clean(body.vehicle, 100),
-    carClass: clean(body.carClass, 80),
-    track: clean(body.track, 100),
-    message: clean(body.message, 500)
-  };
-  if (!data.vehicle || !data.track) return json({ success: false, error: "Fahrzeug und Strecke erforderlich." }, 400);
+async function normalizeSetupRequest(data,request,env) {
+  const manufacturer=resolveRequestManufacturer(data.manufacturer);
+  if(!manufacturer)return {error:json({success:false,error:"Bitte GO, HYMO oder beAlien als Setup-Hersteller auswählen."},400)};
   const selectedTrack=resolveRequestTrack(data.track);
-  if(!selectedTrack)return json({success:false,error:"Bitte eine Strecke aus den Vorschlägen auswählen."},400);
-  data.track=selectedTrack.name;
+  if(!selectedTrack)return {error:json({success:false,error:"Bitte eine Strecke aus den Vorschlägen auswählen."},400)};
   const catalogResponse=await readSiteFile(request,env,"setups.json");
-  if(!catalogResponse.ok)return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);
-  let catalog;try{catalog=await catalogResponse.json();}catch{return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);}
-  const match=Object.entries(catalog).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===data.vehicle.toLowerCase());
-  if(!match)return json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400);
-  data.vehicle=match.name;data.carClass=match.carClass;
-  const sent = await sendSetupRequest(data, env);
-  return sent.ok ? json({ success: true }) : json({ success: false, error: sent.error }, sent.status);
+  if(!catalogResponse.ok)return {error:json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503)};
+  const catalog=await catalogResponse.json().catch(()=>null);
+  const match=Object.entries(catalog||{}).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===String(data.vehicle).toLowerCase());
+  if(!match)return {error:json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400)};
+  return {data:{...data,vehicle:match.name,carClass:match.carClass,track:selectedTrack.name,manufacturer:manufacturer.id}};
 }
 
-function buildRequestContent({ userId, username, vehicle, carClass, track, message }, roleId) {
-  const validUserId = /^\d{16,22}$/.test(String(userId || "")) ? String(userId) : null;
-  const roleMention = roleId && /^\d{16,22}$/.test(roleId) ? `<@&${roleId}>` : null;
-  const userMention = validUserId ? `<@${validUserId}>` : clean(username, 80);
-  const lines = [];
-  if (roleMention) lines.push(roleMention);
-  lines.push(
-    `**User:** ${userMention}`,
-    `**Fahrzeug:** ${clean(vehicle, 100)}`,
-    `**Klasse:** ${clean(carClass || "Nicht angegeben", 80)}`,
-    `**Strecke:** ${clean(track, 100)}`
-  );
-  const extra = clean(message, 500);
-  if (extra) lines.push(`**Weitere Informationen:** ${extra}`);
-  return lines.join("\n").slice(0, 2000);
+async function existingRequestSetups(data,env) {
+  if(!env.GITHUB_TOKEN)return [];
+  const repo=(env.GITHUB_OWNER||"lukasracinglmu")+"/"+(env.GITHUB_REPO||"Le-Mans-Ultimate-Setups");
+  const path=["setups",data.carClass,data.vehicle].map(encodeURIComponent).join("/");
+  try{
+    const response=await fetch("https://api.github.com/repos/"+repo+"/contents/"+path+"?ref="+encodeURIComponent(env.GITHUB_BRANCH||"main"),{
+      headers:{Accept:"application/vnd.github+json",Authorization:"Bearer "+env.GITHUB_TOKEN,"User-Agent":"lmu-setup-requests","X-GitHub-Api-Version":"2022-11-28"},
+      redirect:"manual",signal:AbortSignal.timeout(12000)
+    });
+    if(!response.ok)return [];
+    const files=await response.json();
+    return matchingRequestSetups((Array.isArray(files)?files:[]).filter(file=>file.type==="file"&&/\.zip$/i.test(file.name||"")),data.track,data.manufacturer);
+  }catch{return []}
 }
 
-async function sendSetupRequest(data, env) {
-  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_CHANNEL_ID) {
-    return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
-  }
-  const roleId = env.DISCORD_SETUP_REQUEST_ROLE_ID || env.DISCORD_UPLOAD_ROLE_ID || "1538601074074849330";
-  const validRoleId = roleId && /^\d{16,22}$/.test(roleId) ? roleId : null;
-  const validUserId = /^\d{16,22}$/.test(String(data.userId || "")) ? String(data.userId) : null;
-  const content = buildRequestContent(data, validRoleId);
-  const allowedMentions = { parse: [] };
-  if (validRoleId) allowedMentions.roles = [validRoleId];
-  if (validUserId) allowedMentions.users = [validUserId];
-  const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
-    method: "POST",
-    headers: { "Authorization": `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ content, allowed_mentions: allowedMentions })
+function existingRequestResult(data,matches,env) {
+  if(!matches.length)return null;
+  const params=new URLSearchParams({category:data.carClass,vehicle:data.vehicle,setup:matches[0].name});
+  return {success:true,alreadyExists:true,manufacturer:data.manufacturer,setupName:matches[0].name,setupUrl:new URL("/?"+params,env.SITE_URL||"https://le-mans-ultimate-setups.3peaks-database.workers.dev").toString(),
+    message:"Für "+data.vehicle+" auf "+data.track+" von "+data.manufacturer+" ist bereits ein Setup vorhanden."};
+}
+
+async function createWebsiteRequest(request,env) {
+  const origin=request.headers.get("Origin");
+  if(origin&&origin!==new URL(request.url).origin)return json({success:false,error:"Origin nicht erlaubt."},403);
+  const meResponse=await baseWorker.fetch(new Request(new URL("/api/me",request.url),{headers:request.headers}),env);
+  const me=await safeJson(meResponse);
+  if(!me?.loggedIn||!me?.databaseAccess||!me?.user?.id)return json({success:false,error:"Nicht angemeldet oder keine Datenbankberechtigung."},401);
+  let body;try{body=await request.json()}catch{return json({success:false,error:"Ungültige Anfrage."},400)}
+  const normalized=await normalizeSetupRequest({userId:String(me.user.id),username:me.user.username,vehicle:clean(body.vehicle,100),track:clean(body.track,100),manufacturer:body.manufacturer,message:clean(body.message,1000)},request,env);
+  if(normalized.error)return normalized.error;
+  const data=normalized.data;
+  const existing=existingRequestResult(data,await existingRequestSetups(data,env),env);
+  if(existing)return json(existing);
+  const sent=await sendSetupRequest(data,env);
+  return sent.ok?json({success:true,alreadyExists:false}):json({success:false,error:sent.error},sent.status);
+}
+
+async function sendSetupRequest(data,env) {
+  if(!env.DISCORD_BOT_TOKEN||!env.DISCORD_CHANNEL_ID)return {ok:false,status:503,error:"Request-Dienst nicht konfiguriert."};
+  const roleId=env.DISCORD_SETUP_REQUEST_ROLE_ID||env.DISCORD_UPLOAD_ROLE_ID||"1538601074074849330";
+  const response=await fetch(DISCORD_API+"/channels/"+env.DISCORD_CHANNEL_ID+"/messages",{
+    method:"POST",headers:{Authorization:"Bot "+env.DISCORD_BOT_TOKEN,"Content-Type":"application/json"},
+    body:JSON.stringify(setupRequestPayload(data,roleId)),signal:AbortSignal.timeout(15000)
   });
-  if (!response.ok) return { ok: false, status: 502, error: "Request konnte nicht gesendet werden." };
-  return { ok: true };
+  return response.ok?{ok:true}:{ok:false,status:502,error:"Request konnte nicht gesendet werden."};
 }
 
-async function discordInteraction(request, env) {
-  const rawBody = await request.text();
-  const verified = await verifyDiscordInteraction(request, rawBody, env);
-  if (!verified) return new Response("invalid request signature", { status: 401 });
-  let interaction;
-  try { interaction = JSON.parse(rawBody); }
-  catch { return new Response("bad request", { status: 400 }); }
-  if (interaction.type === 1) return discordJson({ type: 1 });
-  if (interaction.type === 2 && interaction.data?.name === "request") return discordJson(requestModalResponse());
-  if (interaction.type === 5 && interaction.data?.custom_id === REQUEST_MODAL_ID) {
-    const values = modalValues(interaction.data.components);
-    const user = interaction.member?.user || interaction.user || {};
-    const data = {
-      userId: user.id ? String(user.id) : null,
-      username: user.global_name || user.username || "Discord User",
-      vehicle: clean(values.vehicle, 100),
-      carClass: clean(values.class, 80),
-      track: clean(values.track, 100),
-      message: clean(values.message, 500)
-    };
-    if (!data.vehicle || !data.track) return discordJson({ type: 4, data: { content: "Fahrzeug und Strecke sind erforderlich.", flags: 64 } });
-    const selectedTrack=resolveRequestTrack(data.track);
-    if(!selectedTrack)return discordJson({type:4,data:{content:"Bitte eine gültige Strecke aus der Streckenliste angeben.",flags:64}});
-    data.track=selectedTrack.name;
-    const catalogResponse=await readSiteFile(request,env,"setups.json");
-  if(!catalogResponse.ok)return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);
-  let catalog;try{catalog=await catalogResponse.json();}catch{return json({success:false,error:"Fahrzeugliste momentan nicht verfügbar."},503);}
-  const match=Object.entries(catalog).flatMap(([carClass,vehicles])=>Array.isArray(vehicles)?vehicles.map(v=>({name:v.name,carClass})):[]).find(v=>String(v.name).toLowerCase()===data.vehicle.toLowerCase());
-  if(!match)return json({success:false,error:"Bitte ein Fahrzeug aus den Vorschlägen auswählen."},400);
-  data.vehicle=match.name;data.carClass=match.carClass;
-  const sent = await sendSetupRequest(data, env);
-    return discordJson({ type: 4, data: { content: sent.ok ? "Setup Request wurde gesendet." : "Setup Request konnte nicht gesendet werden.", flags: 64 } });
+async function finishDiscordRequest(interaction,data,request,env) {
+  let reply;
+  try{
+    const normalized=await normalizeSetupRequest(data,request,env);
+    if(normalized.error){reply={content:(await normalized.error.json()).error}}
+    else{
+      const ready=normalized.data;
+      const existing=existingRequestResult(ready,await existingRequestSetups(ready,env),env);
+      if(existing)reply={content:existing.message,components:[{type:1,components:[{type:2,style:5,label:"Setup auf der Website öffnen",url:existing.setupUrl}]}]};
+      else{const sent=await sendSetupRequest(ready,env);reply={content:sent.ok?"Die Setup-Anfrage wurde erfolgreich gesendet.":sent.error};}
+    }
+  }catch{reply={content:"Die Setup-Anfrage konnte nicht gesendet werden."}}
+  await fetch(DISCORD_API+"/webhooks/"+encodeURIComponent(interaction.application_id)+"/"+encodeURIComponent(interaction.token)+"/messages/@original",{
+    method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({...reply,allowed_mentions:{parse:[]}}),signal:AbortSignal.timeout(15000)
+  });
+}
+
+async function confirmDiscordRequest(interaction,env,ctx) {
+  const user=interaction.member?.user||interaction.user||{};
+  const roleId=env.DISCORD_UPLOAD_ROLE_ID||env.DISCORD_ROLE_ID||"1538601074074849330";
+  if(!canConfirmSetupRequest(user.id,interaction.member?.roles||[],roleId))return discordJson({type:4,data:{content:"Nur Mitglieder mit der Setup-Supply-Rolle oder der Bestätigungsfreigabe dürfen das Setup bestätigen.",flags:64}});
+  const requesterId=String(interaction.data.custom_id).slice("setup_ready:".length);
+  const embed=interaction.message?.embeds?.[0];
+  const fields=Object.fromEntries((embed?.fields||[]).map(field=>[String(field.name).toLowerCase(),String(field.value)]));
+  if(!/^\d{16,22}$/.test(requesterId)||!embed||fields["angefragt von"]!=="<@"+requesterId+">")return discordJson({type:4,data:{content:"Ungültige Setup-Anfrage.",flags:64}});
+  if(!interaction.message?.components?.length)return discordJson({type:4,data:{content:"Dieses Setup wurde bereits bestätigt.",flags:64}});
+  const date=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",dateStyle:"short",timeStyle:"short"}).format(new Date());
+  const updated={...embed,color:0x2b9b68,footer:{text:"Setup als hochgeladen bestätigt · "+date}};
+  const params=new URLSearchParams({category:fields.klasse||"",vehicle:fields.fahrzeug||""});
+  const link=new URL("/?"+params,env.SITE_URL||"https://le-mans-ultimate-setups.3peaks-database.workers.dev").toString();
+  const notify=fetch(DISCORD_API+"/channels/"+encodeURIComponent(interaction.channel_id)+"/messages",{
+    method:"POST",headers:{Authorization:"Bot "+env.DISCORD_BOT_TOKEN,"Content-Type":"application/json"},
+    body:JSON.stringify({content:"<@"+requesterId+"> Das "+(fields["setup-hersteller"]?fields["setup-hersteller"]+"-":"")+"Setup für **"+(fields.fahrzeug||"deine Anfrage")+"** auf **"+(fields.strecke||"der angefragten Strecke")+"** wurde hochgeladen und kann jetzt genutzt werden: "+link,allowed_mentions:{parse:[],users:[requesterId],roles:[]},flags:4096}),
+    signal:AbortSignal.timeout(15000)
+  }).catch(()=>{});
+  if(ctx?.waitUntil)ctx.waitUntil(notify);else await notify;
+  return discordJson({type:7,data:{embeds:[updated],components:[],allowed_mentions:{parse:[]}}});
+}
+
+async function discordInteraction(request,env,ctx) {
+  const rawBody=await request.text();
+  if(!await verifyDiscordInteraction(request,rawBody,env))return new Response("invalid request signature",{status:401});
+  let interaction;try{interaction=JSON.parse(rawBody)}catch{return new Response("bad request",{status:400})}
+  if(interaction.type===1)return discordJson({type:1});
+  if(interaction.type===3&&String(interaction.data?.custom_id||"").startsWith("setup_ready:"))return confirmDiscordRequest(interaction,env,ctx);
+  if(interaction.type===4&&interaction.data?.name==="request"){
+    const focused=(interaction.data.options||[]).find(option=>option.focused);
+    let choices=[];
+    if(focused?.name==="strecke")choices=searchRequestTracks(focused.value,25).map(track=>({name:track.name,value:track.name}));
+    if(focused?.name==="fahrzeug"){
+      const source=await readSiteFile(request,env,"setups.json");const catalog=source.ok?await source.json().catch(()=>({})):{};
+      const query=String(focused.value||"").toLowerCase();
+      choices=Object.entries(catalog).flatMap(([category,cars])=>Array.isArray(cars)?cars.map(car=>({name:car.name+" ("+category+")",value:car.name})):[]).filter(car=>car.value.toLowerCase().includes(query)).slice(0,25);
+    }
+    return discordJson({type:8,data:{choices}});
   }
-  const delegated = new Request(request.url, { method: "POST", headers: request.headers, body: rawBody });
-  return baseWorker.fetch(delegated, env);
+  let values=null;
+  if(interaction.type===2&&interaction.data?.name==="request"){
+    const options=Object.fromEntries((interaction.data.options||[]).map(option=>[option.name,option.value]));
+    if(!options.fahrzeug)return discordJson(requestModalResponse());
+    values={vehicle:options.fahrzeug,track:options.strecke,manufacturer:options.hersteller,message:options.weitere_infos};
+  }
+  if(interaction.type===5&&interaction.data?.custom_id===REQUEST_MODAL_ID)values=modalValues(interaction.data.components);
+  if(values){
+    const user=interaction.member?.user||interaction.user||{};
+    const data={userId:String(user.id||""),username:user.global_name||user.username||"Discord User",vehicle:clean(values.vehicle,100),track:clean(values.track,100),manufacturer:values.manufacturer,message:clean(values.message,1000)};
+    const task=finishDiscordRequest(interaction,data,request,env);
+    if(ctx?.waitUntil)ctx.waitUntil(task);else await task;
+    return discordJson({type:5,data:{flags:64}});
+  }
+  return baseWorker.fetch(new Request(request.url,{method:"POST",headers:request.headers,body:rawBody}),env);
 }
 
 function requestModalResponse() {
@@ -199,6 +230,7 @@ function requestModalResponse() {
         input("vehicle", "Fahrzeug", { maxLength: 100, placeholder: "z. B. Porsche 963" }),
         input("class", "Klasse", { maxLength: 80, placeholder: "z. B. Hypercar" }),
         input("track", "Strecke", { maxLength: 100, placeholder: "z. B. Le Mans" }),
+        input("manufacturer", "Setup-Hersteller", { maxLength: 20, placeholder: "GO, HYMO oder beAlien" }),
         input("message", "Weitere Informationen", { required: false, paragraph: true, maxLength: 500, placeholder: "Optional" })
       ]
     }

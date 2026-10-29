@@ -31,3 +31,7 @@ tests
 tests/**
 discord-presence
 discord-presence/**
+scripts
+scripts/**
+docs
+docs/**

@@ -5,11 +5,12 @@ import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admi
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
-import { createScheduledBackup } from "./automatic-backup.js";
+import { createScheduledBackup, backupCompletionApi } from "./automatic-backup.js";
 
 export default {
   async fetch(request,env,ctx){
     const url=new URL(request.url);
+    if(url.pathname==='/api/internal/backups/complete')return backupCompletionApi(request,env);
     if(url.pathname!=='/api/me'&&!url.pathname.startsWith('/api/admin')&&await isMaintenanceActive(env)){
       const me=await readMe(request,env,ctx);
       if(String(me?.user?.id)!==String(env.DISCORD_OWNER_USER_ID||'1033453785416208564')){
