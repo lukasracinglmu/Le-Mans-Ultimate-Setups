@@ -22,7 +22,7 @@ Diese Werte dürfen nicht im Repository oder in normalen Textvariablen stehen.
 
 ## Benötigte Textvariablen
 
-Der Code enthält keine Ersatzwerte für diese IDs. Fehlt eine Variable, greift die zugehörige Berechtigung oder Benachrichtigung nicht. Ohne `DISCORD_OWNER_USER_ID` hat z. B. niemand Owner-Rechte. `npm run check:deploy` bricht ab, wenn eine Pflichtvariable (Liste in `src/config.js`) in `wrangler.jsonc` fehlt oder leer ist.
+Der Code enthält keine Ersatzwerte für diese Werte. Fehlt eine Variable, greift die zugehörige Berechtigung, Benachrichtigung oder GitHub-Anfrage nicht. Ohne `DISCORD_OWNER_USER_ID` hat z. B. niemand Owner-Rechte, ohne `GITHUB_REPO` liest der Worker nichts aus dem Repository. `npm run check:deploy` bricht ab, wenn eine Pflichtvariable (Liste in `src/config.js`) in `wrangler.jsonc` fehlt oder leer ist.
 
 | Name | Aktueller Wert | Zweck |
 | :--- | :--- | :--- |
@@ -39,6 +39,9 @@ Der Code enthält keine Ersatzwerte für diese IDs. Fehlt eine Variable, greift 
 | `GITHUB_OWNER` | `lukasracinglmu` | Besitzer des GitHub-Repositorys. |
 | `GITHUB_REPO` | `Le-Mans-Ultimate-Setups` | Name des GitHub-Repositorys. |
 | `GITHUB_BRANCH` | `main` | Branch für Website, Setups und Audit-Logs. |
+| `BACKUP_GITHUB_OWNER` | `lukasracinglmu` | Besitzer des Backup-Repositorys. Fehlt der Wert, wird `GITHUB_OWNER` verwendet. |
+| `BACKUP_GITHUB_REPO` | `LMU-Database-Backups` | Repository, das die vollständigen Backups erhält. |
+| `BACKUP_GITHUB_BRANCH` | `main` | Branch im Backup-Repository. |
 
 ## Optional
 
