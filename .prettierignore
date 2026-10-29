@@ -1,0 +1,16 @@
+# Data, never reformat
+setups/
+audit-logs/
+.github/changelog/state.json
+
+# Maintained by the changelog automation
+CHANGELOG.md
+
+# Stored base64-encoded since commit 6578b70; restore it before formatting (issue #3).
+tests/login-only-controls.test.mjs
+
+# HTML pages are patched at runtime through exact string and regex matches
+# (production-worker.js, ui-hotfix.js, access-worker.js) and are read live
+# from GitHub. Reformatting them would silently break those patches.
+# Remove this entry once the runtime HTML patches are gone (issue #9).
+*.html
