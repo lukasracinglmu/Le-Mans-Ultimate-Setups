@@ -9,6 +9,7 @@ on:
       - '**/*.html'
       - package.json
       - package-lock.json
+      - .nvmrc
       - .prettierrc.json
       - .prettierignore
       - .github/workflows/lint.yml
@@ -19,6 +20,7 @@ on:
       - '**/*.html'
       - package.json
       - package-lock.json
+      - .nvmrc
       - .prettierrc.json
       - .prettierignore
       - .github/workflows/lint.yml
@@ -29,8 +31,6 @@ permissions:
 
 jobs:
   lint:
-    # Same cost guard as the other workflows: jobs only run while the repository is public.
-    if: toJSON(github.event.repository.private) == 'false'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -46,7 +46,7 @@ jobs:
       - name: Node.js einrichten
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - name: Abhängigkeiten installieren
         run: npm ci

@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'setups/**'
+      - 'audit-logs/**'
+      - '**/*.md'
+      - '.github/changelog/state.json'
+  pull_request:
+    paths-ignore:
+      - 'setups/**'
+      - 'audit-logs/**'
+      - '**/*.md'
+      - '.github/changelog/state.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Quellen laden
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !/setups/
+            !/audit-logs/
+          sparse-checkout-cone-mode: false
+      - name: Node.js einrichten
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci
+      - name: Node-Tests
+        run: npm run test:node
+      - name: Python-Tests
+        run: npm run test:python
+      - name: Pre-Deploy-Prüfung
+        run: npm run check:deploy
