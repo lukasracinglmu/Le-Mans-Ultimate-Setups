@@ -66,7 +66,7 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 <body>
 <header>
   <a class="brand" href="/" aria-label="Zur Startseite">
-    <img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing" width="48" height="28">
+    <img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing" width="96" height="48">
     <div class="brand-copy"><div class="brand-title">Three Peaks Racing</div><div class="brand-sub">LMU Setup Database</div></div>
   </a>
   <div class="header-actions">
@@ -79,7 +79,12 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
 <div class="layout">
 <main>
 <section id="homePage" class="page active">
-  <div class="hero"><div class="hero-kicker">Le Mans Ultimate</div><h1>Three Peaks Racing Setup Database</h1><p>Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.</p><div class="manufacturer-strip"><span>Setup Hersteller:</span><span id="manufacturerName" class="manufacturer-name">GO</span></div></div>
+  <div class="hero"><div class="hero-kicker">Le Mans Ultimate</div><h1>Three Peaks Racing Setup Database</h1><p>Setups für Le Mans Ultimate – übersichtlich nach Fahrzeug, Variante und Rennserie.</p><div class="manufacturer-strip manufacturer-carousel" aria-label="Setup Hersteller">
+      <span class="manufacturer-label">Setup Hersteller</span>
+      <button type="button" id="manufacturerPrev" class="manufacturer-nav" aria-label="Vorheriger Hersteller">‹</button>
+      <div class="manufacturer-visual"><img id="manufacturerImage" src="/assets/manufacturers/go-setups.webp" alt="GO Setups"><span id="manufacturerName" class="manufacturer-name" aria-hidden="true">GO</span></div>
+      <button type="button" id="manufacturerNext" class="manufacturer-nav" aria-label="Nächster Hersteller">›</button>
+    </div></div>
   <div class="filter-toolbar login-only-control hidden"><div class="filter-groups"><div id="mfrFilter" class="mfr-filter"><button class="mfr-btn active" data-mfr="">Alle</button><button class="mfr-btn" data-mfr="GO">GO</button><button class="mfr-btn" data-mfr="HYMO">HYMO</button><button class="mfr-btn" data-mfr="beAlien">beAlien</button></div><div id="classFilter" class="mfr-filter"><button class="mfr-btn active" data-class="">Alle</button><button class="mfr-btn" data-class="Hypercar">Hypercar</button><button class="mfr-btn" data-class="LMP2">LMP2</button><button class="mfr-btn" data-class="LMP3">LMP3</button><button class="mfr-btn" data-class="LMGT3">LMGT3</button></div></div><div id="favoriteFilter" class="mfr-filter"><button id="favoriteFilterButton" class="mfr-btn" type="button">Favoriten anzeigen</button></div></div>
 <input id="search" class="search" placeholder="Fahrzeug suchen...">
   <div id="categories"></div>
@@ -87,11 +92,11 @@ header{height:68px;border-bottom:1px solid var(--border);background:color-mix(in
     <h2>Setup Request</h2>
     <div id="requestLoginRequired" class="login-required">Melde dich mit Discord an, um einen Setup Request zu senden.</div>
     <form id="requestForm" class="request-form hidden">
-      <div class="request-grid"><div><label for="reqVehicle">Fahrzeug</label><input id="reqVehicle" required autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="requestVehicleOptions" placeholder="Mindestens 3 Buchstaben eingeben"><div id="requestVehicleOptions" class="request-vehicle-options hidden" role="listbox" aria-label="Fahrzeuge"></div></div><div><label for="reqClass">Klasse</label><input id="reqClass" readonly placeholder="Wird automatisch ausgewählt"></div><div><label for="reqTrack">Strecke</label><input id="reqTrack" required></div><div><label for="reqEvent">Event / Rennserie</label><input id="reqEvent" placeholder="z. B. WEC"></div><div><label for="reqVariant">Setup Variante</label><input id="reqVariant" placeholder="z. B. EVO / Wet"></div></div>
+      <div class="request-grid"><div><label for="reqVehicle">Fahrzeug</label><input id="reqVehicle" required autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="requestVehicleOptions" placeholder="Mindestens 3 Buchstaben eingeben"><div id="requestVehicleOptions" class="request-vehicle-options hidden" role="listbox" aria-label="Fahrzeuge"></div></div><div><label for="reqClass">Klasse</label><input id="reqClass" readonly placeholder="Wird automatisch ausgewählt"></div><div><label for="reqTrack">Strecke</label><input id="reqTrack" required></div></div>
       <label for="reqMsg">Weitere Informationen</label><textarea id="reqMsg"></textarea>
       <button type="submit" class="discord-button">Request senden</button><div id="requestResult" class="request-message"></div>
     </form>
-    <div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button onclick="grantUploadAccess()">Upload freigeben</button><button onclick="revokeUploadAccess()">Freigabe entfernen</button><button onclick="registerRequestCommand()">/request registrieren</button></div><div id="adminResult" class="request-message"></div></div>
+    <div id="adminPanel" class="admin-panel hidden"><h3>Admin</h3><p>Freigaben für die eingegebene Person. Discord-Rollen gelten weiterhin.</p><div class="admin-row"><input id="adminUserId" placeholder="Discord User ID"><button type="button" data-upload-admin onclick="adminSetAllFromInput(true)">Alles freigeben</button><button type="button" data-upload-admin onclick="adminSetAllFromInput(false)">Alles entfernen</button><button type="button" data-full-admin onclick="adminSetFullAdminFromInput(true)">Full Admin freigeben</button><button type="button" data-full-admin onclick="adminSetFullAdminFromInput(false)">Full Admin entfernen</button><button type="button" onclick="grantDatabaseAccess()">Database freigeben</button><button type="button" onclick="revokeDatabaseAccess()">Database entfernen</button><button type="button" data-upload-admin onclick="grantUploadAccess()">Upload/Delete freigeben</button><button type="button" data-upload-admin onclick="revokeUploadAccess()">Upload/Delete entfernen</button></div><div id="adminResult" class="request-message"></div><div id="adminAccessList" style="margin-top:16px;display:grid;gap:10px"></div></div>
   </div>
 </section>
 <section id="carPage" class="page"><button class="back" onclick="showHome()">← Zurück</button><h1 id="carTitle" class="car-title"></h1><div id="carSubtitle" class="car-subtitle"></div><div id="uploadArea" class="upload-area" style="display:none"><input id="fileInput" type="file" accept=".zip,application/zip" multiple hidden><button class="upload-btn" id="uploadBtn">⬆ Setups hochladen</button><button type="button" class="retry-upload-btn" id="retryFailedBtn">Fehlgeschlagene erneut hochladen</button><span id="uploadStatus" class="upload-status"></span><div id="sessionUploadProgress" class="session-upload-progress hidden" role="group" aria-labelledby="sessionProgressTitle"><div id="sessionProgressTitle" class="session-progress-title">Session Upload Progress</div><div class="session-progress-summary" aria-live="polite" aria-atomic="true"><span id="sessionProgressCount"></span><span id="sessionProgressPercent"></span></div><div id="sessionProgressBar" class="session-progress-track" role="progressbar" aria-labelledby="sessionProgressTitle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="sessionProgressFill" class="session-progress-fill"></div></div><div id="sessionProgressCurrent" class="session-progress-current hidden"></div></div><div id="fileStatuses" class="file-statuses"></div></div><input id="trackSearch" class="search track-search" placeholder="Strecke suchen…" style="display:none"><div id="setupList"></div></section>
@@ -407,7 +412,7 @@ async function openSetupFromQuery() {
     });
   }
 }
-loadTheme();initManufacturer();checkLogin();loadData().then(openSetupFromQuery);
+loadTheme();
 </script>
 </body>
 </html>
