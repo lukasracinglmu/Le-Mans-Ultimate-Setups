@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T07:58:51.714Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Daytona HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
