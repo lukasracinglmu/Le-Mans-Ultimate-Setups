@@ -1,6 +1,6 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import 'dotenv/config';
-import { REQUEST_MANUFACTURERS, resolveRequestManufacturer, setupRequestPayload } from './request-manufacturers.js';
+import { REQUEST_MANUFACTURERS, resolveRequestManufacturer, setupRequestPayload, isAnyRequestManufacturer } from './request-manufacturers.js';
 import { searchRequestTracks, resolveRequestTrack, matchingRequestSetups } from './request-tracks.js';
 import { readFile } from 'node:fs/promises';
 import {
@@ -66,7 +66,7 @@ const requestCommand = new SlashCommandBuilder()
   .addStringOption(option => option
     .setName('hersteller')
     .setDescription('Optional: gewünschten Setup-Hersteller auswählen')
-    .addChoices(...REQUEST_MANUFACTURERS.map(item=>({name:item.name,value:item.id})))
+    .addChoices({name:'Egal',value:'egal'},...REQUEST_MANUFACTURERS.map(item=>({name:item.name,value:item.id})))
     .setRequired(false))
   .addStringOption(option => option
     .setName('weitere_infos')
@@ -245,8 +245,8 @@ client.on('interactionCreate', async interaction => {
     return;
   }
 
-  if (requestedManufacturer && !manufacturer) {
-    await interaction.reply({content:'Bitte GO, HYMO oder beAlien als Hersteller auswählen.',flags:MessageFlags.Ephemeral});
+  if (!isAnyRequestManufacturer(requestedManufacturer) && !manufacturer) {
+    await interaction.reply({content:'Bitte GO, HYMO, beAlien oder Egal als Hersteller auswählen.',flags:MessageFlags.Ephemeral});
     return;
   }
 

@@ -22,7 +22,7 @@ Die Abschlussmeldung authentifiziert GitHub mit einer kurzlebigen OIDC-Identitä
 
 ## Setup-Anfragen auf Website und Discord
 
-- Pflichtfelder sind Fahrzeug und Strecke/Layout. Hersteller **GO**, **HYMO** oder **beAlien** sowie die Nachricht sind optional. Ohne Auswahl gilt **Egal – keine Präferenz**. Beim Bot kann `/request … hersteller:…` einfach weggelassen werden; auch das ältere Discord-Formular erlaubt ein leeres Herstellerfeld.
+- Pflichtfelder sind Fahrzeug und Strecke/Layout. Hersteller **GO**, **HYMO** oder **beAlien** sowie die Nachricht sind optional. Ohne Auswahl gilt **Egal – keine Präferenz**. Beim Bot steht **Egal** ausdrücklich in der Hersteller-Auswahl; alternativ kann `/request … hersteller:…` einfach weggelassen werden; auch das ältere Discord-Formular erlaubt ein leeres Herstellerfeld.
 - Die Vorhanden-Prüfung vergleicht Fahrzeugordner, Strecke/Layout **und Hersteller**. Ein HYMO-Setup verhindert keine GO-Anfrage. Ohne Herstellerwahl wird nach einem Setup beliebigen Herstellers für genau dieses Fahrzeug und Streckenlayout gesucht; ein vorhandener Treffer liefert weiterhin den direkten Link. Verschiedene Streckenlayouts bleiben getrennt. Dateikürzel `bA`, `bA1`, `bA2` werden beAlien zugeordnet.
 - Bei einem passenden vorhandenen Setup erscheint auf der Website ein direkter Link zum Fahrzeug/Setup, im Discord-Befehl eine nur für den Anfragenden sichtbare Antwort. Es wird keine neue Channel-Anfrage gepostet.
 - Neue Anfragen erscheinen über beide Wege als ein Embed mit Fahrzeug/Klasse, Strecke, Hersteller (ohne Auswahl: **Egal**), Nachricht und getaggtem Anfragenden. Die Setup-Supply-Rolle steht darüber als sichtbarer Tag, bekommt dabei aber **keinen Rollen-Ping**.

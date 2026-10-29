@@ -4,6 +4,8 @@ export const REQUEST_MANUFACTURERS=Object.freeze([
 ]);
 export const SETUP_CONFIRMATION_WHITELIST=Object.freeze(['771358435416473600','640948738445279261','198399938739175424','711862720567312455','646758275714514955','999265474078593164']);
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+// Der sichtbare Discord-Wert egal hat dieselbe Bedeutung wie eine leere Auswahl.
+export const isAnyRequestManufacturer=value=>value==null||!String(value).trim()||normalized(value)==='egal';
 export function resolveRequestManufacturer(value){
   const aliases={go:'GO',gosetups:'GO',hymo:'HYMO',heimo:'HYMO',highmoss:'HYMO',bealien:'beAlien',ba:'beAlien',ba1:'beAlien',ba2:'beAlien'};
   const id=aliases[normalized(value)];
@@ -21,7 +23,7 @@ export function canConfirmSetupRequest(userId,roles,roleId){
 export function setupRequestPayload(data,roleId,now=new Date()){
   const manufacturer=resolveRequestManufacturer(data.manufacturer);
   const userId=String(data.userId||'');
-  if((String(data.manufacturer??'').trim()&&!manufacturer)||!/^\d{16,22}$/.test(userId))throw Error('Ungültige Setup-Anfrage.');
+  if((!isAnyRequestManufacturer(data.manufacturer)&&!manufacturer)||!/^\d{16,22}$/.test(userId))throw Error('Ungültige Setup-Anfrage.');
   const clean=(value,max)=>String(value||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);
   return {
     content:/^\d{16,22}$/.test(String(roleId||''))?'<@&'+roleId+'>':'',

@@ -91,7 +91,7 @@ test('Signierte HTTP-Buttons bestätigen nur berechtigte Nutzer und aktualisiere
 
 
 test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhandene Treffer bleiben korrekt',async()=>{
-  for(const manufacturer of [undefined,null,'','   ']){
+  for(const manufacturer of [undefined,null,'','   ','egal','Egal']){
     const created=await website([],manufacturer);
     assert.equal(created.status,200);assert.equal(created.body.alreadyExists,false);assert.equal(created.sends.length,1);
     assert.equal(created.sends[0].embeds[0].fields.find(f=>f.name==='Setup-Hersteller').value,'Egal');
@@ -104,4 +104,6 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
   }
   assert.equal(matchingRequestSetups([{name:'Toyota Paul Ricard 1A GO.zip'}],'Paul Ricard - Default').length,0);
   assert.equal(matchingRequestSetups([{name:'Toyota Spa HYMO.zip'}],'Spa').length,1);
+  assert.equal(matchingRequestSetups([{name:'Toyota Spa HYMO.zip'}],'Spa','egal').length,1);
+  assert.equal(setupRequestPayload({...data,manufacturer:'egal'},env.DISCORD_UPLOAD_ROLE_ID).embeds[0].fields.find(f=>f.name==='Setup-Hersteller').value,'Egal');
 });

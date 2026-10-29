@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { REQUEST_TRACKS,searchRequestTracks,resolveRequestTrack,matchingRequestSetups } from '../discord-presence/request-tracks.js';
 import production from '../production-worker.js';
-import {REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload} from '../discord-presence/request-manufacturers.js';
+import {REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload,isAnyRequestManufacturer} from '../discord-presence/request-manufacturers.js';
 import base from '../worker.js';
 
 test('Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts',()=>{
@@ -127,7 +127,7 @@ async function bot(){
   }
   class REST{setToken(){return this}async put(route,options){command=options.body[0]}}
   const source=readFileSync(new URL('../discord-presence/index.js',import.meta.url),'utf8').replace(/^import\s[^;]+;\s*/gm,'');
-  const context={REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload,Client,REST,EmbedBuilder:Builder,ActionRowBuilder:Builder,ButtonBuilder:Builder,SlashCommandBuilder:Builder,ButtonStyle:{Link:5,Success:3},GatewayIntentBits:{Guilds:1},ActivityType:{Playing:0},MessageFlags:{Ephemeral:64,SuppressNotifications:4096},Routes:{applicationGuildCommands:()=>'/commands'},readFile:async()=>JSON.stringify({Hypercar:[{name:'Toyota GR010'}]}),fetch:async()=>Response.json([]),searchRequestTracks,resolveRequestTrack,matchingRequestSetups,URLSearchParams,console:{log(){},warn(){},error(){}},process:{env:{DISCORD_BOT_TOKEN:'fake',DISCORD_CLIENT_ID:'1556978316404068452',DISCORD_GUILD_ID:'1464926567401652418',DISCORD_CHANNEL_ID:'1511795330176520193',DISCORD_ROLE_ID:'1538601074074849330',GITHUB_TOKEN:'fake'},on(){},exit(){throw Error('unexpected exit')}}};
+  const context={REQUEST_MANUFACTURERS,resolveRequestManufacturer,setupRequestPayload,isAnyRequestManufacturer,Client,REST,EmbedBuilder:Builder,ActionRowBuilder:Builder,ButtonBuilder:Builder,SlashCommandBuilder:Builder,ButtonStyle:{Link:5,Success:3},GatewayIntentBits:{Guilds:1},ActivityType:{Playing:0},MessageFlags:{Ephemeral:64,SuppressNotifications:4096},Routes:{applicationGuildCommands:()=>'/commands'},readFile:async()=>JSON.stringify({Hypercar:[{name:'Toyota GR010'}]}),fetch:async()=>Response.json([]),searchRequestTracks,resolveRequestTrack,matchingRequestSetups,URLSearchParams,console:{log(){},warn(){},error(){}},process:{env:{DISCORD_BOT_TOKEN:'fake',DISCORD_CLIENT_ID:'1556978316404068452',DISCORD_GUILD_ID:'1464926567401652418',DISCORD_CHANNEL_ID:'1511795330176520193',DISCORD_ROLE_ID:'1538601074074849330',GITHUB_TOKEN:'fake'},on(){},exit(){throw Error('unexpected exit')}}};
   vm.runInNewContext(source,context);
   await events.get('ready')();
   return {command,sends,handle:events.get('interactionCreate'),context};

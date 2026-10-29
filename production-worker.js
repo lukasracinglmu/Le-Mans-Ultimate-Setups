@@ -7,7 +7,7 @@ import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setu
 
 import { readUploadForm } from "./upload-storage.js";
 import { REQUEST_TRACKS, resolveRequestTrack, searchRequestTracks, matchingRequestSetups } from "./discord-presence/request-tracks.js";
-import { resolveRequestManufacturer, setupRequestPayload, canConfirmSetupRequest } from "./discord-presence/request-manufacturers.js";
+import { resolveRequestManufacturer, setupRequestPayload, canConfirmSetupRequest, isAnyRequestManufacturer } from "./discord-presence/request-manufacturers.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";
@@ -85,7 +85,7 @@ export default {
 async function normalizeSetupRequest(data,request,env) {
   const requestedManufacturer=String(data.manufacturer??'').trim();
   const manufacturer=resolveRequestManufacturer(requestedManufacturer);
-  if(requestedManufacturer&&!manufacturer)return {error:json({success:false,error:"Bitte GO, HYMO oder beAlien als Setup-Hersteller auswählen."},400)};
+  if(!isAnyRequestManufacturer(requestedManufacturer)&&!manufacturer)return {error:json({success:false,error:"Bitte GO, HYMO, beAlien oder Egal als Setup-Hersteller auswählen."},400)};
   const selectedTrack=resolveRequestTrack(data.track);
   if(!selectedTrack)return {error:json({success:false,error:"Bitte eine Strecke aus den Vorschlägen auswählen."},400)};
   const catalogResponse=await readSiteFile(request,env,"setups.json");
@@ -232,7 +232,7 @@ function requestModalResponse() {
         input("vehicle", "Fahrzeug", { maxLength: 100, placeholder: "z. B. Porsche 963" }),
         input("class", "Klasse", { maxLength: 80, placeholder: "z. B. Hypercar" }),
         input("track", "Strecke", { maxLength: 100, placeholder: "z. B. Le Mans" }),
-        input("manufacturer", "Setup-Hersteller (optional)", { required: false, maxLength: 20, placeholder: "GO, HYMO oder beAlien; sonst leer lassen" }),
+        input("manufacturer", "Setup-Hersteller (optional)", { required: false, maxLength: 20, placeholder: "GO, HYMO, beAlien oder Egal" }),
         input("message", "Weitere Informationen", { required: false, paragraph: true, maxLength: 500, placeholder: "Optional" })
       ]
     }

@@ -1,4 +1,4 @@
-import { resolveRequestManufacturer, setupManufacturerFromFilename } from './request-manufacturers.js';
+import { resolveRequestManufacturer, setupManufacturerFromFilename, isAnyRequestManufacturer } from './request-manufacturers.js';
 /* @file-notes: Gemeinsame Streckenliste und Suche für Website und Discord-Bot.
  * Namen und Layouts entsprechen der bestätigten Liste. Keine externen APIs erforderlich.
  */
@@ -357,6 +357,6 @@ export function requestTrackFromFilename(value) {
 export function matchingRequestSetups(files,value,manufacturer) {
   const requested=resolveRequestTrack(value);
   const vendor=manufacturer?resolveRequestManufacturer(manufacturer):null;
-  if(!requested||(manufacturer&&!vendor))return [];
+  if(!requested||(!isAnyRequestManufacturer(manufacturer)&&!vendor))return [];
   return (Array.isArray(files)?files:[]).filter(file=>requestTrackFromFilename(file.name)?.name===requested.name&&(!vendor||setupManufacturerFromFilename(file.name)===vendor.id));
 }
