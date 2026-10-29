@@ -1,0 +1,16 @@
+# Data, never reformat
+setups/
+audit-logs/
+.github/changelog/state.json
+
+# Maintained by the changelog automation
+CHANGELOG.md
+
+# Stored base64-encoded since commit 6578b70; restore it before formatting (issue #3).
+tests/login-only-controls.test.mjs
+
+# Worker layers rewrite index.html at runtime through exact string and regex
+# matches and inject the CSS and JavaScript those rewrites depend on.
+# Reformatting the file breaks the matches. Format it once the runtime
+# patches live in the page itself (issue #9).
+index.html

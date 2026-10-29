@@ -8,109 +8,359 @@ import { writeSetupAuditEvent } from "./audit-log.js";
 import { createScheduledBackup, backupCompletionApi } from "./automatic-backup.js";
 
 export default {
-  async fetch(request,env,ctx){
-    const url=new URL(request.url);
-    if(url.pathname==='/api/internal/backups/complete')return backupCompletionApi(request,env);
-    if(url.pathname!=='/api/me'&&!url.pathname.startsWith('/api/admin')&&await isMaintenanceActive(env)){
-      const me=await readMe(request,env,ctx);
-      if(String(me?.user?.id)!==String(env.DISCORD_OWNER_USER_ID||'1033453785416208564')){
-        const state=await maintenanceState(env);
-        return new Response('<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>*{box-sizing:border-box}@keyframes maintenanceDrift{from{background-position:70px 75px,300px 305px}to{background-position:105px 110px,335px 340px}}body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center;overflow:hidden;animation:maintenanceDrift 28s ease-in-out infinite alternate;background-image:url("/assets/bp-logo.webp?v=maintenance-gray-2"),url("/assets/bp-logo.webp?v=maintenance-gray-2");background-size:460px auto;background-position:70px 75px,300px 305px;background-repeat:repeat}main{position:relative;z-index:1;max-width:620px;margin:30px;padding:34px 38px;border:1px solid #343943;border-radius:18px;background:#191c22;box-shadow:0 18px 60px #0008}main h1{margin:0 0 12px}main p{margin:0;color:#a5a9b3;line-height:1.55}</style><main><h1>Wartungsarbeiten</h1><p>'+escapeHtml(state.message)+'</p></main>',{status:503,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','Strict-Transport-Security':'max-age=31536000; includeSubDomains','Content-Security-Policy':"default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self'; style-src 'unsafe-inline'; upgrade-insecure-requests"}});
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/internal/backups/complete") return backupCompletionApi(request, env);
+    if (
+      url.pathname !== "/api/me" &&
+      !url.pathname.startsWith("/api/admin") &&
+      (await isMaintenanceActive(env))
+    ) {
+      const me = await readMe(request, env, ctx);
+      if (String(me?.user?.id) !== String(env.DISCORD_OWNER_USER_ID || "1033453785416208564")) {
+        const state = await maintenanceState(env);
+        return new Response(
+          '<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>*{box-sizing:border-box}@keyframes maintenanceDrift{from{background-position:70px 75px,300px 305px}to{background-position:105px 110px,335px 340px}}body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center;overflow:hidden;animation:maintenanceDrift 28s ease-in-out infinite alternate;background-image:url("/assets/bp-logo.webp?v=maintenance-gray-2"),url("/assets/bp-logo.webp?v=maintenance-gray-2");background-size:460px auto;background-position:70px 75px,300px 305px;background-repeat:repeat}main{position:relative;z-index:1;max-width:620px;margin:30px;padding:34px 38px;border:1px solid #343943;border-radius:18px;background:#191c22;box-shadow:0 18px 60px #0008}main h1{margin:0 0 12px}main p{margin:0;color:#a5a9b3;line-height:1.55}</style><main><h1>Wartungsarbeiten</h1><p>' +
+            escapeHtml(state.message) +
+            "</p></main>",
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "text/html;charset=utf-8",
+              "Cache-Control": "no-store",
+              "X-Content-Type-Options": "nosniff",
+              "X-Frame-Options": "DENY",
+              "Referrer-Policy": "no-referrer",
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+              "Content-Security-Policy":
+                "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self'; style-src 'unsafe-inline'; upgrade-insecure-requests",
+            },
+          },
+        );
       }
     }
-    if(url.pathname==='/strategy' || url.pathname==='/strategy.html' || url.pathname==='/strategy.js'){
-      return new Response('Nicht gefunden.',{status:410,headers:{'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0','Pragma':'no-cache','Expires':'0','Clear-Site-Data':'"cache"','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY'}});
+    if (
+      url.pathname === "/strategy" ||
+      url.pathname === "/strategy.html" ||
+      url.pathname === "/strategy.js"
+    ) {
+      return new Response("Nicht gefunden.", {
+        status: 410,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          "Clear-Site-Data": '"cache"',
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY",
+        },
+      });
     }
-    if(url.pathname==='/bug-report'&&request.method==='GET'){
-      const me=await readMe(request,env,ctx);
-      if(!hasSiteAccess(me))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
-      return sitePage(request,env,'bug-report.html',true);
+    if (url.pathname === "/bug-report" && request.method === "GET") {
+      const me = await readMe(request, env, ctx);
+      if (!hasSiteAccess(me))
+        return new Response("Nicht gefunden.", {
+          status: 404,
+          headers: { "Cache-Control": "private, no-store" },
+        });
+      return sitePage(request, env, "bug-report.html", true);
     }
-    if(url.pathname==='/request'&&request.method==='GET'){
-      const me=await readMe(request,env,ctx);
-      if(!hasSiteAccess(me))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
-      return sitePage(request,env,'request.html',true);
+    if (url.pathname === "/request" && request.method === "GET") {
+      const me = await readMe(request, env, ctx);
+      if (!hasSiteAccess(me))
+        return new Response("Nicht gefunden.", {
+          status: 404,
+          headers: { "Cache-Control": "private, no-store" },
+        });
+      return sitePage(request, env, "request.html", true);
     }
-    if(url.pathname==='/bug-tickets'&&request.method==='GET'){
-      if(!await isTicketOwner(request,env,ctx,productionWorker))return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
-      return sitePage(request,env,'bug-tickets.html',true);
+    if (url.pathname === "/bug-tickets" && request.method === "GET") {
+      if (!(await isTicketOwner(request, env, ctx, productionWorker)))
+        return new Response("Nicht gefunden.", {
+          status: 404,
+          headers: { "Cache-Control": "private, no-store" },
+        });
+      return sitePage(request, env, "bug-tickets.html", true);
     }
-    if(url.pathname==='/admin'&&request.method==='GET'){
-      const me=await readMe(request,env,ctx);
-      if(!me?.loggedIn||!me.user?.canViewAdminPanel)return new Response('Nicht gefunden.',{status:404,headers:{'Cache-Control':'private, no-store'}});
-      return sitePage(request,env,'admin.html',true);
+    if (url.pathname === "/admin" && request.method === "GET") {
+      const me = await readMe(request, env, ctx);
+      if (!me?.loggedIn || !me.user?.canViewAdminPanel)
+        return new Response("Nicht gefunden.", {
+          status: 404,
+          headers: { "Cache-Control": "private, no-store" },
+        });
+      return sitePage(request, env, "admin.html", true);
     }
-    if(url.pathname==='/api/admin/full-admin'||url.pathname==='/api/admin/maintenance'||url.pathname==='/api/admin/backup'||url.pathname==='/api/admin/backups')return fullAdminApi(request,env,ctx,productionWorker);
-    if(url.pathname==='/api/favorites'&&(request.method==='GET'||request.method==='POST'||request.method==='DELETE'))return favoritesApi(request,env,ctx);
-    if(url.pathname==='/api/bug-reports'){
-      if(request.method!=='POST')return Response.json({success:false,error:'Methode nicht erlaubt.'},{status:405});
-      const me=await readMe(request,env,ctx);
-      if(!hasSiteAccess(me))return Response.json({success:false,error:'Keine Berechtigung.'},{status:403,headers:{'Cache-Control':'no-store'}});
-      return submitBugReport(request,me.user,env);
+    if (
+      url.pathname === "/api/admin/full-admin" ||
+      url.pathname === "/api/admin/maintenance" ||
+      url.pathname === "/api/admin/backup" ||
+      url.pathname === "/api/admin/backups"
+    )
+      return fullAdminApi(request, env, ctx, productionWorker);
+    if (
+      url.pathname === "/api/favorites" &&
+      (request.method === "GET" || request.method === "POST" || request.method === "DELETE")
+    )
+      return favoritesApi(request, env, ctx);
+    if (url.pathname === "/api/bug-reports") {
+      if (request.method !== "POST")
+        return Response.json({ success: false, error: "Methode nicht erlaubt." }, { status: 405 });
+      const me = await readMe(request, env, ctx);
+      if (!hasSiteAccess(me))
+        return Response.json(
+          { success: false, error: "Keine Berechtigung." },
+          { status: 403, headers: { "Cache-Control": "no-store" } },
+        );
+      return submitBugReport(request, me.user, env);
     }
-    if(url.pathname.startsWith('/api/admin/bug-tickets'))return ticketApi(request,env,ctx,productionWorker);
-    if(request.method==='GET'&&url.pathname==='/setups.json'){
-      const me=await readMe(request,env,ctx);
-      if(!me?.loggedIn)return Response.json({success:false,error:'Nicht angemeldet.'},{status:401});
-      if(!me?.databaseAccess){const unavailable=me?.rolesAvailable===false;return Response.json({success:false,error:unavailable?'Discord-Rollenprüfung momentan nicht verfügbar. Bitte erneut versuchen.':'Erforderliche Discord-Rolle fehlt.',reauthorize:Boolean(me?.reauthorize)},{status:unavailable?503:403,headers:{'Cache-Control':'private, no-store',...(unavailable?{'Retry-After':String(Math.max(1,Math.ceil((me.retryAfterMs||5000)/1000)))}:{})}});}
-      const source=await readSiteFile(request,env,'setups.json');
-      return new Response(source.body,{status:source.ok?200:502,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store'}});
+    if (url.pathname.startsWith("/api/admin/bug-tickets"))
+      return ticketApi(request, env, ctx, productionWorker);
+    if (request.method === "GET" && url.pathname === "/setups.json") {
+      const me = await readMe(request, env, ctx);
+      if (!me?.loggedIn)
+        return Response.json({ success: false, error: "Nicht angemeldet." }, { status: 401 });
+      if (!me?.databaseAccess) {
+        const unavailable = me?.rolesAvailable === false;
+        return Response.json(
+          {
+            success: false,
+            error: unavailable
+              ? "Discord-Rollenprüfung momentan nicht verfügbar. Bitte erneut versuchen."
+              : "Erforderliche Discord-Rolle fehlt.",
+            reauthorize: Boolean(me?.reauthorize),
+          },
+          {
+            status: unavailable ? 503 : 403,
+            headers: {
+              "Cache-Control": "private, no-store",
+              ...(unavailable
+                ? {
+                    "Retry-After": String(Math.max(1, Math.ceil((me.retryAfterMs || 5000) / 1000))),
+                  }
+                : {}),
+            },
+          },
+        );
+      }
+      const source = await readSiteFile(request, env, "setups.json");
+      return new Response(source.body, {
+        status: source.ok ? 200 : 502,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "private, no-store",
+        },
+      });
     }
-    const permissionChange=isPermissionChange(request.method,url.pathname);
-    if(permissionChange){
-      const bodyRequest=request.clone(),actor=await readMe(request,env,ctx);let targetUserId=null;
-      try{targetUserId=String((await bodyRequest.json())?.userId||'').trim()||null}catch{}
-      const response=await productionWorker.fetch(request,env,ctx);
-      if(response.ok&&actor?.loggedIn&&actor?.user?.id&&targetUserId){let result=null;try{result=await response.clone().json()}catch{}if(result?.success){const task=writeSetupAuditEvent(permissionAuditEvent(request.method,url.pathname,actor.user,targetUserId),env).catch(()=>{});if(ctx?.waitUntil)ctx.waitUntil(task)}}
+    const permissionChange = isPermissionChange(request.method, url.pathname);
+    if (permissionChange) {
+      const bodyRequest = request.clone(),
+        actor = await readMe(request, env, ctx);
+      let targetUserId = null;
+      try {
+        targetUserId = String((await bodyRequest.json())?.userId || "").trim() || null;
+      } catch {}
+      const response = await productionWorker.fetch(request, env, ctx);
+      if (response.ok && actor?.loggedIn && actor?.user?.id && targetUserId) {
+        let result = null;
+        try {
+          result = await response.clone().json();
+        } catch {}
+        if (result?.success) {
+          const task = writeSetupAuditEvent(
+            permissionAuditEvent(request.method, url.pathname, actor.user, targetUserId),
+            env,
+          ).catch(() => {});
+          if (ctx?.waitUntil) ctx.waitUntil(task);
+        }
+      }
       return response;
     }
-    const response=await productionWorker.fetch(request,env,ctx);
-    if(request.method==='GET'&&url.pathname==='/'&&response.headers.get('content-type')?.includes('text/html')){
-      let html=await response.text();
-      html=injectHomeLogo(html);
-      html=injectRoleHeader(html);
-      html=hideEmbeddedSections(html);
-      const headers=new Headers(response.headers);headers.delete('Content-Length');headers.set('Cache-Control','private, no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('X-Frame-Options','DENY');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('Strict-Transport-Security','max-age=31536000; includeSubDomains');
-      return new Response(html,{status:response.status,headers});
+    const response = await productionWorker.fetch(request, env, ctx);
+    if (
+      request.method === "GET" &&
+      url.pathname === "/" &&
+      response.headers.get("content-type")?.includes("text/html")
+    ) {
+      let html = await response.text();
+      html = injectHomeLogo(html);
+      html = injectRoleHeader(html);
+      html = hideEmbeddedSections(html);
+      const headers = new Headers(response.headers);
+      headers.delete("Content-Length");
+      headers.set("Cache-Control", "private, no-store");
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("X-Frame-Options", "DENY");
+      headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+      headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+      return new Response(html, { status: response.status, headers });
     }
     return response;
   },
-  async scheduled(event,env,ctx){try{await createScheduledBackup(env,new Date(event.scheduledTime||Date.now()))}catch(error){console.error('Automatic backup failed',error)}} ,
-  async queue(batch,env,ctx){for(const message of batch.messages){try{message.ack?.()}catch{message.retry?.({delaySeconds:10})}}}
+  async scheduled(event, env, ctx) {
+    try {
+      await createScheduledBackup(env, new Date(event.scheduledTime || Date.now()));
+    } catch (error) {
+      console.error("Automatic backup failed", error);
+    }
+  },
+  async queue(batch, env, ctx) {
+    for (const message of batch.messages) {
+      try {
+        message.ack?.();
+      } catch {
+        message.retry?.({ delaySeconds: 10 });
+      }
+    }
+  },
 };
 
-function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function escapeHtml(value) {
+  return String(value || "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
+}
 
-async function readMe(request,env,ctx){const r=await productionWorker.fetch(new Request(new URL('/api/me',request.url),{headers:request.headers}),env,ctx);try{return await r.json()}catch{return null}}
-function hasSiteAccess(me){return Boolean(me?.loggedIn&&me?.databaseAccess&&me?.user?.id)}
-async function favoritesApi(request,env,ctx){
-  try{
-    const me=await readMe(request,env,ctx);
-    if(!hasSiteAccess(me))return Response.json({success:false,error:"Nicht angemeldet oder keine Datenbankberechtigung."},{status:403,headers:{"Cache-Control":"no-store"}});
-    if(!env.ACCESS_DB)return Response.json({success:false,error:"Favoriten-Datenbank nicht verfügbar."},{status:503});
-    const userId=String(me.user.id);
-    if(request.method==="GET"){
-      const rows=await env.ACCESS_DB.prepare("SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC").bind(userId).all();
-      return Response.json({success:true,favorites:rows.results||[]},{headers:{"Cache-Control":"private, no-store"}});
+async function readMe(request, env, ctx) {
+  const r = await productionWorker.fetch(
+    new Request(new URL("/api/me", request.url), { headers: request.headers }),
+    env,
+    ctx,
+  );
+  try {
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+function hasSiteAccess(me) {
+  return Boolean(me?.loggedIn && me?.databaseAccess && me?.user?.id);
+}
+async function favoritesApi(request, env, ctx) {
+  try {
+    const me = await readMe(request, env, ctx);
+    if (!hasSiteAccess(me))
+      return Response.json(
+        { success: false, error: "Nicht angemeldet oder keine Datenbankberechtigung." },
+        { status: 403, headers: { "Cache-Control": "no-store" } },
+      );
+    if (!env.ACCESS_DB)
+      return Response.json(
+        { success: false, error: "Favoriten-Datenbank nicht verfügbar." },
+        { status: 503 },
+      );
+    const userId = String(me.user.id);
+    if (request.method === "GET") {
+      const rows = await env.ACCESS_DB.prepare(
+        "SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC",
+      )
+        .bind(userId)
+        .all();
+      return Response.json(
+        { success: true, favorites: rows.results || [] },
+        { headers: { "Cache-Control": "private, no-store" } },
+      );
     }
-    let body;try{body=await request.json()}catch{return Response.json({success:false,error:"Ungültige Anfrage."},{status:400})}
-    const category=String(body?.category||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,100);
-    const vehicle=String(body?.vehicle||"").replace(/[\u0000-\u001F\u007F]/g," ").trim().slice(0,150);
-    if(!category||!vehicle)return Response.json({success:false,error:"Fahrzeug fehlt."},{status:400});
-    if(request.method==="POST")await env.ACCESS_DB.prepare("INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,?)").bind(userId,category,vehicle,new Date().toISOString()).run();
-    else await env.ACCESS_DB.prepare("DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?").bind(userId,category,vehicle).run();
-    return Response.json({success:true,category,vehicle,favorite:request.method==="POST"},{headers:{"Cache-Control":"no-store"}});
-  }catch(error){console.error("favoritesApi failed",error);return Response.json({success:false,error:"Favorit konnte nicht gespeichert werden."},{status:503,headers:{"Cache-Control":"no-store"}})}
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ success: false, error: "Ungültige Anfrage." }, { status: 400 });
+    }
+    const category = String(body?.category || "")
+      .replace(/[\u0000-\u001F\u007F]/g, " ")
+      .trim()
+      .slice(0, 100);
+    const vehicle = String(body?.vehicle || "")
+      .replace(/[\u0000-\u001F\u007F]/g, " ")
+      .trim()
+      .slice(0, 150);
+    if (!category || !vehicle)
+      return Response.json({ success: false, error: "Fahrzeug fehlt." }, { status: 400 });
+    if (request.method === "POST")
+      await env.ACCESS_DB.prepare(
+        "INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,?)",
+      )
+        .bind(userId, category, vehicle, new Date().toISOString())
+        .run();
+    else
+      await env.ACCESS_DB.prepare(
+        "DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?",
+      )
+        .bind(userId, category, vehicle)
+        .run();
+    return Response.json(
+      { success: true, category, vehicle, favorite: request.method === "POST" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("favoritesApi failed", error);
+    return Response.json(
+      { success: false, error: "Favorit konnte nicht gespeichert werden." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
-async function sitePage(request,env,file,privatePage){const source=await readSiteFile(request,env,file);const headers=new Headers(source.headers);headers.set('Content-Type',source.ok?'text/html; charset=utf-8':'text/plain; charset=utf-8');headers.set('Cache-Control',privatePage?'private, no-store':'no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('X-Frame-Options','DENY');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('Strict-Transport-Security','max-age=31536000; includeSubDomains');headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(source.body,{status:source.status,headers});}
-function injectHomeLogo(html){const script=`<script>(()=>{const brand=document.querySelector('header .brand');if(!brand)return;brand.style.cursor='pointer';brand.setAttribute('role','link');brand.setAttribute('tabindex','0');brand.setAttribute('aria-label','Zur Startseite');const go=()=>{location.href='/'};brand.addEventListener('click',e=>{if(e.target.closest('a,button')&&e.target.closest('a,button')!==brand)return;go()});brand.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})})();</script>`;return html.replace('</body>',script+'</body>');}
-
-function injectRoleHeader(html){
- const css=`<style>#roleHeaderActions{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;z-index:60}#roleHeaderActions a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--text);border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:800;white-space:nowrap}#roleHeaderActions a:hover{background:var(--surface2)}#roleHeaderActions svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}#roleHeaderActions .bug-action{background:#b91c1c;border-color:#ef4444;color:#fff}#roleHeaderActions .bug-action:hover{background:#dc2626}#roleHeaderActions .ticket-action.alert{background:#b91c1c;border-color:#ef4444;color:#fff;animation:ticketAlert 1.15s ease-in-out infinite}#roleHeaderActions .ticket-action.in-progress{background:#d88725;border-color:#f0a43b;color:#fff;animation:none}#roleHeaderActions .ticket-action.in-progress:hover{background:#e39832}#privateTicketCount{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;margin-left:1px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px}@keyframes ticketAlert{50%{box-shadow:0 0 0 6px rgba(239,68,68,.18);filter:brightness(1.22)}}@media(max-width:950px){#roleHeaderActions{position:static;transform:none;gap:5px}#roleHeaderActions a{padding:8px 9px;font-size:12px}}@media(max-width:700px){#roleHeaderActions .action-label{display:none}#roleHeaderActions a{gap:3px}}</style>`;
- const script=`<script>(()=>{const header=document.querySelector('header');if(!header)return;const icons={ticket:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>',admin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>',bug:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',request:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18v3h3l6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-3-3 2.4-2.4Z"/></svg>'};const group=document.createElement('nav');group.id='roleHeaderActions';group.setAttribute('aria-label','Schnellzugriff');header.appendChild(group);const add=(label,href,cls,icon)=>{const a=document.createElement('a');a.href=href;a.className=cls;a.innerHTML=icons[icon]+'<span class="action-label">'+label+'</span>';group.appendChild(a);return a};fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(!me?.loggedIn||!me?.databaseAccess)return;const user=me.user||{};if(user.canViewTickets){const t=add('Tickets','/bug-tickets','ticket-action','ticket'),count=document.createElement('span');count.id='privateTicketCount';count.textContent='0';t.appendChild(count);const refresh=async()=>{try{const [ro,rp]=await Promise.all([fetch('/api/admin/bug-tickets?status=open',{credentials:'same-origin',cache:'no-store'}),fetch('/api/admin/bug-tickets?status=progress',{credentials:'same-origin',cache:'no-store'})]);const [od,pd]=await Promise.all([ro.json(),rp.json()]);if(!ro.ok||!rp.ok)return;const open=(od.tickets||[]).length,progress=(pd.tickets||[]).length,total=open+progress;count.textContent=total;t.classList.toggle('alert',open>0);t.classList.toggle('in-progress',open===0&&progress>0)}catch{}};refresh();setInterval(refresh,30000)}if(user.canViewAdminPanel)add('Admin Panel','/admin','admin-action','admin');add('Setup Request','/request','request-action','request');add('Bug melden','/bug-report','bug-action','bug')}).catch(()=>{})})();</script>`;
- return html.replace('</head>',css+'</head>').replace('</body>',script+'</body>');
+async function sitePage(request, env, file, privatePage) {
+  const source = await readSiteFile(request, env, file);
+  const headers = new Headers(source.headers);
+  headers.set("Content-Type", source.ok ? "text/html; charset=utf-8" : "text/plain; charset=utf-8");
+  headers.set("Cache-Control", privatePage ? "private, no-store" : "no-store");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  headers.set(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'",
+  );
+  return new Response(source.body, { status: source.status, headers });
+}
+function injectHomeLogo(html) {
+  const script = `<script>(()=>{const brand=document.querySelector('header .brand');if(!brand)return;brand.style.cursor='pointer';brand.setAttribute('role','link');brand.setAttribute('tabindex','0');brand.setAttribute('aria-label','Zur Startseite');const go=()=>{location.href='/'};brand.addEventListener('click',e=>{if(e.target.closest('a,button')&&e.target.closest('a,button')!==brand)return;go()});brand.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})})();</script>`;
+  return html.replace("</body>", script + "</body>");
 }
 
-function hideEmbeddedSections(html){const css=`<style>body.no-database-access #mfrFilter,body.no-database-access #classFilter{display:none!important}</style>`;const script=`<script>(()=>{document.body.classList.add('no-database-access');const hide=()=>{document.querySelectorAll('#adminPanel,[id*="adminAccess"],.admin-panel,.request-section,#requestForm,#requestLoginRequired').forEach(el=>{const section=el.closest('.request-section')||el;section.classList.add('hidden')});const oldBug=[...document.querySelectorAll('button,a')].find(el=>/bug melden/i.test((el.textContent||'').trim())&&!el.closest('#roleHeaderActions'));if(oldBug)oldBug.classList.add('hidden')};hide();fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(me?.loggedIn&&me?.databaseAccess)document.body.classList.remove('no-database-access');else document.body.classList.add('no-database-access')}).catch(()=>document.body.classList.add('no-database-access'));new MutationObserver(hide).observe(document.body,{childList:true,subtree:true})})();</script>`;return html.replace('</head>',css+'</head>').replace('</body>',script+'</body>');}
-function isPermissionChange(method,path){return(method==='POST'||method==='DELETE')&&(path==='/api/admin/database-access'||path==='/api/admin/upload-access'||path==='/api/admin/all-access'||path==='/api/admin/admin-panel-access')}
-function permissionAuditEvent(method,path,actor,targetUserId){const grant=method==='POST',database=path==='/api/admin/database-access',permission=path==='/api/admin/all-access'?'DATABASE_AND_UPLOAD_DELETE_ACCESS':path==='/api/admin/admin-panel-access'?'ADMIN_PANEL_ACCESS':database?'DATABASE_ACCESS':'UPLOAD_DELETE_ACCESS';return{action:grant?'PERMISSION_GRANT':'PERMISSION_REVOKE',discordAccount:actor.username||null,discordUserId:actor.id,targetDiscordUserId:targetUserId,permission,oldValue:grant?'DENIED':'GRANTED',newValue:grant?'GRANTED':'DENIED',result:'SUCCESS'}}
+function injectRoleHeader(html) {
+  const css = `<style>#roleHeaderActions{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;z-index:60}#roleHeaderActions a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--text);border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:800;white-space:nowrap}#roleHeaderActions a:hover{background:var(--surface2)}#roleHeaderActions svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}#roleHeaderActions .bug-action{background:#b91c1c;border-color:#ef4444;color:#fff}#roleHeaderActions .bug-action:hover{background:#dc2626}#roleHeaderActions .ticket-action.alert{background:#b91c1c;border-color:#ef4444;color:#fff;animation:ticketAlert 1.15s ease-in-out infinite}#roleHeaderActions .ticket-action.in-progress{background:#d88725;border-color:#f0a43b;color:#fff;animation:none}#roleHeaderActions .ticket-action.in-progress:hover{background:#e39832}#privateTicketCount{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;margin-left:1px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px}@keyframes ticketAlert{50%{box-shadow:0 0 0 6px rgba(239,68,68,.18);filter:brightness(1.22)}}@media(max-width:950px){#roleHeaderActions{position:static;transform:none;gap:5px}#roleHeaderActions a{padding:8px 9px;font-size:12px}}@media(max-width:700px){#roleHeaderActions .action-label{display:none}#roleHeaderActions a{gap:3px}}</style>`;
+  const script = `<script>(()=>{const header=document.querySelector('header');if(!header)return;const icons={ticket:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>',admin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>',bug:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',request:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18v3h3l6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-3-3 2.4-2.4Z"/></svg>'};const group=document.createElement('nav');group.id='roleHeaderActions';group.setAttribute('aria-label','Schnellzugriff');header.appendChild(group);const add=(label,href,cls,icon)=>{const a=document.createElement('a');a.href=href;a.className=cls;a.innerHTML=icons[icon]+'<span class="action-label">'+label+'</span>';group.appendChild(a);return a};fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(!me?.loggedIn||!me?.databaseAccess)return;const user=me.user||{};if(user.canViewTickets){const t=add('Tickets','/bug-tickets','ticket-action','ticket'),count=document.createElement('span');count.id='privateTicketCount';count.textContent='0';t.appendChild(count);const refresh=async()=>{try{const [ro,rp]=await Promise.all([fetch('/api/admin/bug-tickets?status=open',{credentials:'same-origin',cache:'no-store'}),fetch('/api/admin/bug-tickets?status=progress',{credentials:'same-origin',cache:'no-store'})]);const [od,pd]=await Promise.all([ro.json(),rp.json()]);if(!ro.ok||!rp.ok)return;const open=(od.tickets||[]).length,progress=(pd.tickets||[]).length,total=open+progress;count.textContent=total;t.classList.toggle('alert',open>0);t.classList.toggle('in-progress',open===0&&progress>0)}catch{}};refresh();setInterval(refresh,30000)}if(user.canViewAdminPanel)add('Admin Panel','/admin','admin-action','admin');add('Setup Request','/request','request-action','request');add('Bug melden','/bug-report','bug-action','bug')}).catch(()=>{})})();</script>`;
+  return html.replace("</head>", css + "</head>").replace("</body>", script + "</body>");
+}
+
+function hideEmbeddedSections(html) {
+  const css = `<style>body.no-database-access #mfrFilter,body.no-database-access #classFilter{display:none!important}</style>`;
+  const script = `<script>(()=>{document.body.classList.add('no-database-access');const hide=()=>{document.querySelectorAll('#adminPanel,[id*="adminAccess"],.admin-panel,.request-section,#requestForm,#requestLoginRequired').forEach(el=>{const section=el.closest('.request-section')||el;section.classList.add('hidden')});const oldBug=[...document.querySelectorAll('button,a')].find(el=>/bug melden/i.test((el.textContent||'').trim())&&!el.closest('#roleHeaderActions'));if(oldBug)oldBug.classList.add('hidden')};hide();fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(me=>{if(me?.loggedIn&&me?.databaseAccess)document.body.classList.remove('no-database-access');else document.body.classList.add('no-database-access')}).catch(()=>document.body.classList.add('no-database-access'));new MutationObserver(hide).observe(document.body,{childList:true,subtree:true})})();</script>`;
+  return html.replace("</head>", css + "</head>").replace("</body>", script + "</body>");
+}
+function isPermissionChange(method, path) {
+  return (
+    (method === "POST" || method === "DELETE") &&
+    (path === "/api/admin/database-access" ||
+      path === "/api/admin/upload-access" ||
+      path === "/api/admin/all-access" ||
+      path === "/api/admin/admin-panel-access")
+  );
+}
+function permissionAuditEvent(method, path, actor, targetUserId) {
+  const grant = method === "POST",
+    database = path === "/api/admin/database-access",
+    permission =
+      path === "/api/admin/all-access"
+        ? "DATABASE_AND_UPLOAD_DELETE_ACCESS"
+        : path === "/api/admin/admin-panel-access"
+          ? "ADMIN_PANEL_ACCESS"
+          : database
+            ? "DATABASE_ACCESS"
+            : "UPLOAD_DELETE_ACCESS";
+  return {
+    action: grant ? "PERMISSION_GRANT" : "PERMISSION_REVOKE",
+    discordAccount: actor.username || null,
+    discordUserId: actor.id,
+    targetDiscordUserId: targetUserId,
+    permission,
+    oldValue: grant ? "DENIED" : "GRANTED",
+    newValue: grant ? "GRANTED" : "DENIED",
+    result: "SUCCESS",
+  };
+}

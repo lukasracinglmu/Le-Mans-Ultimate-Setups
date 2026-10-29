@@ -5,23 +5,39 @@ function ghHeaders(env) {
   const headers = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "lmu-setups-worker"
+    "User-Agent": "lmu-setups-worker",
   };
   if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
   return headers;
 }
-function ghRepo(env) { return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`; }
-function ghBranch(env) { return env.GITHUB_BRANCH || "main"; }
-function clean(value) { const v = String(value ?? "").trim(); return v || null; }
+function ghRepo(env) {
+  return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`;
+}
+function ghBranch(env) {
+  return env.GITHUB_BRANCH || "main";
+}
+function clean(value) {
+  const v = String(value ?? "").trim();
+  return v || null;
+}
 function classifyManufacturer(name) {
   const n = String(name || "").toUpperCase();
   if (n.includes("HYMO")) return "HYMO";
-  if (n.includes("BEALIEN") || n.includes("BE_ALIEN") || /(?:^|[^A-Z0-9])BA[12]?(?=$|[^A-Z0-9])/.test(n)) return "beAlien";
+  if (
+    n.includes("BEALIEN") ||
+    n.includes("BE_ALIEN") ||
+    /(?:^|[^A-Z0-9])BA[12]?(?=$|[^A-Z0-9])/.test(n)
+  )
+    return "beAlien";
   if (n.includes(" GO") || n.includes("_GO") || /\bGO\b/.test(n)) return "GO";
   return null;
 }
 function inferTrack(name) {
-  const base = String(name || "").replace(/\.zip$/i, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  const base = String(name || "")
+    .replace(/\.zip$/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return base || null;
 }
 function normalizeEvent(event) {
@@ -31,7 +47,7 @@ function normalizeEvent(event) {
     "SETUP_OUTDATED_REVERT",
     "SETUP_DELETE",
     "SETUP_DISPLAY_NAME_UPDATE",
-    "SETUP_VERSION_UPDATE"
+    "SETUP_VERSION_UPDATE",
   ]);
   const category = setupActions.has(String(event.action || ""))
     ? "SETUPS"
@@ -51,7 +67,7 @@ function normalizeEvent(event) {
     version: clean(event.version),
     oldValue: clean(event.oldValue),
     newValue: clean(event.newValue),
-    result: "SUCCESS"
+    result: "SUCCESS",
   };
   out.category = category;
   for (const key of Object.keys(out)) if (out[key] == null) delete out[key];
@@ -64,7 +80,7 @@ async function gh(path, opts, env) {
   return fetch(`${GITHUB_API}/${ghRepo(env)}${path}`, {
     ...opts,
     signal: opts?.signal || AbortSignal.timeout(20000),
-    headers: { ...ghHeaders(env), ...(opts?.headers || {}) }
+    headers: { ...ghHeaders(env), ...(opts?.headers || {}) },
   });
 }
 function discordTitle(action) {
@@ -84,8 +100,19 @@ function addField(fields, name, value, inline = false) {
 }
 function discordFields(event) {
   const fields = [];
-  addField(fields, "Ausgeführt von", event.discordUserId ? `<@${event.discordUserId}>` : (event.discordAccount || "Unbekannt"));
-  if (event.targetDiscordAccount || event.targetDiscordUserId) addField(fields, "Betroffener User", event.targetDiscordUserId ? `<@${event.targetDiscordUserId}>` : (event.targetDiscordAccount || "Unbekannt"));
+  addField(
+    fields,
+    "Ausgeführt von",
+    event.discordUserId ? `<@${event.discordUserId}>` : event.discordAccount || "Unbekannt",
+  );
+  if (event.targetDiscordAccount || event.targetDiscordUserId)
+    addField(
+      fields,
+      "Betroffener User",
+      event.targetDiscordUserId
+        ? `<@${event.targetDiscordUserId}>`
+        : event.targetDiscordAccount || "Unbekannt",
+    );
   addField(fields, "Berechtigung", event.permission, true);
   addField(fields, "Setup", event.setup);
   addField(fields, "Fahrzeug", event.vehicle, true);
@@ -99,17 +126,28 @@ function discordFields(event) {
 }
 async function writeDiscordAuditEvent(event, env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_AUDIT_CHANNEL_ID) return;
-  const actorId = /^\d{16,22}$/.test(String(event.discordUserId || "")) ? String(event.discordUserId) : null;
-  const targetId = /^\d{16,22}$/.test(String(event.targetDiscordUserId || "")) ? String(event.targetDiscordUserId) : null;
+  const actorId = /^\d{16,22}$/.test(String(event.discordUserId || ""))
+    ? String(event.discordUserId)
+    : null;
+  const targetId = /^\d{16,22}$/.test(String(event.targetDiscordUserId || ""))
+    ? String(event.targetDiscordUserId)
+    : null;
   const mentionUsers = [...new Set([actorId, targetId].filter(Boolean))];
   const response = await fetch(`${DISCORD_API}/channels/${env.DISCORD_AUDIT_CHANNEL_ID}/messages`, {
     method: "POST",
     signal: AbortSignal.timeout(10000),
     headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      embeds: [{ title: discordTitle(event.action), color: auditColor(event.category), fields: discordFields(event), timestamp: event.timestamp }],
-      allowed_mentions: { parse: [], users: mentionUsers }
-    })
+      embeds: [
+        {
+          title: discordTitle(event.action),
+          color: auditColor(event.category),
+          fields: discordFields(event),
+          timestamp: event.timestamp,
+        },
+      ],
+      allowed_mentions: { parse: [], users: mentionUsers },
+    }),
   });
   if (!response.ok) throw new Error(`Discord audit write failed (${response.status})`);
 }
@@ -119,7 +157,7 @@ export async function writeSetupAuditEvent(event, env) {
   const safe = normalizeEvent({
     ...event,
     manufacturer: event.manufacturer || classifyManufacturer(event.setup),
-    track: event.track || inferTrack(event.setup)
+    track: event.track || inferTrack(event.setup),
   });
   const id = crypto.randomUUID();
   const path = `audit-logs/${safe.timestamp.slice(0, 7)}/${safe.timestamp.replace(/[:.]/g, "-")}-${id}.json`;
@@ -127,15 +165,22 @@ export async function writeSetupAuditEvent(event, env) {
   const body = {
     message: `Audit ${safe.action}: ${subject}`,
     content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + "\n"))),
-    branch: ghBranch(env)
+    branch: ghBranch(env),
   };
-  const response = await gh(`/contents/${path.split('/').map(encodeURIComponent).join('/')}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  }, env);
+  const response = await gh(
+    `/contents/${path.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    env,
+  );
   if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
-  try { await writeDiscordAuditEvent(safe, env); }
-  catch (error) { console.error("Discord audit failed", error instanceof Error ? error.message : "unknown"); }
+  try {
+    await writeDiscordAuditEvent(safe, env);
+  } catch (error) {
+    console.error("Discord audit failed", error instanceof Error ? error.message : "unknown");
+  }
   return safe;
 }
