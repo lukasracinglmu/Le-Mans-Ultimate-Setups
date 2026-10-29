@@ -250,7 +250,8 @@ test("full upload handler recovers ZIP after D1 fails without re-uploading its b
   const original = globalThis.fetch;
   let stored = false,
     writes = 0,
-    d1Calls = 0;
+    versionWrites = 0,
+    lifecycleClears = 0;
   globalThis.fetch = async (url, options) => {
     if (options.method === "PUT") {
       stored = true;
@@ -264,13 +265,15 @@ test("full upload handler recovers ZIP after D1 fails without re-uploading its b
   const env = {
     SESSION_SECRET: "local-test-secret",
     ACCESS_DB: {
-      prepare() {
+      prepare(sql) {
         return {
           bind() {
             return {
               async run() {
-                d1Calls++;
-                if (d1Calls === 1) throw Error("D1 unavailable");
+                if (sql.startsWith("DELETE FROM setup_lifecycle")) return void lifecycleClears++;
+                assert.ok(sql.startsWith("INSERT INTO setup_versions"), sql);
+                versionWrites++;
+                if (versionWrites === 1) throw Error("D1 unavailable");
               },
             };
           },
@@ -301,7 +304,8 @@ test("full upload handler recovers ZIP after D1 fails without re-uploading its b
     assert.equal(data.uploaded[0].version, "v2");
     assert.equal(data.uploaded[0].alreadyExists, true);
     assert.equal(writes, 1);
-    assert.equal(d1Calls, 2);
+    assert.equal(versionWrites, 2);
+    assert.equal(lifecycleClears, 1);
     const unauth = await worker.fetch(
       new Request("https://example.test/api/setups/upload", { method: "POST", body: "x" }),
       env,

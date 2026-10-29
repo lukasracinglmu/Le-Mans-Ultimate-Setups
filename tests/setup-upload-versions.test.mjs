@@ -25,14 +25,18 @@ test("separate uploads store their own versions, including an empty replacement"
   const originalFetch = baseWorker.fetch;
   const rows = new Map([["first.zip", "old-version"]]);
   const forwarded = [];
+  const clearedLifecycle = [];
   const env = {
     ACCESS_DB: {
-      prepare() {
+      prepare(sql) {
         return {
           bind(...values) {
             return {
               async run() {
-                rows.set(values[2], values[3]);
+                if (sql.startsWith("INSERT INTO setup_versions")) rows.set(values[2], values[3]);
+                else if (sql.startsWith("DELETE FROM setup_lifecycle"))
+                  clearedLifecycle.push(values[2]);
+                else throw Error("Unexpected run: " + sql);
               },
               async all() {
                 return {
@@ -79,6 +83,7 @@ test("separate uploads store their own versions, including an empty replacement"
       ["", "v2", "v3"],
     );
     assert.ok(forwarded.every((x) => x.category === "Hypercar" && x.vehicle === "Test Car"));
+    assert.deepEqual(clearedLifecycle, ["first.zip", "second.zip", "third.zip"]);
     const setups = await enrichSetupVersions(
       [...rows.keys()].map((name) => ({ name })),
       "Hypercar",
