@@ -1,6 +1,7 @@
 /* @file-notes: Basis-Worker für Authentifizierung, Discord-Login, Setup-APIs und grundlegende Website-Funktionen. */
 import { cleanSetupFileName } from "./setup-version.js";
-import { ownerUserId, resolvePermissions, rolePermissions } from "./discord-permissions.js";
+import { ownerUserId } from "./config.js";
+import { resolvePermissions, rolePermissions } from "./discord-permissions.js";
 import { readPreviousSetups, deleteGithubSetup } from "./setup-lifecycle.js";
 import { readRepoFile, readSiteFile } from "./repo-read.js";
 import { persistSetupFile, readUploadForm } from "./upload-storage.js";

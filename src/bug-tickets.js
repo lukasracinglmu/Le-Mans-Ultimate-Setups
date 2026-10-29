@@ -1,5 +1,4 @@
 const DISCORD_API = "https://discord.com/api/v10";
-export const TICKET_OWNER_ID = "1033453785416208564";
 const json = (data, status = 200) =>
   Response.json(data, {
     status,

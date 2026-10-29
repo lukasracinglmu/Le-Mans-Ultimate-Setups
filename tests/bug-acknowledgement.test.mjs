@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { submitBugReport, BUG_REPORT_RECIPIENT } from "../src/bug-reports.js";
+import { submitBugReport } from "../src/bug-reports.js";
+const OWNER = "1033453785416208564";
 
 for (const failure of [null, "channel", "message", "network"])
   test("report acknowledgement: " + failure, async () => {
@@ -10,6 +11,7 @@ for (const failure of [null, "channel", "message", "network"])
     let status = null;
     const env = {
       DISCORD_BOT_TOKEN: "test",
+      DISCORD_OWNER_USER_ID: OWNER,
       ACCESS_DB: {
         async batch() {},
         prepare(sql) {
@@ -57,7 +59,7 @@ for (const failure of [null, "channel", "message", "network"])
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { success: true, ticket: "0007" });
       assert.equal(status, "sent");
-      assert.equal(calls[0].body.recipient_id, BUG_REPORT_RECIPIENT);
+      assert.equal(calls[0].body.recipient_id, OWNER);
       assert.equal(calls[2].body.recipient_id, "222222222222222222");
       if (!failure) {
         assert.equal(calls[3].body.embeds[0].title, "Ticket 0007 erstellt");

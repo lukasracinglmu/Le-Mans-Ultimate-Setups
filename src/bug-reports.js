@@ -1,6 +1,6 @@
 import { createTicket } from "./bug-tickets.js";
+import { ownerUserId } from "./config.js";
 const DISCORD_API = "https://discord.com/api/v10";
-export const BUG_REPORT_RECIPIENT = "1033453785416208564";
 export const MAX_REPORT_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = MAX_REPORT_IMAGE_BYTES + 128 * 1024;
 const priorities = ["Low", "Medium", "High"];
@@ -81,7 +81,7 @@ export async function submitBugReport(request, user, env) {
   if (url.protocol !== "https:" || request.headers.get("Origin") !== url.origin)
     return json({ success: false, error: "Ungültige Herkunft der Anfrage." }, 403);
   if (!user?.id) return json({ success: false, error: "Bitte mit Discord anmelden." }, 401);
-  if (!env.DISCORD_BOT_TOKEN || !env.ACCESS_DB)
+  if (!env.DISCORD_BOT_TOKEN || !env.ACCESS_DB || !ownerUserId(env))
     return json({ success: false, error: "Bugmeldungen sind momentan nicht verfügbar." }, 503);
   let form, image, description, title, priority, reportId;
   try {
@@ -151,7 +151,7 @@ export async function submitBugReport(request, user, env) {
     const opened = await discordRequest("/users/@me/channels", env, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipient_id: BUG_REPORT_RECIPIENT }),
+      body: JSON.stringify({ recipient_id: ownerUserId(env) }),
     });
     const channel = await opened.json().catch(() => ({}));
     if (opened.status === 429)

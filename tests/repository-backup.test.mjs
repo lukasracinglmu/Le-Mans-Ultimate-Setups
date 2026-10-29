@@ -46,6 +46,7 @@ const env = () => ({
   GITHUB_TOKEN: "source-test",
   BACKUP_GITHUB_TOKEN: "destination-test",
   DISCORD_BOT_TOKEN: "bot-test",
+  DISCORD_OWNER_USER_ID: "1033453785416208564",
   SITE_URL: "https://example.test",
 });
 let pair, jwk;

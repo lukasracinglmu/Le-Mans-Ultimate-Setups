@@ -1,6 +1,7 @@
 /* @file-notes: Öffentlicher Worker-Einstiegspunkt für Seitenrouting, Wartung, APIs, Berechtigungen und Hintergrundaktionen. */
 import { submitBugReport } from "./bug-reports.js";
 import { ticketApi, isTicketOwner } from "./bug-tickets.js";
+import { ownerUserId } from "./config.js";
 import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admin.js";
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
@@ -17,7 +18,7 @@ export default {
       (await isMaintenanceActive(env))
     ) {
       const me = await readMe(request, env, ctx);
-      if (String(me?.user?.id) !== String(env.DISCORD_OWNER_USER_ID || "1033453785416208564")) {
+      if (String(me?.user?.id) !== ownerUserId(env)) {
         const state = await maintenanceState(env);
         return new Response(
           '<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>*{box-sizing:border-box}@keyframes maintenanceDrift{from{background-position:70px 75px,300px 305px}to{background-position:105px 110px,335px 340px}}body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center;overflow:hidden;animation:maintenanceDrift 28s ease-in-out infinite alternate;background-image:url("/assets/bp-logo.webp?v=maintenance-gray-2"),url("/assets/bp-logo.webp?v=maintenance-gray-2");background-size:460px auto;background-position:70px 75px,300px 305px;background-repeat:repeat}main{position:relative;z-index:1;max-width:620px;margin:30px;padding:34px 38px;border:1px solid #343943;border-radius:18px;background:#191c22;box-shadow:0 18px 60px #0008}main h1{margin:0 0 12px}main p{margin:0;color:#a5a9b3;line-height:1.55}</style><main><h1>Wartungsarbeiten</h1><p>' +

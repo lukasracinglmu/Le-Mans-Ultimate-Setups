@@ -1,6 +1,8 @@
 /* @file-notes: Vollständige Repo-Sicherungen über GitHub Actions; Erfolg erst nach Prüfung des kopierten Git-Baums.
  * Cloudflare plant täglich 00:00 und 12:00 Europe/Berlin. Es werden keine Secrets in Backups geschrieben.
  */
+import { ownerUserId } from "./config.js";
+
 const API = "https://api.github.com";
 const WORKFLOW = ".github/workflows/daily-repository-backup.yml";
 const ISSUER = "https://token.actions.githubusercontent.com";
@@ -12,7 +14,6 @@ const targetRepo = (env) =>
   "/" +
   (env.BACKUP_GITHUB_REPO || "LMU-Database-Backups");
 const branch = (env) => env.GITHUB_BRANCH || "main";
-const ownerId = (env) => String(env.DISCORD_OWNER_USER_ID || "1033453785416208564");
 const site = (env) =>
   new URL(env.SITE_URL || "https://le-mans-ultimate-setups.3peaks-database.workers.dev").origin;
 const json = (data, status = 200) =>
@@ -334,12 +335,12 @@ async function verifySnapshot(job, env) {
   return { fileCount: files.length, size: manifest.size_bytes };
 }
 async function notifyOwner(job, env) {
-  if (!env.DISCORD_BOT_TOKEN) return false;
+  if (!env.DISCORD_BOT_TOKEN || !ownerUserId(env)) return false;
   const h = { Authorization: "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" };
   const channel = await fetch("https://discord.com/api/v10/users/@me/channels", {
     method: "POST",
     headers: h,
-    body: JSON.stringify({ recipient_id: ownerId(env) }),
+    body: JSON.stringify({ recipient_id: ownerUserId(env) }),
     signal: AbortSignal.timeout(15000),
   });
   if (!channel.ok) return false;
