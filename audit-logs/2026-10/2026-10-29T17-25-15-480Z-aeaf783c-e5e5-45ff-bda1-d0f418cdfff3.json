@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T17:25:15.480Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "GO V1.4.1 GR010 HYP IMO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "GO V1.4.1 GR010 HYP IMO",
+  "manufacturer": "GO",
+  "version": "1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
