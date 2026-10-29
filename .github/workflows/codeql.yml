@@ -13,6 +13,9 @@ permissions:
 jobs:
   analyze:
     name: CodeQL
+    # Code scanning needs GitHub Code Security on private repositories, which is
+    # not enabled here. Remove this guard once it is enabled.
+    if: toJSON(github.event.repository.private) == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,7 +27,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: [${{ matrix.language }}]
+          languages: ${{ matrix.language }}
       - name: Analyze
         uses: github/codeql-action/analyze@v3
         with:
