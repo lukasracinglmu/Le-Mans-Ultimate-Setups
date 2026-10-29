@@ -5,8 +5,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,mjs}\"",
-    "format:check": "prettier --check \"**/*.{js,mjs}\""
+    "format": "prettier --write \"**/*.{js,mjs,html}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,html}\""
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
