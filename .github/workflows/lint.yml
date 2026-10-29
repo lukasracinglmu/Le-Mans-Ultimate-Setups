@@ -1,0 +1,54 @@
+name: Code-Stil prüfen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.js'
+      - '**/*.mjs'
+      - package.json
+      - package-lock.json
+      - .prettierrc.json
+      - .prettierignore
+      - .github/workflows/lint.yml
+  pull_request:
+    paths:
+      - '**/*.js'
+      - '**/*.mjs'
+      - package.json
+      - package-lock.json
+      - .prettierrc.json
+      - .prettierignore
+      - .github/workflows/lint.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    # Same cost guard as the other workflows: jobs only run while the repository is public.
+    if: toJSON(github.event.repository.private) == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Quellen laden
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !/setups/
+            !/audit-logs/
+          sparse-checkout-cone-mode: false
+      - name: Node.js einrichten
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier
+        run: npm run format:check
