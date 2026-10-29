@@ -21,7 +21,7 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 
 - Worker-Code gehört nie nach `public/`. `npm run check:deploy` bricht ab, wenn dort ein Modul aus `src/` liegt.
 - Geschützte Seiten liegen trotzdem in `public/`. Die Zugriffsprüfung passiert in den Routen des Workers.
-- Der Worker liest Seiten aus `public/` zur Laufzeit über die GitHub API (`readSiteFile`) und fällt bei einem Fehler auf die deployten Assets zurück.
+- Seiten liefert der Worker aus den deployten Assets (`readPage`). Daten wie `setups.json` und die Herstellerbilder liest er live über die GitHub API (`readSiteFile`) und fällt bei einem Fehler auf die Assets zurück.
 
 ## Code-Stil
 
@@ -37,7 +37,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 ### Deploy und Laufzeit
 
 - Ein Merge auf `main` deployt den Worker automatisch (Cloudflare Workers Builds). Jeder PR bekommt eine Vorschau-URL im Check „Workers Builds“. Dort Änderungen vor dem Merge live prüfen.
-- HTML-Seiten sind mit dem Merge sofort live, weil der Worker sie aus `main` liest.
+- Seiten, ihre Scripts und der Worker gehen mit demselben Deploy live. Nur Daten aus `readSiteFile` sind schon mit dem Merge live, weil der Worker sie aus `main` liest. Die PR-Vorschau zeigt deshalb die Seiten des PRs, aber die Daten aus `main`.
 - Der Bot läuft getrennt auf eigenem Host mit eigener `.env`, die hier nicht einsehbar ist. Änderungen am Bot dürfen keine neuen Variablen voraussetzen.
 
 ### Konfiguration
@@ -63,7 +63,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 ### Übergänge
 
-- Betrifft eine Änderung HTML und Worker-Code zugleich, in zwei PRs ausrollen. Die HTML ist mit dem Merge sofort live, der Worker erst nach dem Deploy. Zuerst den Worker so ändern, dass er beide Stände verträgt, erst nach dessen Deploy die HTML.
+- Seiten und Worker-Code brauchen keinen Übergang, sie gehen gemeinsam live. Ändern sich Daten aus `readSiteFile` (z. B. das Format von `setups.json`) und Worker zugleich, in zwei PRs ausrollen: zuerst den Worker so ändern, dass er beide Stände verträgt, erst nach dessen Deploy die Daten.
 - Prüfscripte, die den Worker lokal ausführen, brauchen die Variablen aus `wrangler.jsonc`. Sonst liefern sie die 503-Fehlerseite. Immer Status 200 und echten Inhalt prüfen, bevor Ausgaben verglichen werden.
 
 ### Tests
@@ -75,6 +75,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Angepasste Tests per Gegenprobe absichern: Fehler im Code einbauen, der Test muss rot werden.
 - Test-Umgebungen setzen benötigte Variablen wie `DISCORD_OWNER_USER_ID` ausdrücklich. Es gibt keine Ersatzwerte mehr, auf die sich ein Test verlassen könnte.
 - Repo-Einstellungen in Tests per `...repositoryEnv` aus `tests/helpers/repository-env.mjs`. Die Werte kommen aus `wrangler.jsonc`.
+- Ohne `...repositoryEnv` stellt der Worker gar keine GitHub-Anfrage. Ein Test, der „GitHub wird nicht gefragt“ prüft, wäre dann immer grün.
 
 ### Repo-Pflege
 
