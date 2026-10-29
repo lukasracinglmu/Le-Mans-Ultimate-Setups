@@ -6,9 +6,9 @@ import vm from "node:vm";
 const html = readFileSync(new URL("../admin.html", import.meta.url), "utf8");
 const helpers = html.slice(
   html.indexOf("function grantTime("),
-  html.indexOf("const backupButton="),
+  html.search(/const backupButton\s*=/),
 );
-const formatter = html.match(/const formatGrantDate=.*?;/)[0];
+const formatter = html.match(/const formatGrantDate\s*=[\s\S]*?;/)[0];
 const renderer = html.slice(
   html.indexOf("function renderGrantList("),
   html.indexOf("async function change("),

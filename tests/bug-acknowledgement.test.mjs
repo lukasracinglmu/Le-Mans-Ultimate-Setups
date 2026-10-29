@@ -80,5 +80,5 @@ for (const failure of [null, "channel", "message", "network"])
 
 test("ticket numbers use white in every status", () => {
   const html = readFileSync(new URL("../bug-tickets.html", import.meta.url), "utf8");
-  assert.match(html, /\.nr\{color:#fff;/);
+  assert.match(html, /\.nr\s*\{\s*color:\s*#fff;/);
 });

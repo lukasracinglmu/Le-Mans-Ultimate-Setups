@@ -15,9 +15,7 @@ const extractFunction = (code, name) => {
   throw new Error(name + " not found");
 };
 const source = read("index.html");
-const frontend = vm.runInNewContext(
-  source.match(/function classifyVendor\(name\)\{[^\n]+/)[0] + ";classifyVendor",
-);
+const frontend = vm.runInNewContext(extractFunction(source, "classifyVendor") + ";classifyVendor");
 const access = vm.runInNewContext(
   extractFunction(read("access-worker.js"), "classifyManufacturer") + ";classifyManufacturer",
 );

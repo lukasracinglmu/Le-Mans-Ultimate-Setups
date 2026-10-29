@@ -174,8 +174,8 @@ test("Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf", async 
 test("Browser findet Kurzformen und Layouts aus dem gelieferten Katalog", () => {
   const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
   const source = html
-    .slice(html.indexOf("let REQUEST_TRACKS=[]"), html.indexOf("const form="))
-    .replace("let REQUEST_TRACKS=[]", "const REQUEST_TRACKS=tracks");
+    .slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
+    .replace(/let REQUEST_TRACKS\s*=\s*\[\]/, "const REQUEST_TRACKS=tracks");
   const search = vm.runInNewContext(source + ";({searchRequestTracks,resolveRequestTrack})", {
     tracks: REQUEST_TRACKS,
   });
@@ -432,8 +432,8 @@ test("Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrz
 test("Paul bleibt Paul Ricard; Aliase treffen keine beliebigen Wortfragmente", () => {
   const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
   const source = html
-    .slice(html.indexOf("let REQUEST_TRACKS=[]"), html.indexOf("const form="))
-    .replace("let REQUEST_TRACKS=[]", "const REQUEST_TRACKS=tracks");
+    .slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
+    .replace(/let REQUEST_TRACKS\s*=\s*\[\]/, "const REQUEST_TRACKS=tracks");
   const browser = vm.runInNewContext(source + ";({searchRequestTracks,resolveRequestTrack})", {
     tracks: REQUEST_TRACKS,
   });

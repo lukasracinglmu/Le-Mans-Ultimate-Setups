@@ -130,14 +130,14 @@ test("Website sendet GO-Request trotz vorhandenem HYMO-Setup und blockiert nur d
 test("Formular bietet optionale Herstellerwahl mit zurücksetzbarer Egal-Option an", () => {
   const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
   assert.match(html, /<select id="manufacturer">/);
-  assert.match(html, /<label for="manufacturer">Setup-Hersteller \(optional\)<\/label>/);
+  assert.match(html, /<label for="manufacturer">Setup-Hersteller \(optional\)<\/label\s*>/);
   assert.match(html, /<option value="">Egal – keine Präferenz<\/option>/);
   assert.doesNotMatch(html, /<select id="manufacturer"[^>]*required|<option value=""[^>]*disabled/);
   for (const manufacturer of REQUEST_MANUFACTURERS)
     assert.ok(
       html.includes('<option value="' + manufacturer.id + '">' + manufacturer.name + "</option>"),
     );
-  assert.match(html, /manufacturer:manufacturer.value/);
+  assert.match(html, /manufacturer:\s*manufacturer\.value/);
 });
 test("Signierte HTTP-Buttons bestätigen nur berechtigte Nutzer und aktualisieren das Embed", async () => {
   const pair = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
