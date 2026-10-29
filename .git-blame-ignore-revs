@@ -3,3 +3,6 @@
 
 # Prettier formatting of all HTML pages (issue #4)
 7b63ddd607153366f5f5e218fa6436cc34b23582
+
+# Prettier formatting in the style of the reference project (issue #16)
+8f2da10798977b26af907b16833fb052caf3e811
