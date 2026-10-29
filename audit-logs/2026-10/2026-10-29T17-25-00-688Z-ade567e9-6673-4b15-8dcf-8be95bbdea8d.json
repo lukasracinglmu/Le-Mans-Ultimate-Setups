@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T17:25:00.688Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Imola GO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Imola GO",
+  "manufacturer": "GO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
