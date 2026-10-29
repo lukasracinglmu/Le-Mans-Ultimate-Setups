@@ -1,7 +1,9 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import "dotenv/config";
 import {
+  DEFAULT_SETUP_SUPPLY_ROLE_ID,
   REQUEST_MANUFACTURERS,
+  SETUP_CONFIRMATION_WHITELIST,
   resolveRequestManufacturer,
   setupRequestPayload,
   isAnyRequestManufacturer,
@@ -46,15 +48,8 @@ const setupDownloadBaseUrl =
 const setupSupplyRoleId =
   process.env.DISCORD_UPLOAD_ROLE_ID?.trim() ||
   process.env.DISCORD_ROLE_ID?.trim() ||
-  "1538601074074849330";
-const setupConfirmationWhitelist = new Set([
-  "771358435416473600",
-  "640948738445279261",
-  "198399938739175424",
-  "711862720567312455",
-  "646758275714514955",
-  "999265474078593164",
-]);
+  DEFAULT_SETUP_SUPPLY_ROLE_ID;
+const setupConfirmationWhitelist = new Set(SETUP_CONFIRMATION_WHITELIST);
 
 if (!token || !clientId || !guildId || !requestChannelId || !requestRoleId) {
   console.error(

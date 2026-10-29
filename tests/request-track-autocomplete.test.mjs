@@ -10,7 +10,9 @@ import {
 } from "../discord-presence/request-tracks.js";
 import production from "../src/production-worker.js";
 import {
+  DEFAULT_SETUP_SUPPLY_ROLE_ID,
   REQUEST_MANUFACTURERS,
+  SETUP_CONFIRMATION_WHITELIST,
   resolveRequestManufacturer,
   setupRequestPayload,
   isAnyRequestManufacturer,
@@ -301,7 +303,9 @@ async function bot() {
     "utf8",
   ).replace(/^import\s[^;]+;\s*/gm, "");
   const context = {
+    DEFAULT_SETUP_SUPPLY_ROLE_ID,
     REQUEST_MANUFACTURERS,
+    SETUP_CONFIRMATION_WHITELIST,
     resolveRequestManufacturer,
     setupRequestPayload,
     isAnyRequestManufacturer,
