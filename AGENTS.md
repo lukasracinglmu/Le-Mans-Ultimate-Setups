@@ -22,3 +22,32 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 - Worker-Code gehört nie nach `public/`. `npm run check:deploy` bricht ab, wenn dort ein Modul aus `src/` liegt.
 - Geschützte Seiten liegen trotzdem in `public/`. Die Zugriffsprüfung passiert in den Routen des Workers.
 - Der Worker liest Seiten aus `public/` zur Laufzeit über die GitHub API (`readSiteFile`) und fällt bei einem Fehler auf die deployten Assets zurück.
+
+## Learnings
+
+Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
+
+### Deploy und Laufzeit
+
+- Ein Merge auf `main` deployt den Worker automatisch (Cloudflare Workers Builds). Jeder PR bekommt eine Vorschau-URL im Check „Workers Builds“. Dort Änderungen vor dem Merge live prüfen.
+- HTML-Seiten sind mit dem Merge sofort live, weil der Worker sie aus `main` liest.
+
+### `public/index.html`
+
+- `production-worker.js`, `ui-hotfix.js` und `access-worker.js` ändern die Seite zur Laufzeit per exakter String- und Regex-Suche und schleusen CSS/JS ein, von dem diese Änderungen abhängen. Markup und Inline-Scripts deshalb erst nach #9 umformatieren oder verschieben.
+- Änderungen über den Worker **und** direkt im Browser ohne Worker prüfen. Beides muss funktionieren.
+
+### Tests
+
+- `npm test` führt Node- und Python-Tests aus. Node ≥ 22.13, wegen `node:sqlite`.
+- Schlägt ein Test fehl, zuerst per `git log` klären, ob Code oder Test veraltet ist. Erwartungen nicht einfach anpassen.
+- Mocks für D1, Discord und GitHub reagieren auf SQL-Text bzw. URLs. Neue Anweisungen oder Pfade brauchen passende Mocks. Anweisungen im Mock unterscheiden, nicht pauschal zählen.
+- Tests, die Quelltext per Textsuche lesen, formatierungsunabhängig halten: `\s*` statt fester Leerzeichen, Funktionen per Klammerzählung herauslösen.
+- Angepasste Tests per Gegenprobe absichern: Fehler im Code einbauen, der Test muss rot werden.
+
+### Repo-Pflege
+
+- Dateien über die GitHub API dekodiert schreiben. `41f8878` hat mehrere Dateien Base64-kodiert eingecheckt, `CHANGELOG.md` ist es noch.
+- Beim Verschieben von Dateien `area()` in `.github/changelog/update_changelog.py` mitziehen. Die Funktion ordnet Bereiche über Pfade zu.
+- Formatierungs-Commits rein mechanisch halten (AST-identisch) und in `.git-blame-ignore-revs` eintragen. Solche PRs als Merge-Commit mergen, nicht squashen.
+- CodeQL und Dependency Review brauchen in privaten Repos GitHub Code Security und laufen deshalb nur bei öffentlichem Repo.
