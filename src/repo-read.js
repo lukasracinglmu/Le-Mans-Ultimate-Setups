@@ -1,26 +1,23 @@
 /* @file-notes: Liest geschützte Dateien und Verzeichnisse sicher aus dem GitHub-Repository. */
+import { githubBranch } from "./config.js";
+import { githubRequest } from "./lib/github.js";
+
 // GitHub credentials stay in the Worker, including when the repository is private.
 export async function readRepoFile(env, path) {
-  const owner = env.GITHUB_OWNER || "lukasracinglmu";
-  const repo = env.GITHUB_REPO || "Le-Mans-Ultimate-Setups";
-  const branch = env.GITHUB_BRANCH || "main";
   const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`;
-  const headers = {
-    Accept: "application/vnd.github.raw+json",
-    "User-Agent": "lmu-setups-worker",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
   try {
     // Workers supports manual/follow only. Keep redirects manual so credentials
     // cannot follow a redirect to another host; callers reject non-2xx responses.
-    return await fetch(url, {
-      headers,
-      cache: "no-store",
-      redirect: "manual",
-      signal: AbortSignal.timeout(15000),
-    });
+    return await githubRequest(
+      env,
+      `/contents/${encodedPath}?ref=${encodeURIComponent(githubBranch(env))}`,
+      {
+        headers: { Accept: "application/vnd.github.raw+json" },
+        cache: "no-store",
+        redirect: "manual",
+        signal: AbortSignal.timeout(15000),
+      },
+    );
   } catch {
     return new Response("Repository momentan nicht erreichbar.", { status: 502 });
   }

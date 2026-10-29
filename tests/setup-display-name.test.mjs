@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readDisplayName, enrichDisplayNames } from "../src/setup-display-name.js";
 import accessWorker from "../src/access-worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 const sha = "a".repeat(40),
   userId = "1033453785416208564";
 test("display name validates text and accepts an empty reset", () => {
@@ -12,6 +13,7 @@ test("display name validates text and accepts an empty reset", () => {
 });
 test("display names attach to exact file SHA and stale metadata cannot rename new bytes", async () => {
   const env = {
+    ...repositoryEnv,
     ACCESS_DB: {
       prepare() {
         return {
@@ -64,6 +66,7 @@ async function harness(run) {
     writes = [],
     background = [];
   const env = {
+    ...repositoryEnv,
     SESSION_SECRET: "test-secret",
     DISCORD_OWNER_USER_ID: userId,
     ACCESS_DB: {

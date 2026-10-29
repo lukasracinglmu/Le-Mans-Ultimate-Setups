@@ -1,9 +1,6 @@
+import { json } from "./lib/http.js";
+
 const DISCORD_API = "https://discord.com/api/v10";
-const json = (data, status = 200) =>
-  Response.json(data, {
-    status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
-  });
 const validTicket = (value) => Number.isInteger(Number(value)) && Number(value) > 0;
 const clean = (v, max) =>
   String(v || "")

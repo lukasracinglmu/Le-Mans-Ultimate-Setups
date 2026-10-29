@@ -2,11 +2,7 @@
 import { writeSetupAuditEvent } from "./audit-log.js";
 import { ownerUserId } from "./config.js";
 import { createManualBackup, backupOverview, backupJobStatus } from "./automatic-backup.js";
-const json = (data, status = 200) =>
-  Response.json(data, {
-    status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
-  });
+import { json } from "./lib/http.js";
 const validUserId = (v) => (/^\d{16,22}$/.test(String(v || "").trim()) ? String(v).trim() : null);
 
 async function ensure(env) {

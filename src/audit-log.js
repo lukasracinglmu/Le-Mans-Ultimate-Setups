@@ -1,21 +1,8 @@
-const GITHUB_API = "https://api.github.com";
+import { githubBranch } from "./config.js";
+import { githubRequest } from "./lib/github.js";
+
 const DISCORD_API = "https://discord.com/api/v10";
 
-function ghHeaders(env) {
-  const headers = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "lmu-setups-worker",
-  };
-  if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  return headers;
-}
-function ghRepo(env) {
-  return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`;
-}
-function ghBranch(env) {
-  return env.GITHUB_BRANCH || "main";
-}
 function clean(value) {
   const v = String(value ?? "").trim();
   return v || null;
@@ -75,13 +62,6 @@ function normalizeEvent(event) {
 }
 function auditColor(category) {
   return category === "SETUPS" ? 0x3498db : 0x8e44ad;
-}
-async function gh(path, opts, env) {
-  return fetch(`${GITHUB_API}/${ghRepo(env)}${path}`, {
-    ...opts,
-    signal: opts?.signal || AbortSignal.timeout(20000),
-    headers: { ...ghHeaders(env), ...(opts?.headers || {}) },
-  });
 }
 function discordTitle(action) {
   if (action === "SETUP_UPLOAD") return "SETUP HOCHGELADEN";
@@ -165,16 +145,17 @@ export async function writeSetupAuditEvent(event, env) {
   const body = {
     message: `Audit ${safe.action}: ${subject}`,
     content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + "\n"))),
-    branch: ghBranch(env),
+    branch: githubBranch(env),
   };
-  const response = await gh(
+  const response = await githubRequest(
+    env,
     `/contents/${path.split("/").map(encodeURIComponent).join("/")}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20000),
     },
-    env,
   );
   if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
   try {

@@ -14,9 +14,31 @@ export const REQUIRED_VARS = Object.freeze([
   "DISCORD_UPLOAD_ROLE_ID",
   "DISCORD_OWNER_ROLE_ID",
   "DISCORD_CHANNEL_ID",
+  "GITHUB_OWNER",
+  "GITHUB_REPO",
+  "GITHUB_BRANCH",
+  "BACKUP_GITHUB_REPO",
+  "BACKUP_GITHUB_BRANCH",
 ]);
 
 export const ownerUserId = (env) => read(env, "DISCORD_OWNER_USER_ID");
+
+function repository(owner, repo) {
+  return owner && repo ? `${owner}/${repo}` : null;
+}
+
+// Repository with the website, setups and audit logs, as "owner/repo".
+export const githubRepository = (env) =>
+  repository(read(env, "GITHUB_OWNER"), read(env, "GITHUB_REPO"));
+export const githubBranch = (env) => read(env, "GITHUB_BRANCH");
+
+// Repository that receives the complete backups, as "owner/repo".
+export const backupRepository = (env) =>
+  repository(
+    read(env, "BACKUP_GITHUB_OWNER") ?? read(env, "GITHUB_OWNER"),
+    read(env, "BACKUP_GITHUB_REPO"),
+  );
+export const backupBranch = (env) => read(env, "BACKUP_GITHUB_BRANCH");
 
 // Role that is mentioned in new setup requests.
 export const setupRequestRoleId = (env) =>

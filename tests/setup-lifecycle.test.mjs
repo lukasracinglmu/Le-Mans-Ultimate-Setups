@@ -10,6 +10,7 @@ import {
 import { persistSetupFile, gitBlobSha } from "../src/upload-storage.js";
 import production from "../src/production-worker.js";
 import base from "../src/worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 const oldSha = "a".repeat(40),
   newSha = "b".repeat(40),
   name = "Alpine Spa HYMO.zip",
@@ -88,6 +89,7 @@ async function cleanupHarness(
       : Response.json({ sha: currentOldSha });
   };
   const env = {
+    ...repositoryEnv,
     ACCESS_DB: {
       prepare(sql) {
         return {
@@ -141,6 +143,7 @@ test("outdated marker retains ZIP bytes and is tied to the exact file SHA", asyn
     assert.deepEqual(rows[0].args, ["Hypercar", "Alpine A424", name, oldSha]);
   });
   const env = {
+    ...repositoryEnv,
     ACCESS_DB: {
       prepare() {
         return {
@@ -263,6 +266,7 @@ test("Setup Request derives class from catalog and mentions exactly the configur
         }),
       });
     const env = {
+      ...repositoryEnv,
       DISCORD_SETUP_REQUEST_ROLE_ID: "1538601074074849330",
       DISCORD_BOT_TOKEN: "test",
       DISCORD_CHANNEL_ID: "1557002876906377258",
@@ -335,7 +339,7 @@ test("cleanup retry after a deleted old ZIP is idempotent and leaves replacement
       category: "Hypercar",
       vehicle: "Alpine A424",
       replacement: { name: newName, sha: newSha },
-      env: {},
+      env: { ...repositoryEnv },
     };
     assert.equal((await applyPreviousSetups(params)).success, true);
     assert.equal((await applyPreviousSetups(params)).success, true);

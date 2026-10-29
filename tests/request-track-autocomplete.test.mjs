@@ -18,6 +18,7 @@ import {
   isAnyRequestManufacturer,
 } from "../discord-presence/request-manufacturers.js";
 import base from "../src/worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 test("Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts", () => {
   assert.equal(REQUEST_TRACKS.length, 33);
@@ -129,7 +130,11 @@ test("Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
     sends.push(JSON.parse(options.body));
     return Response.json({ id: "test" });
   };
-  const env = { DISCORD_BOT_TOKEN: "fake", DISCORD_CHANNEL_ID: "1511795330176520193" };
+  const env = {
+    ...repositoryEnv,
+    DISCORD_BOT_TOKEN: "fake",
+    DISCORD_CHANNEL_ID: "1511795330176520193",
+  };
   const request = (track) =>
     new Request("https://example.test/api/request", {
       method: "POST",

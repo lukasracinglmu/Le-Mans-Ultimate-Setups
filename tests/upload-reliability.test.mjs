@@ -10,6 +10,7 @@ import {
 } from "../src/upload-storage.js";
 import worker from "../src/worker.js";
 import productionWorker from "../src/production-worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3, 4, 255]);
 const file = new File([bytes], "test.zip");
@@ -263,6 +264,7 @@ test("full upload handler recovers ZIP after D1 fails without re-uploading its b
       : Response.json({ message: "Not Found" }, { status: 404 });
   };
   const env = {
+    ...repositoryEnv,
     SESSION_SECRET: "local-test-secret",
     DISCORD_OWNER_USER_ID: "1033453785416208564",
     ACCESS_DB: {

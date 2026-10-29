@@ -1,6 +1,8 @@
 /* @file-notes: Basis-Worker für Authentifizierung, Discord-Login, Setup-APIs und grundlegende Website-Funktionen. */
 import { cleanSetupFileName } from "./setup-version.js";
-import { ownerUserId } from "./config.js";
+import { githubBranch, ownerUserId } from "./config.js";
+import { githubRequest } from "./lib/github.js";
+import { json, securityHeaders, withSecurityHeaders } from "./lib/http.js";
 import { resolvePermissions, rolePermissions } from "./discord-permissions.js";
 import { readPreviousSetups, deleteGithubSetup } from "./setup-lifecycle.js";
 import { readRepoFile, readSiteFile } from "./repo-read.js";
@@ -14,7 +16,6 @@ const SESSION_TTL = 604800;
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
 const MAX_REQUEST_BODY_BYTES = 26 * 1024 * 1024;
-const GITHUB_API = "https://api.github.com";
 const REQUEST_MODAL_ID = "lmu_setup_request";
 const DISCORD_TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
 const DISCORD_DISPLAY_CHANNEL_TYPES = new Set([0, 2, 4, 5, 10, 11, 12, 13, 15]);
@@ -112,30 +113,6 @@ function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {
 function safeError(error) {
   if (!error) return "unknown";
   return error instanceof Error ? error.name || "Error" : "unknown";
-}
-function securityHeaders(headers = new Headers()) {
-  const h = new Headers(headers);
-  h.set("X-Content-Type-Options", "nosniff");
-  h.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  h.set("X-Frame-Options", "DENY");
-  h.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  h.set("X-Permitted-Cross-Domain-Policies", "none");
-  h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
-  h.set("Cross-Origin-Opener-Policy", "same-origin");
-  h.set("Cross-Origin-Resource-Policy", "same-origin");
-  h.set(
-    "Content-Security-Policy",
-    "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' https://cdn.discordapp.com data:; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; upgrade-insecure-requests",
-  );
-  return h;
-}
-function withSecurityHeaders(response) {
-  const headers = securityHeaders(response.headers);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
 function redirectUri(env) {
   return `${env.SITE_URL}/auth/discord/callback`;
@@ -469,33 +446,12 @@ async function revokeUploadAccess(request, env) {
   return json({ success: true, userId });
 }
 
-function ghHeaders(env) {
-  const h = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "lmu-setups-worker",
-  };
-  if (env.GITHUB_TOKEN) h.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  return h;
-}
-function ghRepo(env) {
-  return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`;
-}
-function ghBranch(env) {
-  return env.GITHUB_BRANCH || "main";
-}
 function safe(v) {
   return String(v || "")
     .trim()
     .replace(/[/\\]+/g, "")
     .replace(/\.\./g, "")
     .replace(/[\u0000-\u001F\u007F]/g, "");
-}
-async function ghReq(path, opts, env) {
-  return fetch(`${GITHUB_API}/${ghRepo(env)}${path}`, {
-    ...opts,
-    headers: { ...ghHeaders(env), ...(opts?.headers || {}) },
-  });
 }
 function zipOk(file) {
   return (
@@ -533,8 +489,8 @@ async function listSetups(request, env) {
     cat = safe(u.searchParams.get("category")),
     veh = safe(u.searchParams.get("vehicle"));
   if (!cat || !veh) return json({ success: false, error: "Fahrzeug fehlt." }, 400);
-  const path = `/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}?ref=${encodeURIComponent(ghBranch(env))}`;
-  const r = await ghReq(path, {}, env);
+  const path = `/contents/setups/${encodeURIComponent(cat)}/${encodeURIComponent(veh)}?ref=${encodeURIComponent(githubBranch(env))}`;
+  const r = await githubRequest(env, path, {});
   if (r.status === 404) return json({ success: true, setups: [] });
   if (!r.ok) return json({ success: false, error: "Setups konnten nicht geladen werden." }, 502);
   const items = await r.json();
@@ -629,7 +585,7 @@ async function uploadSetups(request, env, suppliedForm) {
       name,
       category,
       vehicle,
-      branch: ghBranch(env),
+      branch: githubBranch(env),
       replaceSha:
         previous.action === "replace"
           ? previous.targets.find((target) => target.name === name)?.sha
@@ -641,7 +597,7 @@ async function uploadSetups(request, env, suppliedForm) {
           ? previous.targets.find((target) => target.name === name)?.sha
           : undefined,
       version: String(form.get("version") || ""),
-      githubRequest: (path, options) => ghReq(path, options, env),
+      githubRequest: (path, options) => githubRequest(env, path, options),
     });
     if (result.uploaded)
       uploaded.push({
@@ -700,8 +656,8 @@ async function deleteSetup(request, env) {
     vehicle: veh,
     name,
     expectedSha: b.sha,
-    branch: ghBranch(env),
-    githubRequest: (path, options) => ghReq(path, options, env),
+    branch: githubBranch(env),
+    githubRequest: (path, options) => githubRequest(env, path, options),
   });
   return json(result, result.success ? 200 : result.status || 502);
 }
@@ -1125,17 +1081,6 @@ function logout() {
   const h = securityHeaders(new Headers({ Location: "/" }));
   h.append("Set-Cookie", cookie(SESSION_COOKIE, "", 0));
   return new Response(null, { status: 302, headers: h });
-}
-function json(d, s = 200) {
-  return new Response(JSON.stringify(d), {
-    status: s,
-    headers: securityHeaders(
-      new Headers({
-        "Content-Type": "application/json; charset=UTF-8",
-        "Cache-Control": "no-store",
-      }),
-    ),
-  });
 }
 async function serveHome(request, env) {
   const r = await readSiteFile(request, env, "index.html");

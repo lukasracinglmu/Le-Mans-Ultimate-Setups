@@ -3,8 +3,10 @@ import test from "node:test";
 import { rolePermissions, resolvePermissions } from "../src/discord-permissions.js";
 import accessWorker from "../src/access-worker.js";
 import worker from "../src/worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 const envBase = {
+  ...repositoryEnv,
   DISCORD_GUILD_ID: "1464926567401652418",
   DISCORD_DATABASE_ROLE_ID: "1464926567401652420",
   DISCORD_UPLOAD_ROLE_ID: "1538601074074849330",
@@ -72,6 +74,7 @@ async function harness(roles, run, { id = userId, grants = {}, discordStatus = 2
     writes = [],
     background = [];
   const env = {
+    ...repositoryEnv,
     ...envBase,
     ACCESS_DB: {
       async batch(statements) {

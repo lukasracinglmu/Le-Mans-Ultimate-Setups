@@ -2,6 +2,7 @@
 import { submitBugReport } from "./bug-reports.js";
 import { ticketApi, isTicketOwner } from "./bug-tickets.js";
 import { ownerUserId } from "./config.js";
+import { json, securityHeaders } from "./lib/http.js";
 import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admin.js";
 import productionWorker from "./access-worker.js";
 import { readSiteFile } from "./repo-read.js";
@@ -106,24 +107,22 @@ export default {
       return favoritesApi(request, env, ctx);
     if (url.pathname === "/api/bug-reports") {
       if (request.method !== "POST")
-        return Response.json({ success: false, error: "Methode nicht erlaubt." }, { status: 405 });
+        return json({ success: false, error: "Methode nicht erlaubt." }, 405);
       const me = await readMe(request, env, ctx);
       if (!hasSiteAccess(me))
-        return Response.json(
-          { success: false, error: "Keine Berechtigung." },
-          { status: 403, headers: { "Cache-Control": "no-store" } },
-        );
+        return json({ success: false, error: "Keine Berechtigung." }, 403, {
+          "Cache-Control": "no-store",
+        });
       return submitBugReport(request, me.user, env);
     }
     if (url.pathname.startsWith("/api/admin/bug-tickets"))
       return ticketApi(request, env, ctx, productionWorker);
     if (request.method === "GET" && url.pathname === "/setups.json") {
       const me = await readMe(request, env, ctx);
-      if (!me?.loggedIn)
-        return Response.json({ success: false, error: "Nicht angemeldet." }, { status: 401 });
+      if (!me?.loggedIn) return json({ success: false, error: "Nicht angemeldet." }, 401);
       if (!me?.databaseAccess) {
         const unavailable = me?.rolesAvailable === false;
-        return Response.json(
+        return json(
           {
             success: false,
             error: unavailable
@@ -131,26 +130,24 @@ export default {
               : "Erforderliche Discord-Rolle fehlt.",
             reauthorize: Boolean(me?.reauthorize),
           },
+          unavailable ? 503 : 403,
           {
-            status: unavailable ? 503 : 403,
-            headers: {
-              "Cache-Control": "private, no-store",
-              ...(unavailable
-                ? {
-                    "Retry-After": String(Math.max(1, Math.ceil((me.retryAfterMs || 5000) / 1000))),
-                  }
-                : {}),
-            },
+            "Cache-Control": "private, no-store",
+            ...(unavailable
+              ? {
+                  "Retry-After": String(Math.max(1, Math.ceil((me.retryAfterMs || 5000) / 1000))),
+                }
+              : {}),
           },
         );
       }
       const source = await readSiteFile(request, env, "setups.json");
       return new Response(source.body, {
         status: source.ok ? 200 : 502,
-        headers: {
+        headers: securityHeaders({
           "Content-Type": "application/json; charset=utf-8",
           "Cache-Control": "private, no-store",
-        },
+        }),
       });
     }
     const permissionChange = isPermissionChange(request.method, url.pathname);
@@ -242,15 +239,13 @@ async function favoritesApi(request, env, ctx) {
   try {
     const me = await readMe(request, env, ctx);
     if (!hasSiteAccess(me))
-      return Response.json(
+      return json(
         { success: false, error: "Nicht angemeldet oder keine Datenbankberechtigung." },
-        { status: 403, headers: { "Cache-Control": "no-store" } },
+        403,
+        { "Cache-Control": "no-store" },
       );
     if (!env.ACCESS_DB)
-      return Response.json(
-        { success: false, error: "Favoriten-Datenbank nicht verfügbar." },
-        { status: 503 },
-      );
+      return json({ success: false, error: "Favoriten-Datenbank nicht verfügbar." }, 503);
     const userId = String(me.user.id);
     if (request.method === "GET") {
       const rows = await env.ACCESS_DB.prepare(
@@ -258,16 +253,15 @@ async function favoritesApi(request, env, ctx) {
       )
         .bind(userId)
         .all();
-      return Response.json(
-        { success: true, favorites: rows.results || [] },
-        { headers: { "Cache-Control": "private, no-store" } },
-      );
+      return json({ success: true, favorites: rows.results || [] }, 200, {
+        "Cache-Control": "private, no-store",
+      });
     }
     let body;
     try {
       body = await request.json();
     } catch {
-      return Response.json({ success: false, error: "Ungültige Anfrage." }, { status: 400 });
+      return json({ success: false, error: "Ungültige Anfrage." }, 400);
     }
     const category = String(body?.category || "")
       .replace(/[\u0000-\u001F\u007F]/g, " ")
@@ -277,8 +271,7 @@ async function favoritesApi(request, env, ctx) {
       .replace(/[\u0000-\u001F\u007F]/g, " ")
       .trim()
       .slice(0, 150);
-    if (!category || !vehicle)
-      return Response.json({ success: false, error: "Fahrzeug fehlt." }, { status: 400 });
+    if (!category || !vehicle) return json({ success: false, error: "Fahrzeug fehlt." }, 400);
     if (request.method === "POST")
       await env.ACCESS_DB.prepare(
         "INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,?)",
@@ -291,16 +284,14 @@ async function favoritesApi(request, env, ctx) {
       )
         .bind(userId, category, vehicle)
         .run();
-    return Response.json(
-      { success: true, category, vehicle, favorite: request.method === "POST" },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ success: true, category, vehicle, favorite: request.method === "POST" }, 200, {
+      "Cache-Control": "no-store",
+    });
   } catch (error) {
     console.error("favoritesApi failed", error);
-    return Response.json(
-      { success: false, error: "Favorit konnte nicht gespeichert werden." },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ success: false, error: "Favorit konnte nicht gespeichert werden." }, 503, {
+      "Cache-Control": "no-store",
+    });
   }
 }
 async function sitePage(request, env, file, privatePage) {
