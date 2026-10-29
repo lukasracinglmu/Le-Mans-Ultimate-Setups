@@ -18,16 +18,16 @@ const HOME_HEADERS = {
 
 async function serveHome(html) {
 	const original = globalThis.fetch;
-	globalThis.fetch = async (url) =>
-		String(url).includes('/contents/public/index.html')
-			? new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-			: new Response('', { status: 404 });
+	globalThis.fetch = async () => new Response('', { status: 404 });
 	try {
 		const env = {
 			...repositoryEnv,
 			GITHUB_TOKEN: 'test',
 			SESSION_SECRET: 'test',
-			ASSETS: { fetch: async () => new Response('', { status: 404 }) },
+			ASSETS: {
+				fetch: async () =>
+					new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }),
+			},
 		};
 		const response = await runtime.fetch(new Request('https://example.test/'), env, {
 			waitUntil() {},

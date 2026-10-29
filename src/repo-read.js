@@ -1,4 +1,4 @@
-/* @file-notes: Liest geschützte Dateien und Verzeichnisse sicher aus dem GitHub-Repository. */
+/* @file-notes: Liest geschützte Dateien aus dem GitHub-Repository und Seiten aus den deployten Assets. */
 import { githubBranch } from './config.js';
 import { githubRequest } from './lib/github.js';
 
@@ -24,19 +24,34 @@ export async function readRepoFile(env, path) {
 }
 
 // Site files live in public/ in the repository and at the root of the asset binding.
+// Data files such as setups.json are read live from the repository.
 export async function readSiteFile(request, env, path) {
 	const source = await readRepoFile(env, 'public/' + path);
 	if (source.ok) return source;
 	await source.body?.cancel();
+	return (await readAsset(request, env, path)) || siteUnavailable();
+}
+
+// Pages are read from the deployed assets only, so they always match the
+// scripts deployed with them.
+export async function readPage(request, env, path) {
+	return (await readAsset(request, env, path)) || siteUnavailable();
+}
+
+async function readAsset(request, env, path) {
 	try {
 		// The asset binding canonicalizes /index.html to /. Fetch / directly to
-		// avoid sending a redirect back through the same failing Worker route.
+		// avoid sending a redirect back through the same Worker route.
 		const assetPath =
 			path === 'index.html' ? '/' : '/' + (path.endsWith('.html') ? path.slice(0, -5) : path);
-		const fallback = await env.ASSETS.fetch(new Request(new URL(assetPath, request.url)));
-		if (fallback.ok) return fallback;
-		await fallback.body?.cancel();
+		const asset = await env.ASSETS.fetch(new Request(new URL(assetPath, request.url)));
+		if (asset.ok) return asset;
+		await asset.body?.cancel();
 	} catch {}
+	return null;
+}
+
+function siteUnavailable() {
 	return new Response('Website momentan nicht verfügbar. Bitte später erneut versuchen.', {
 		status: 503,
 		headers: {

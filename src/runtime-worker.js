@@ -5,7 +5,7 @@ import { ownerUserId } from './config.js';
 import { json, securityHeaders } from './lib/http.js';
 import { fullAdminApi, isMaintenanceActive, maintenanceState } from './full-admin.js';
 import productionWorker from './access-worker.js';
-import { readSiteFile } from './repo-read.js';
+import { readPage, readSiteFile } from './repo-read.js';
 import { writeSetupAuditEvent } from './audit-log.js';
 import { createScheduledBackup, backupCompletionApi } from './automatic-backup.js';
 
@@ -291,7 +291,7 @@ async function favoritesApi(request, env, ctx) {
 	}
 }
 async function sitePage(request, env, file, privatePage) {
-	const source = await readSiteFile(request, env, file);
+	const source = await readPage(request, env, file);
 	const headers = new Headers(source.headers);
 	headers.set('Content-Type', source.ok ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8');
 	headers.set('Cache-Control', privatePage ? 'private, no-store' : 'no-store');

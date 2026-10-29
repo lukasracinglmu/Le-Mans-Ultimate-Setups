@@ -5,7 +5,7 @@ import { githubRequest } from './lib/github.js';
 import { json, securityHeaders, withSecurityHeaders } from './lib/http.js';
 import { resolvePermissions, rolePermissions } from './discord-permissions.js';
 import { readPreviousSetups, deleteGithubSetup } from './setup-lifecycle.js';
-import { readRepoFile, readSiteFile } from './repo-read.js';
+import { readPage, readRepoFile } from './repo-read.js';
 import { persistSetupFile, readUploadForm } from './upload-storage.js';
 
 const DISCORD_API = 'https://discord.com/api/v10';
@@ -1081,7 +1081,7 @@ function logout() {
 	return new Response(null, { status: 302, headers: h });
 }
 async function serveHome(request, env) {
-	const r = await readSiteFile(request, env, 'index.html');
+	const r = await readPage(request, env, 'index.html');
 	const h = securityHeaders(new Headers(r.headers));
 	h.set('Content-Type', r.ok ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8');
 	h.set('Cache-Control', 'no-store');
