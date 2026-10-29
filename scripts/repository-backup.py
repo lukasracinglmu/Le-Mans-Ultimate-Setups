@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from zoneinfo import ZoneInfo
 
 TARGET = "lukasracinglmu/LMU-Database-Backups"
@@ -27,7 +28,8 @@ def git(args, cwd=None, token=None, check=True):
                    GIT_CONFIG_VALUE_0="AUTHORIZATION: basic " + auth)
     result = subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True, text=True)
     if check and result.returncode:
-        raise RuntimeError("Git operation failed: " + args[0])
+        detail = result.stderr.replace(token or "__no_token__", "[redacted]")[-500:].strip()
+        raise RuntimeError("Git operation failed: " + args[0] + ": " + detail)
     return result.stdout.strip() if check else result
 
 
@@ -74,10 +76,18 @@ def callback(data, success):
     req = Request(oidc_url, headers={"Authorization": "Bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
     with urlopen(req, timeout=30) as response:
         token = json.load(response)["value"]
+    # Only public identity metadata is logged; the bearer token is never logged.
+    encoded = token.split(".")[1]
+    claims = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+    print("Workflow identity:", json.dumps({k: claims.get(k) for k in ("repository", "ref", "workflow_ref", "event_name", "aud", "run_id")}))
     req = Request(CALLBACK, data=json.dumps({"job_id": data["job_id"], "success": success}).encode(),
                   headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"}, method="POST")
-    with urlopen(req, timeout=60) as response:
-        result = json.load(response)
+    try:
+        with urlopen(req, timeout=60) as response:
+            result = json.load(response)
+    except HTTPError as error:
+        print("Backup callback HTTP status:", error.code, file=sys.stderr)
+        raise
     if result.get("success") is not True:
         raise RuntimeError("Backup verification callback failed")
 
