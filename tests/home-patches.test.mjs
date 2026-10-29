@@ -1,12 +1,20 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { INLINE_PATCHES_MARKER } from "../src/lib/home-page.js";
 import runtime from "../src/runtime-worker.js";
 import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 const index = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-const marked = index.replace("<head>", "<head>" + INLINE_PATCHES_MARKER);
+
+// Headers of GET / in production before the runtime patches moved into index.html.
+const HOME_HEADERS = {
+  "cache-control": "private, no-store",
+  "content-type": "text/html; charset=utf-8",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+};
 
 async function serveHome(html) {
   const original = globalThis.fetch;
@@ -25,7 +33,7 @@ async function serveHome(html) {
       waitUntil() {},
     });
     const headers = Object.fromEntries(
-      [...response.headers].filter(([name]) => name !== "content-length"),
+      [...response.headers].filter(([name]) => name !== "content-length").sort(),
     );
     return { status: response.status, headers, body: await response.text() };
   } finally {
@@ -33,20 +41,15 @@ async function serveHome(html) {
   }
 }
 
-test("the home page is still patched at runtime without the marker", async () => {
-  assert.ok(index.includes("<head>"), "index.html needs a <head> tag for the marker");
-  assert.ok(!index.includes(INLINE_PATCHES_MARKER));
+test("the home page is served exactly as stored in index.html", async () => {
   const served = await serveHome(index);
   assert.equal(served.status, 200);
-  assert.notEqual(served.body, index);
-  assert.ok(served.body.includes('id="manufacturerImage"'), "enhanceHome patch missing");
-  assert.ok(served.body.includes("loadAdminAccessList"), "admin UI patch missing");
+  assert.equal(served.body, index);
+  assert.deepEqual(served.headers, HOME_HEADERS);
 });
 
-test("a home page with the marker is served unchanged with the same headers", async () => {
-  const patched = await serveHome(index);
-  const unchanged = await serveHome(marked);
-  assert.equal(unchanged.status, 200);
-  assert.equal(unchanged.body, marked);
-  assert.deepEqual(unchanged.headers, patched.headers);
+test("index.html contains the former runtime patches itself", () => {
+  assert.ok(index.includes('id="manufacturerImage"'), "manufacturer carousel missing");
+  assert.ok(index.includes("const setLoginControls="), "login controls script missing");
+  assert.ok(index.includes("loadAdminAccessList"), "admin access list script missing");
 });
