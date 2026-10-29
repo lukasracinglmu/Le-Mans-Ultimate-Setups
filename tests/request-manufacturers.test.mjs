@@ -139,7 +139,8 @@ test('Formular bietet optionale Herstellerwahl mit zurücksetzbarer Egal-Option 
 		assert.ok(
 			html.includes('<option value="' + manufacturer.id + '">' + manufacturer.name + '</option>')
 		);
-	assert.match(html, /manufacturer:\s*manufacturer\.value/);
+	const script = readFileSync(new URL('../public/js/request/form.js', import.meta.url), 'utf8');
+	assert.match(script, /manufacturer:\s*manufacturer\.value/);
 });
 test('Signierte HTTP-Buttons bestätigen nur berechtigte Nutzer und aktualisieren das Embed', async () => {
 	const pair = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);

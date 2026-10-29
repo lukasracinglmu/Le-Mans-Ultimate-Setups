@@ -1,3 +1,5 @@
+import { fetchMe } from '../shared/api.js';
+
 const TOPICS = {
 	access: { title: 'Zugriffsproblem', priority: 'High' },
 	download: { title: 'Setup-Download fehlerhaft', priority: 'High' },
@@ -161,8 +163,7 @@ export function initBugReportForm() {
 
 	const showFormToMembers = async () => {
 		try {
-			const response = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' });
-			const data = await response.json();
+			const data = await fetchMe();
 			if (!data.loggedIn) {
 				login.innerHTML =
 					'<p>Bitte melde dich mit Discord an, um eine Bugmeldung zu senden.</p><a href="/auth/discord">Mit Discord anmelden</a>';
