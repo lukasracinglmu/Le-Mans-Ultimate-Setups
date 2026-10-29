@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
 // Pages whose scripts live in public/js.
-const PAGES = ['bug-report.html', 'request.html'];
+const PAGES = ['bug-report.html', 'request.html', 'bug-tickets.html'];
 
 const publicUrl = (path) => new URL('../public/' + path, import.meta.url);
 
