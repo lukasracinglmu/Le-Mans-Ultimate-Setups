@@ -5,7 +5,7 @@ import vm from "node:vm";
 const text = readFileSync(new URL("../src/ui-hotfix.js", import.meta.url), "utf8");
 const moduleContext = vm.createContext({});
 vm.runInContext(
-  text.replace(/^import .*;\s*/, "").replace("export default {", "const worker = {") +
+  text.replace(/^import .*;\s*/gm, "").replace("export default {", "const worker = {") +
     ";globalThis.script=HOTFIX_JS;",
   moduleContext,
 );

@@ -8,6 +8,7 @@ import {
 } from "./setup-lifecycle.js";
 import { githubBranch, setupRequestRoleId, setupSupplyRoleId } from "./config.js";
 import { githubRequest } from "./lib/github.js";
+import { hasInlinePatches } from "./lib/home-page.js";
 import { json, safeJson } from "./lib/http.js";
 import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
@@ -625,7 +626,8 @@ function hexToBytes(hex) {
 async function serveEnhancedHome(request, env) {
   const response = await readSiteFile(request, env, "index.html");
   if (!response.ok) return response;
-  const html = enhanceHome(await response.text());
+  const source = await response.text();
+  const html = hasInlinePatches(source) ? source : enhanceHome(source);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",

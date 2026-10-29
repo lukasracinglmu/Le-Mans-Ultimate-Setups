@@ -26,7 +26,7 @@ const audit = vm.runInNewContext(
 const hotfixContext = vm.createContext({});
 vm.runInContext(
   read("src/ui-hotfix.js")
-    .replace(/^import .*;\s*/, "")
+    .replace(/^import .*;\s*/gm, "")
     .replace("export default {", "const worker = {") + ";globalThis.script=HOTFIX_JS;",
   hotfixContext,
 );
