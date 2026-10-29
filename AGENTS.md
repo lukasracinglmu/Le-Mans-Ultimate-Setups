@@ -23,6 +23,13 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 - Geschützte Seiten liegen trotzdem in `public/`. Die Zugriffsprüfung passiert in den Routen des Workers.
 - Der Worker liest Seiten aus `public/` zur Laufzeit über die GitHub API (`readSiteFile`) und fällt bei einem Fehler auf die deployten Assets zurück.
 
+## Code-Stil
+
+- JS und HTML: Tabs mit Breite 2, einfache Quotes, Semikolons, Trailing Commas nach ES5, 100 Zeichen pro Zeile.
+- Die Einrückung steht in `.editorconfig`, der Rest in `.prettierrc.json`. Andere Dateitypen behalten Leerzeichen, Python 4.
+- `npm run format` formatiert, `npm run format:check` prüft. Beides deckt `js`, `mjs` und `html` ab.
+- `public/index.html` ist von Prettier ausgenommen, bis ihre Inline-Scripts in Module umgezogen sind (#16).
+
 ## Learnings
 
 Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
@@ -74,5 +81,6 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Dateien über die GitHub API dekodiert schreiben. `41f8878` hat mehrere Dateien Base64-kodiert eingecheckt, `CHANGELOG.md` ist es noch.
 - Beim Verschieben von Dateien `area()` in `.github/changelog/update_changelog.py` mitziehen. Die Funktion ordnet Bereiche über Pfade zu.
 - Formatierungs-Commits rein mechanisch halten (AST-identisch) und in `.git-blame-ignore-revs` eintragen. Solche PRs als Merge-Commit mergen, nicht squashen.
+- Beim AST-Vergleich `"a": 1` und `a: 1` als gleichen Schlüssel behandeln. `quoteProps: "as-needed"` entfernt unnötige Quotes.
 - CodeQL und Dependency Review brauchen in privaten Repos GitHub Code Security und laufen deshalb nur bei öffentlichem Repo.
 - Automatische Ersetzungen (Regex, `sed`, `perl`) danach per `git diff` prüfen. Ein `|` als Trennzeichen bei Mustern mit `||` macht daraus eine leere Alternative, und der Text landet am Dateianfang.
