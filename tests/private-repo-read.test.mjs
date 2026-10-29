@@ -4,8 +4,10 @@ import { readRepoFile, readSiteFile } from "../src/repo-read.js";
 import production from "../src/production-worker.js";
 import runtime from "../src/runtime-worker.js";
 import worker from "../src/worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 const envBase = {
+  ...repositoryEnv,
   GITHUB_TOKEN: "server-only-secret",
   GITHUB_BRANCH: "release/test",
   SESSION_SECRET: "local-test-secret",
@@ -67,6 +69,7 @@ for (const failure of ["private-404", "network-error"]) {
   test("GitHub " + failure + " falls back to canonical asset root with enhancements", async () => {
     const paths = [];
     const env = {
+      ...repositoryEnv,
       ...envBase,
       ASSETS: {
         async fetch(req) {
@@ -129,6 +132,7 @@ test("catalog denies anonymous users and reports unavailable role checks before 
     },
     async () => {
       const env = {
+        ...repositoryEnv,
         ...envBase,
         ASSETS: {
           fetch() {
@@ -158,6 +162,7 @@ test("authorized catalog reads private GitHub and retains protected asset fallba
       },
       async () => {
         const env = {
+          ...repositoryEnv,
           ...envBase,
           ASSETS: {
             fetch(req) {

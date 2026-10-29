@@ -10,6 +10,7 @@ import {
   verifyBackupIdentity,
 } from "../src/automatic-backup.js";
 import { fullAdminApi } from "../src/full-admin.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 function database() {
   const db = new DatabaseSync(":memory:");
@@ -42,6 +43,7 @@ const source = "a".repeat(40),
   snapshot = "c".repeat(40),
   root = "d".repeat(40);
 const env = () => ({
+  ...repositoryEnv,
   ACCESS_DB: database(),
   GITHUB_TOKEN: "source-test",
   BACKUP_GITHUB_TOKEN: "destination-test",

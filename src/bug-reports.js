@@ -1,15 +1,10 @@
 import { createTicket } from "./bug-tickets.js";
 import { ownerUserId } from "./config.js";
+import { json } from "./lib/http.js";
 const DISCORD_API = "https://discord.com/api/v10";
 export const MAX_REPORT_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = MAX_REPORT_IMAGE_BYTES + 128 * 1024;
 const priorities = ["Low", "Medium", "High"];
-function json(data, status = 200, extra = {}) {
-  return Response.json(data, {
-    status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extra },
-  });
-}
 async function readReportForm(request) {
   if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data;"))
     throw Object.assign(Error("Ungültiges Formular."), { status: 400 });

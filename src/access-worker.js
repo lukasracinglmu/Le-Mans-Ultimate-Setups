@@ -4,11 +4,13 @@ import {
   readStoredDisplayName,
 } from "./setup-display-name.js";
 import uiWorker from "./ui-hotfix.js";
-import { enrichSetupVersions, storeSetupVersion } from "./setup-version.js";
+import { storeSetupVersion } from "./setup-version.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
+import { githubBranch } from "./config.js";
+import { githubRequest } from "./lib/github.js";
+import { json, safeJson } from "./lib/http.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
-const GITHUB_API = "https://api.github.com";
 
 export default {
   async fetch(request, env, ctx) {
@@ -127,10 +129,10 @@ export default {
       if (parsedName?.error) return json({ success: false, error: parsedName.error }, 400);
       if (!env.ACCESS_DB)
         return json({ success: false, error: "Metadaten-Datenbank nicht verfügbar." }, 503);
-      const filePath = `/${ghRepo(env)}/contents/setups/${enc(category)}/${enc(vehicle)}/${enc(name)}?ref=${enc(ghBranch(env))}`;
+      const filePath = `/contents/setups/${enc(category)}/${enc(vehicle)}/${enc(name)}?ref=${enc(githubBranch(env))}`;
       let existing;
       try {
-        existing = await ghReq(filePath, { signal: AbortSignal.timeout(15000) }, env);
+        existing = await githubRequest(env, filePath, { signal: AbortSignal.timeout(15000) });
       } catch {
         return json({ success: false, error: "Setup konnte nicht geprüft werden." }, 502);
       }
@@ -620,21 +622,6 @@ async function fetchGuildMember(userId, env) {
   }
 }
 
-function ghHeaders(env) {
-  const headers = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "lmu-setups-worker",
-  };
-  if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  return headers;
-}
-function ghRepo(env) {
-  return `repos/${env.GITHUB_OWNER || "lukasracinglmu"}/${env.GITHUB_REPO || "Le-Mans-Ultimate-Setups"}`;
-}
-function ghBranch(env) {
-  return env.GITHUB_BRANCH || "main";
-}
 function enc(value) {
   return encodeURIComponent(String(value));
 }
@@ -644,24 +631,6 @@ function cleanPath(value) {
     .replace(/[/\\]+/g, "")
     .replace(/\.\./g, "")
     .replace(/[\u0000-\u001F\u007F]/g, "");
-}
-async function ghReq(path, opts, env) {
-  return fetch(GITHUB_API + path, {
-    ...opts,
-    headers: { ...ghHeaders(env), ...(opts?.headers || {}) },
-  });
-}
-function classifySetup(name, vehicle) {
-  const file = String(name || ""),
-    v = String(vehicle || "");
-  const variant = /(^|[^a-z0-9])evo([^a-z0-9]|$)/i.test(file) ? "EVO" : "Standard";
-  let series = null;
-  if (/oreca\s*0?7/i.test(v)) {
-    if (/(^|[^a-z0-9])elms([^a-z0-9]|$)/i.test(file)) series = "ELMS";
-    else if (/(^|[^a-z0-9])wec([^a-z0-9]|$)/i.test(file)) series = "WEC";
-    else series = "Other";
-  }
-  return { variant, series };
 }
 function classifyManufacturer(name) {
   const n = String(name || "").toUpperCase();
@@ -711,50 +680,6 @@ function runAuditTasks(tasks, ctx) {
   else work.catch(() => {});
 }
 
-async function listSetupsForGrantedUser(request, env) {
-  const url = new URL(request.url),
-    cat = cleanPath(url.searchParams.get("category")),
-    veh = cleanPath(url.searchParams.get("vehicle"));
-  if (!cat || !veh) return json({ success: false, error: "Fahrzeug fehlt." }, 400);
-  const path = `/${ghRepo(env)}/contents/setups/${enc(cat)}/${enc(veh)}?ref=${enc(ghBranch(env))}`;
-  const r = await ghReq(path, {}, env);
-  if (r.status === 404) return json({ success: true, setups: [] });
-  if (!r.ok) return json({ success: false, error: "Setups konnten nicht geladen werden." }, 502);
-  const items = await r.json();
-  let setups = (Array.isArray(items) ? items : [])
-    .filter((i) => i.type === "file" && /\.zip$/i.test(i.name))
-    .map((i) => ({
-      name: i.name,
-      sha: i.sha,
-      download: `/api/setups/download?category=${enc(cat)}&vehicle=${enc(veh)}&name=${enc(i.name)}`,
-      ...classifySetup(i.name, veh),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true, sensitivity: "base" }));
-  setups = await enrichSetupVersions(setups, cat, veh, env);
-  return json({ success: true, setups });
-}
-async function downloadSetupForGrantedUser(request, env) {
-  const url = new URL(request.url),
-    cat = cleanPath(url.searchParams.get("category")),
-    veh = cleanPath(url.searchParams.get("vehicle")),
-    name = cleanPath(url.searchParams.get("name"));
-  if (!cat || !veh || !name || !/\.zip$/i.test(name))
-    return json({ success: false, error: "Ungültiger Download." }, 400);
-  const path = `/${ghRepo(env)}/contents/setups/${enc(cat)}/${enc(veh)}/${enc(name)}?ref=${enc(ghBranch(env))}`;
-  const meta = await ghReq(path, {}, env);
-  if (meta.status === 404) return json({ success: false, error: "Setup nicht gefunden." }, 404);
-  if (!meta.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502);
-  const data = await meta.json();
-  const file = await fetch(data.download_url, { headers: { Accept: "application/octet-stream" } });
-  if (!file.ok) return json({ success: false, error: "Setup konnte nicht geladen werden." }, 502);
-  const headers = new Headers(file.headers);
-  headers.set("Content-Type", "application/zip");
-  headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(name)}`);
-  headers.set("Cache-Control", "private, no-store");
-  headers.set("X-Content-Type-Options", "nosniff");
-  return new Response(file.body, { status: 200, headers });
-}
-
 function fixHeaderLogo(html) {
   return html
     .replace(
@@ -778,21 +703,4 @@ function injectAdminUi(html) {
   html = html.replace(oldPanel, newPanel);
   const script = `<script>(()=>{let adminBusy=false;const escAdmin=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');async function loadAdminAccessList(){const panel=document.getElementById('adminPanel'),list=document.getElementById('adminAccessList');if(!panel||!list)return;try{const me=await fetch('/api/me',{cache:'no-store',credentials:'same-origin'}).then(r=>r.json());if(!me?.user?.isAdmin){panel.classList.add('hidden');return;}panel.classList.remove('hidden');panel.querySelectorAll('[data-upload-admin]').forEach(button=>button.classList.toggle('hidden',!me.user.canManageUploadAccess));panel.querySelectorAll('[data-full-admin]').forEach(button=>button.classList.toggle('hidden',!me.user.canManageAdminAccess));const r=await fetch('/api/admin/access',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!d.success)throw new Error(d.error||'Fehler');list.innerHTML=(d.users||[]).map(u=>'<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:8px;padding:12px"><img src="'+escAdmin(u.avatar)+'" alt="" width="40" height="40" style="border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.src=\'https://cdn.discordapp.com/embed/avatars/0.png\'"><div style="min-width:0"><div style="font-weight:700">'+escAdmin(u.username)+'</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+escAdmin(u.userId)+'</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">'+(u.permissions||[]).map(p=>{const classes={FULL_ADMIN:'full-admin-badge',ADMIN_PANEL:'admin-badge',DATABASE:'database-badge',UPLOAD:'upload-badge'};return '<span class="badge '+(classes[p]||'')+'">'+escAdmin(p)+'</span>';}).join('')+'</div></div></div>').join('')||'<div class="empty">Noch keine individuellen Freigaben.</div>';}catch(e){list.textContent=e.message||'Freigaben konnten nicht geladen werden.';}}async function mutate(url,method,userId){if(adminBusy)return;adminBusy=true;const buttons=document.querySelectorAll('#adminPanel button');buttons.forEach(b=>b.disabled=true);try{const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({userId})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||'Fehler.');await loadAdminAccessList();}finally{adminBusy=false;buttons.forEach(b=>b.disabled=false);}}window.adminSetFullAdminFromInput=async grant=>{const id=document.getElementById('adminUserId')?.value.trim(),out=document.getElementById('adminResult');if(!id){out.textContent='Discord User ID fehlt.';return;}try{await mutate('/api/admin/full-admin-access',grant?'POST':'DELETE',id);out.textContent=grant?'Full Admin freigegeben.':'Full Admin entfernt.';}catch(e){out.textContent=e.message;}};window.adminSetAllFromInput=async grant=>{const id=document.getElementById('adminUserId')?.value.trim(),out=document.getElementById('adminResult');if(!id){out.textContent='Discord User ID fehlt.';return;}try{await mutate('/api/admin/all-access',grant?'POST':'DELETE',id);out.textContent=grant?'Datenbank und Upload/Delete freigegeben.':'Alle persönlichen Freigaben entfernt. Discord-Rollen gelten weiterhin.';}catch(e){out.textContent=e.message;}};window.adminSetDatabase=async(id,grant)=>{try{await mutate('/api/admin/database-access',grant?'POST':'DELETE',id);const out=document.getElementById('adminResult');if(out)out.textContent=grant?'Datenbank freigegeben.':'Datenbank entfernt.';}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.adminSetUpload=async(id,grant)=>{try{await mutate('/api/admin/upload-access',grant?'POST':'DELETE',id);}catch(e){const out=document.getElementById('adminResult');if(out)out.textContent=e.message;}};window.grantDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,true);};window.revokeDatabaseAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetDatabase(id,false);};window.grantUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,true);};window.revokeUploadAccess=async()=>{const id=document.getElementById('adminUserId')?.value.trim();if(id)await window.adminSetUpload(id,false);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loadAdminAccessList,0),{once:true});else setTimeout(loadAdminAccessList,0);})();</script>`;
   return html.replace("</body>", script + "\n</body>");
-}
-async function safeJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=UTF-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
 }

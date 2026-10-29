@@ -3,9 +3,11 @@ import test from "node:test";
 import runtime from "../src/runtime-worker.js";
 import worker from "../src/worker.js";
 import { resolvePermissions } from "../src/discord-permissions.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 
 const id = "222222222222222222";
 const config = {
+  ...repositoryEnv,
   SESSION_SECRET: "test-session-signing-key",
   DISCORD_CLIENT_ID: "1556978316404068452",
   DISCORD_CLIENT_SECRET: "test-client-secret",

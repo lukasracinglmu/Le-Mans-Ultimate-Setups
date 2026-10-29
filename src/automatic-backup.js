@@ -1,51 +1,39 @@
 /* @file-notes: Vollständige Repo-Sicherungen über GitHub Actions; Erfolg erst nach Prüfung des kopierten Git-Baums.
  * Cloudflare plant täglich 00:00 und 12:00 Europe/Berlin. Es werden keine Secrets in Backups geschrieben.
  */
-import { ownerUserId } from "./config.js";
+import {
+  backupBranch,
+  backupRepository,
+  githubBranch,
+  githubRepository,
+  ownerUserId,
+} from "./config.js";
+import { GITHUB_API, githubHeaders } from "./lib/github.js";
+import { json } from "./lib/http.js";
 
-const API = "https://api.github.com";
 const WORKFLOW = ".github/workflows/daily-repository-backup.yml";
 const ISSUER = "https://token.actions.githubusercontent.com";
 let keyCache = { expires: 0, keys: [] };
-const sourceRepo = (env) =>
-  (env.GITHUB_OWNER || "lukasracinglmu") + "/" + (env.GITHUB_REPO || "Le-Mans-Ultimate-Setups");
-const targetRepo = (env) =>
-  (env.BACKUP_GITHUB_OWNER || env.GITHUB_OWNER || "lukasracinglmu") +
-  "/" +
-  (env.BACKUP_GITHUB_REPO || "LMU-Database-Backups");
-const branch = (env) => env.GITHUB_BRANCH || "main";
 const site = (env) =>
   new URL(env.SITE_URL || "https://le-mans-ultimate-setups.3peaks-database.workers.dev").origin;
-const json = (data, status = 200) =>
-  Response.json(data, {
-    status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
-  });
 const encPath = (value) => String(value).split("/").map(encodeURIComponent).join("/");
-function ghHeaders(token) {
-  return {
-    Accept: "application/vnd.github+json",
-    Authorization: "Bearer " + token,
-    "User-Agent": "lmu-repository-backup",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "Content-Type": "application/json",
-  };
-}
 async function gh(env, path, options = {}, destination = false) {
   const token = destination ? env.BACKUP_GITHUB_TOKEN || env.GITHUB_TOKEN : env.GITHUB_TOKEN;
   if (!token)
     throw Error(
       destination ? "Backup-GitHub-Token fehlt." : "GitHub-Token für das Website-Repository fehlt.",
     );
-  const r = await fetch(
-    API + "/repos/" + (destination ? targetRepo(env) : sourceRepo(env)) + path,
-    {
-      ...options,
-      headers: ghHeaders(token),
-      redirect: "manual",
-      signal: AbortSignal.timeout(15000),
-    },
-  );
+  const repository = destination ? backupRepository(env) : githubRepository(env);
+  if (!repository) throw Error("GitHub-Repository ist nicht konfiguriert.");
+  const r = await fetch(GITHUB_API + "/repos/" + repository + path, {
+    ...options,
+    headers: githubHeaders(token, {
+      "User-Agent": "lmu-repository-backup",
+      "Content-Type": "application/json",
+    }),
+    redirect: "manual",
+    signal: AbortSignal.timeout(15000),
+  });
   if (!r.ok) {
     await r.body?.cancel();
     throw Error("GitHub-Anfrage fehlgeschlagen (HTTP " + r.status + ").");
@@ -101,22 +89,28 @@ function publicJob(job, env) {
     sourceSha: job.source_sha,
     viewUrl: job.backup_path
       ? "https://github.com/" +
-        targetRepo(env) +
+        backupRepository(env) +
         "/tree/" +
-        encodeURIComponent(env.BACKUP_GITHUB_BRANCH || "main") +
+        encodeURIComponent(backupBranch(env)) +
         "/" +
         encPath(job.backup_path) +
         "/repository"
       : null,
     downloadUrl:
-      "https://github.com/" + targetRepo(env) + "/archive/refs/tags/" + encPath(job.tag) + ".zip",
+      "https://github.com/" +
+      backupRepository(env) +
+      "/archive/refs/tags/" +
+      encPath(job.tag) +
+      ".zip",
     deleteAt: new Date(Date.parse(job.created_at) + 14 * 86400000).toISOString(),
     size: job.size_bytes,
     fileCount: job.file_count,
     notificationDelivered: Boolean(job.notified),
     runUrl: job.run_id
-      ? "https://github.com/" + sourceRepo(env) + "/actions/runs/" + job.run_id
-      : "https://github.com/" + sourceRepo(env) + "/actions/workflows/daily-repository-backup.yml",
+      ? "https://github.com/" + githubRepository(env) + "/actions/runs/" + job.run_id
+      : "https://github.com/" +
+        githubRepository(env) +
+        "/actions/workflows/daily-repository-backup.yml",
     verified: job.status === "completed" && !job.validation_only,
   };
 }
@@ -147,7 +141,7 @@ async function queueBackup(env, now, manual, validationOnly = false) {
     .first();
   if (existing && existing.status !== "failed")
     return { success: true, queued: existing.status === "pending", ...publicJob(existing, env) };
-  const head = await gh(env, "/git/ref/heads/" + encPath(branch(env)));
+  const head = await gh(env, "/git/ref/heads/" + encPath(githubBranch(env)));
   if (!/^[a-f0-9]{40}$/.test(head?.object?.sha || ""))
     throw Error("GitHub-Quellstand konnte nicht bestimmt werden.");
   const id = crypto.randomUUID(),
@@ -181,8 +175,8 @@ async function queueBackup(env, now, manual, validationOnly = false) {
           tag,
           source_sha: head.object.sha,
           created_at: createdAt,
-          backup_repository: targetRepo(env),
-          backup_branch: env.BACKUP_GITHUB_BRANCH || "main",
+          backup_repository: backupRepository(env),
+          backup_branch: backupBranch(env),
           backup_path: backupPath,
           callback_url: site(env) + "/api/internal/backups/complete",
           validation_only: validationOnly,
@@ -231,14 +225,15 @@ export async function verifyBackupIdentity(request, env, now = Date.now()) {
     if (parts.length !== 3) return null;
     const header = JSON.parse(new TextDecoder().decode(decode(parts[0])));
     const claims = JSON.parse(new TextDecoder().decode(decode(parts[1])));
-    const expectedWorkflow = sourceRepo(env) + "/" + WORKFLOW + "@refs/heads/" + branch(env);
+    const expectedWorkflow =
+      githubRepository(env) + "/" + WORKFLOW + "@refs/heads/" + githubBranch(env);
     if (
       header.alg !== "RS256" ||
       !header.kid ||
       claims.iss !== ISSUER ||
       claims.aud !== site(env) ||
-      claims.repository !== sourceRepo(env) ||
-      claims.ref !== "refs/heads/" + branch(env) ||
+      claims.repository !== githubRepository(env) ||
+      claims.ref !== "refs/heads/" + githubBranch(env) ||
       claims.workflow_ref !== expectedWorkflow ||
       !["repository_dispatch", "workflow_dispatch"].includes(claims.event_name)
     )
@@ -310,7 +305,7 @@ async function verifySnapshot(job, env) {
     "/contents/" +
       encPath(job.backup_path) +
       "/.backup.json?ref=" +
-      encodeURIComponent(env.BACKUP_GITHUB_BRANCH || "main"),
+      encodeURIComponent(backupBranch(env)),
     {},
     true,
   );
@@ -499,9 +494,13 @@ export async function backupOverview(env) {
       verified: false,
       createdAt: created.toISOString(),
       deleteAt: new Date(created.getTime() + 14 * 86400000).toISOString(),
-      viewUrl: "https://github.com/" + targetRepo(env) + "/tree/" + encPath(row.tag),
+      viewUrl: "https://github.com/" + backupRepository(env) + "/tree/" + encPath(row.tag),
       downloadUrl:
-        "https://github.com/" + targetRepo(env) + "/archive/refs/tags/" + encPath(row.tag) + ".zip",
+        "https://github.com/" +
+        backupRepository(env) +
+        "/archive/refs/tags/" +
+        encPath(row.tag) +
+        ".zip",
     });
   }
   rows.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));

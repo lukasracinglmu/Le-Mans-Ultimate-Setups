@@ -11,8 +11,10 @@ import {
 import { matchingRequestSetups } from "../discord-presence/request-tracks.js";
 import production from "../src/production-worker.js";
 import base from "../src/worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 const owner = "1033453785416208564";
 const env = {
+  ...repositoryEnv,
   GITHUB_TOKEN: "test-repo",
   DISCORD_BOT_TOKEN: "test-bot",
   DISCORD_CHANNEL_ID: "1511795330176520193",

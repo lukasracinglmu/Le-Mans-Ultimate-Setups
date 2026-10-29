@@ -5,6 +5,7 @@ import vm from "node:vm";
 import { compareSetupVersions, cleanSetupFileName } from "../src/setup-version.js";
 import { persistSetupFile, gitBlobSha } from "../src/upload-storage.js";
 import production from "../src/production-worker.js";
+import { repositoryEnv } from "./helpers/repository-env.mjs";
 const source = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const client = vm.runInNewContext(
   source.slice(source.indexOf("function displaySetupFileName("), source.indexOf("function esc(")) +
@@ -91,6 +92,7 @@ test("same-name outdate uploads new bytes separately and marks exactly the origi
     versions = new Map([[fileName, "v1"]]),
     marks = [];
   const env = {
+    ...repositoryEnv,
     SESSION_SECRET: "test-secret",
     DISCORD_OWNER_USER_ID: "1033453785416208564",
     ACCESS_DB: {
@@ -221,6 +223,7 @@ test("verified duplicate does not lower the stored version", async () => {
       }),
     );
     const env = {
+      ...repositoryEnv,
       ACCESS_DB: {
         prepare() {
           return {
@@ -265,6 +268,7 @@ test("explicit existing-file choices work for identical bytes and equal or missi
       let puts = 0,
         deletes = 0;
       const env = {
+        ...repositoryEnv,
         SESSION_SECRET: "test-secret",
         DISCORD_OWNER_USER_ID: "1033453785416208564",
         ACCESS_DB: {

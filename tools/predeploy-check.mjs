@@ -14,7 +14,7 @@ if (missingVars.length)
 const pages = ["index.html", "admin.html", "request.html", "bug-report.html", "bug-tickets.html"];
 for (const file of [main, ...pages.map((page) => "public/" + page)]) await access(file);
 
-const workerFiles = (await readdir("src"))
+const workerFiles = (await readdir("src", { recursive: true }))
   .filter((file) => file.endsWith(".js"))
   .map((file) => "src/" + file);
 const botFiles = (await readdir("discord-presence"))
@@ -28,7 +28,7 @@ for (const file of jsFiles) {
 }
 const assets = await readdir("public/assets");
 if (!assets.includes("bp-logo.webp")) throw new Error("public/assets/bp-logo.webp fehlt.");
-const workerNames = new Set(workerFiles.map((file) => file.slice("src/".length)));
+const workerNames = new Set(workerFiles.map((file) => file.split("/").pop()));
 const exposed = (await readdir("public", { recursive: true })).filter((file) =>
   workerNames.has(file.split("/").pop()),
 );

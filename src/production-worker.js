@@ -6,7 +6,9 @@ import {
   applyPreviousSetups,
   enrichSetupLifecycle,
 } from "./setup-lifecycle.js";
-import { setupRequestRoleId, setupSupplyRoleId } from "./config.js";
+import { githubBranch, setupRequestRoleId, setupSupplyRoleId } from "./config.js";
+import { githubRequest } from "./lib/github.js";
+import { json, safeJson } from "./lib/http.js";
 import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
@@ -215,24 +217,13 @@ async function normalizeSetupRequest(data, request, env) {
 
 async function existingRequestSetups(data, env) {
   if (!env.GITHUB_TOKEN) return [];
-  const repo =
-    (env.GITHUB_OWNER || "lukasracinglmu") + "/" + (env.GITHUB_REPO || "Le-Mans-Ultimate-Setups");
   const path = ["setups", data.carClass, data.vehicle].map(encodeURIComponent).join("/");
   try {
-    const response = await fetch(
-      "https://api.github.com/repos/" +
-        repo +
-        "/contents/" +
-        path +
-        "?ref=" +
-        encodeURIComponent(env.GITHUB_BRANCH || "main"),
+    const response = await githubRequest(
+      env,
+      "/contents/" + path + "?ref=" + encodeURIComponent(githubBranch(env)),
       {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: "Bearer " + env.GITHUB_TOKEN,
-          "User-Agent": "lmu-setup-requests",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+        headers: { "User-Agent": "lmu-setup-requests" },
         redirect: "manual",
         signal: AbortSignal.timeout(12000),
       },
@@ -388,7 +379,7 @@ async function confirmDiscordRequest(interaction, env, ctx) {
   const user = interaction.member?.user || interaction.user || {};
   const roleId = setupSupplyRoleId(env);
   if (!canConfirmSetupRequest(user.id, interaction.member?.roles || [], roleId))
-    return discordJson({
+    return json({
       type: 4,
       data: {
         content:
@@ -406,9 +397,9 @@ async function confirmDiscordRequest(interaction, env, ctx) {
     !embed ||
     fields["angefragt von"] !== "<@" + requesterId + ">"
   )
-    return discordJson({ type: 4, data: { content: "Ungültige Setup-Anfrage.", flags: 64 } });
+    return json({ type: 4, data: { content: "Ungültige Setup-Anfrage.", flags: 64 } });
   if (!interaction.message?.components?.length)
-    return discordJson({
+    return json({
       type: 4,
       data: { content: "Dieses Setup wurde bereits bestätigt.", flags: 64 },
     });
@@ -459,7 +450,7 @@ async function confirmDiscordRequest(interaction, env, ctx) {
   ).catch(() => {});
   if (ctx?.waitUntil) ctx.waitUntil(notify);
   else await notify;
-  return discordJson({
+  return json({
     type: 7,
     data: { embeds: [updated], components: [], allowed_mentions: { parse: [] } },
   });
@@ -475,7 +466,7 @@ async function discordInteraction(request, env, ctx) {
   } catch {
     return new Response("bad request", { status: 400 });
   }
-  if (interaction.type === 1) return discordJson({ type: 1 });
+  if (interaction.type === 1) return json({ type: 1 });
   if (
     interaction.type === 3 &&
     String(interaction.data?.custom_id || "").startsWith("setup_ready:")
@@ -502,14 +493,14 @@ async function discordInteraction(request, env, ctx) {
         .filter((car) => car.value.toLowerCase().includes(query))
         .slice(0, 25);
     }
-    return discordJson({ type: 8, data: { choices } });
+    return json({ type: 8, data: { choices } });
   }
   let values = null;
   if (interaction.type === 2 && interaction.data?.name === "request") {
     const options = Object.fromEntries(
       (interaction.data.options || []).map((option) => [option.name, option.value]),
     );
-    if (!options.fahrzeug) return discordJson(requestModalResponse());
+    if (!options.fahrzeug) return json(requestModalResponse());
     values = {
       vehicle: options.fahrzeug,
       track: options.strecke,
@@ -532,7 +523,7 @@ async function discordInteraction(request, env, ctx) {
     const task = finishDiscordRequest(interaction, data, request, env);
     if (ctx?.waitUntil) ctx.waitUntil(task);
     else await task;
-    return discordJson({ type: 5, data: { flags: 64 } });
+    return json({ type: 5, data: { flags: 64 } });
   }
   return baseWorker.fetch(
     new Request(request.url, { method: "POST", headers: request.headers, body: rawBody }),
@@ -724,27 +715,4 @@ function clean(value, max) {
     .replace(/[\u0000-\u001F\u007F]/g, " ")
     .trim()
     .slice(0, max);
-}
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=UTF-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
-}
-async function safeJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-function discordJson(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
-  });
 }

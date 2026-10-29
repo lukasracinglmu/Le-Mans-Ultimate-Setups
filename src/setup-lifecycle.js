@@ -1,4 +1,6 @@
 /* @file-notes: Verwaltet Zustände wie behalten, ersetzen, löschen und veraltet für Setup-Dateien. */
+import { githubBranch } from "./config.js";
+import { githubRequest as repoRequest } from "./lib/github.js";
 import { githubFailure } from "./upload-storage.js";
 
 export function setupManufacturer(name) {
@@ -76,18 +78,10 @@ export function readPreviousSetups(form, names) {
   return { action: plan.action, targets: plan.targets.map(({ name, sha }) => ({ name, sha })) };
 }
 export function repoJsonRequest(env, path, options = {}) {
-  const owner = encodeURIComponent(env.GITHUB_OWNER || "lukasracinglmu"),
-    repo = encodeURIComponent(env.GITHUB_REPO || "Le-Mans-Ultimate-Setups");
-  return fetch(`https://api.github.com/repos/${owner}/${repo}${path}`, {
+  return repoRequest(env, path, {
     ...options,
     signal: options.signal || AbortSignal.timeout(20000),
-    headers: {
-      Accept: "application/vnd.github.object+json",
-      "User-Agent": "lmu-setups-worker",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(env.GITHUB_TOKEN ? { Authorization: `Bearer ${env.GITHUB_TOKEN}` } : {}),
-      ...options.headers,
-    },
+    headers: { Accept: "application/vnd.github.object+json", ...options.headers },
   });
 }
 const filePath = (category, vehicle, name) =>
@@ -171,7 +165,7 @@ export async function applyPreviousSetups({ plan, category, vehicle, replacement
       retryable: true,
     };
   const githubRequest = (path, options) => repoJsonRequest(env, path, options),
-    branch = env.GITHUB_BRANCH || "main";
+    branch = githubBranch(env);
   try {
     // Confirm the new bytes before touching any selected old file.
     const current = await inspect(
