@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T17:19:33.130Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Sebring GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Sebring GO",
+  "manufacturer": "GO",
+  "version": "1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
