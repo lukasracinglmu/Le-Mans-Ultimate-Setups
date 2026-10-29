@@ -1,10 +1,16 @@
 /* @file-notes: Prüft vor einem Deployment Syntax, Assets und zentrale Konfigurationsfehler. */
 import { access, readdir, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { REQUIRED_VARS } from "../src/config.js";
 
 const wrangler = await readFile("wrangler.jsonc", "utf8");
 const main = wrangler.match(/"main"\s*:\s*"([^"]+)"/)?.[1];
 if (!main) throw new Error("wrangler.jsonc enthält keinen Worker-Einstieg (main).");
+const missingVars = REQUIRED_VARS.filter(
+  (name) => !wrangler.match(new RegExp(`"${name}"\\s*:\\s*"\\s*[^"\\s][^"]*"`)),
+);
+if (missingVars.length)
+  throw new Error(`Pflichtvariablen fehlen in wrangler.jsonc: ${missingVars.join(", ")}`);
 const pages = ["index.html", "admin.html", "request.html", "bug-report.html", "bug-tickets.html"];
 for (const file of [main, ...pages.map((page) => "public/" + page)]) await access(file);
 

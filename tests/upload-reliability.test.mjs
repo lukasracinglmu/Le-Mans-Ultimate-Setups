@@ -264,6 +264,7 @@ test("full upload handler recovers ZIP after D1 fails without re-uploading its b
   };
   const env = {
     SESSION_SECRET: "local-test-secret",
+    DISCORD_OWNER_USER_ID: "1033453785416208564",
     ACCESS_DB: {
       prepare(sql) {
         return {

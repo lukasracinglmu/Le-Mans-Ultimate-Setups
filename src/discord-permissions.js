@@ -1,10 +1,7 @@
 /* @file-notes: Ermittelt Discord-Rollen, persönliche Freigaben und daraus abgeleitete Website-Berechtigungen. */
-const DEFAULT_OWNER_USER_ID = "1033453785416208564";
-const ROLE_SNAPSHOT_TTL = 60_000;
+import { ownerUserId } from "./config.js";
 
-export function ownerUserId(env) {
-  return String(env.DISCORD_OWNER_USER_ID || DEFAULT_OWNER_USER_ID);
-}
+const ROLE_SNAPSHOT_TTL = 60_000;
 
 export function rolePermissions(userId, roles, env, grants = {}) {
   const hasRole = (id) => Boolean(id && Array.isArray(roles) && roles.includes(String(id)));

@@ -22,6 +22,8 @@ Diese Werte dürfen nicht im Repository oder in normalen Textvariablen stehen.
 
 ## Benötigte Textvariablen
 
+Der Code enthält keine Ersatzwerte für diese IDs. Fehlt eine Variable, greift die zugehörige Berechtigung oder Benachrichtigung nicht. Ohne `DISCORD_OWNER_USER_ID` hat z. B. niemand Owner-Rechte. `npm run check:deploy` bricht ab, wenn eine Pflichtvariable (Liste in `src/config.js`) in `wrangler.jsonc` fehlt oder leer ist.
+
 | Name | Aktueller Wert | Zweck |
 | :--- | :--- | :--- |
 | `DISCORD_CLIENT_ID` | `1556978316404068452` | ID der Discord-Anwendung für Login und Slash-Befehl. |
@@ -30,8 +32,8 @@ Diese Werte dürfen nicht im Repository oder in normalen Textvariablen stehen.
 | `DISCORD_UPLOAD_ROLE_ID` | `1538601074074849330` | Setup-Supply-Rolle für Upload, Löschen und Bearbeiten. |
 | `DISCORD_OWNER_ROLE_ID` | `1464926567401652423` | Rolle für Admin-Panel und persönliche Freigaben. |
 | `DISCORD_OWNER_USER_ID` | `1033453785416208564` | Persönliche Owner-ID mit vollständigem Zugriff. |
-| `DISCORD_CHANNEL_ID` | `1557002876906377258` | Zielkanal für Setup Requests. |
-| `DISCORD_AUDIT_CHANNEL_ID` | `1560579797472645151` | Zielkanal für Änderungsprotokolle. |
+| `DISCORD_CHANNEL_ID` | `1511795330176520193` | Zielkanal für Setup Requests. |
+| `DISCORD_AUDIT_CHANNEL_ID` | `1564325702344507442` | Zielkanal für Änderungsprotokolle. |
 | `DISCORD_SETUP_REQUEST_ROLE_ID` | `1538601074074849330` | Rolle, die bei Setup Requests erwähnt wird. |
 | `SITE_URL` | `https://le-mans-ultimate-setups.3peaks-database.workers.dev` | Öffentliche Adresse und Grundlage des Discord-Redirects. |
 | `GITHUB_OWNER` | `lukasracinglmu` | Besitzer des GitHub-Repositorys. |

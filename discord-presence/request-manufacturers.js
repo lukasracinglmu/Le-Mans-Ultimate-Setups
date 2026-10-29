@@ -4,6 +4,10 @@ export const REQUEST_MANUFACTURERS = Object.freeze([
   Object.freeze({ id: "HYMO", name: "HYMO" }),
   Object.freeze({ id: "beAlien", name: "beAlien" }),
 ]);
+// Discord users and role used by the worker and the bot. The worker reads the
+// role from wrangler.jsonc. The bot falls back to this ID when its .env does not
+// set DISCORD_UPLOAD_ROLE_ID.
+export const DEFAULT_SETUP_SUPPLY_ROLE_ID = "1538601074074849330";
 export const SETUP_CONFIRMATION_WHITELIST = Object.freeze([
   "771358435416473600",
   "640948738445279261",

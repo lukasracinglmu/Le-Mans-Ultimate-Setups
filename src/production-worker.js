@@ -6,6 +6,7 @@ import {
   applyPreviousSetups,
   enrichSetupLifecycle,
 } from "./setup-lifecycle.js";
+import { setupRequestRoleId, setupSupplyRoleId } from "./config.js";
 import { readSiteFile } from "./repo-read.js";
 import { enrichSetupVersions, readSetupVersion, storeSetupVersion } from "./setup-version.js";
 
@@ -321,8 +322,7 @@ async function createWebsiteRequest(request, env) {
 async function sendSetupRequest(data, env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_CHANNEL_ID)
     return { ok: false, status: 503, error: "Request-Dienst nicht konfiguriert." };
-  const roleId =
-    env.DISCORD_SETUP_REQUEST_ROLE_ID || env.DISCORD_UPLOAD_ROLE_ID || "1538601074074849330";
+  const roleId = setupRequestRoleId(env);
   const response = await fetch(DISCORD_API + "/channels/" + env.DISCORD_CHANNEL_ID + "/messages", {
     method: "POST",
     headers: { Authorization: "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
@@ -386,7 +386,7 @@ async function finishDiscordRequest(interaction, data, request, env) {
 
 async function confirmDiscordRequest(interaction, env, ctx) {
   const user = interaction.member?.user || interaction.user || {};
-  const roleId = env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID || "1538601074074849330";
+  const roleId = setupSupplyRoleId(env);
   if (!canConfirmSetupRequest(user.id, interaction.member?.roles || [], roleId))
     return discordJson({
       type: 4,

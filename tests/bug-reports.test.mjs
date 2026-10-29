@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { submitBugReport, BUG_REPORT_RECIPIENT, reportImage } from "../src/bug-reports.js";
+import { submitBugReport, reportImage } from "../src/bug-reports.js";
 import runtime from "../src/runtime-worker.js";
 const user = { id: "222222222222222222", username: "Reporter" },
   reportId = "a".repeat(25),
   channelId = "333333333333333333",
   messageId = "444444444444444444",
-  reporterChannelId = "555555555555555555";
+  reporterChannelId = "555555555555555555",
+  owner = "1033453785416208564";
 function database() {
   let row = null;
   const tickets = [];
@@ -75,15 +76,18 @@ function request({
 async function harness(run, { dmStatus = 200, messageStatus = 200, missingId = false } = {}) {
   const original = globalThis.fetch,
     calls = [],
-    env = { DISCORD_BOT_TOKEN: "server-only-bot-secret", ACCESS_DB: database() };
+    env = {
+      DISCORD_BOT_TOKEN: "server-only-bot-secret",
+      DISCORD_OWNER_USER_ID: owner,
+      ACCESS_DB: database(),
+    };
   globalThis.fetch = async (url, options) => {
     calls.push({ url: String(url), options });
     assert.ok(String(url).startsWith("https://discord.com/api/v10/"));
     assert.equal(options.headers.Authorization, "Bot " + env.DISCORD_BOT_TOKEN);
     if (String(url).endsWith("/users/@me/channels")) {
       const recipient = JSON.parse(options.body).recipient_id;
-      if (recipient === BUG_REPORT_RECIPIENT)
-        return Response.json({ id: channelId }, { status: dmStatus });
+      if (recipient === owner) return Response.json({ id: channelId }, { status: dmStatus });
       assert.equal(recipient, user.id);
       return Response.json({ id: reporterChannelId });
     }
@@ -226,6 +230,15 @@ for (const options of [{ dmStatus: 403 }, { messageStatus: 403 }, { missingId: t
       }, options);
     },
   );
+test("reports are unavailable while no owner is configured", async () => {
+  await harness(async ({ calls, env }) => {
+    delete env.DISCORD_OWNER_USER_ID;
+    const r = await submitBugReport(request(), user, env);
+    assert.equal(r.status, 503);
+    assert.equal(calls.length, 0);
+    assert.equal(env.ACCESS_DB.tickets.length, 0);
+  });
+});
 test("supported images have canonical MIME types, while empty optional attachment is ignored", async () => {
   assert.equal(await reportImage(null), null);
   assert.equal(await reportImage(new File([], "empty.png")), null);

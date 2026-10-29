@@ -1116,10 +1116,7 @@
         fetch("/api/me", { credentials: "same-origin", cache: "no-store" })
           .then((r) => r.json())
           .then((data) => {
-            const ownerId = "1033453785416208564";
-            const owner = Boolean(
-              data?.user && (data.user.isOwner || String(data.user.id) === ownerId),
-            );
+            const owner = Boolean(data?.user?.isOwner);
             const full = Boolean(data?.user?.fullAdmin || owner);
             if (!data.loggedIn || (!data.user?.canViewAdminPanel && !owner)) {
               location.replace("/");
