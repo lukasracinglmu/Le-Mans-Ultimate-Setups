@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T07:59:14.590Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Toyota Daytona HYMO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Daytona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
