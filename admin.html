@@ -94,6 +94,7 @@ async function change(path,method,id=input.value.trim(),reload=true){const admin
   finally{backupButton.disabled=false}
 };
 const backupList=document.getElementById('backupList'),latestBackupLink=document.getElementById('latestBackupLink');
+const backupSchedule=document.createElement('p');backupSchedule.textContent='Automatisch täglich um 00:00 und 12:00 Uhr (deutsche Zeit) · Aufbewahrung: 14 Tage';backupList.before(backupSchedule);
 async function loadBackups(){
   if(!backupList)return;
   try{

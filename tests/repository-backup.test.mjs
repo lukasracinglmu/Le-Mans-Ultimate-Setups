@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {isBackupSlot,createScheduledBackup,validateBackupConfiguration,backupCompletionApi,backupOverview,verifyBackupIdentity} from '../automatic-backup.js';
+import {fullAdminApi} from '../full-admin.js';
 
 function database(){
   const db=new DatabaseSync(':memory:');
@@ -86,4 +87,15 @@ test('MD-Index allein wird ausdrücklich abgelehnt und erzeugt keine Erfolgsmeld
     assert.equal((await backupCompletionApi(await signed(job.id),e)).status,409);
     const row=(await backupOverview(e)).backups[0];assert.equal(row.status,'failed');assert.equal(row.verified,false);assert.equal(requests.some(r=>r.url.includes('discord.com')),false);
   },{complete:true,mdOnly:true});
+});
+test('Full Admin, Server-Owner-Rolle und normale Nutzer erhalten keine Backup-Freigabe',async()=>{
+  for(const user of [{id:'222222222222222222',fullAdmin:true},{id:'222222222222222222',isOwner:true},{id:'222222222222222222'}]){
+    const worker={fetch:async()=>Response.json({loggedIn:true,user})};
+    for(const [method,path] of [['GET','/api/admin/backups'],['POST','/api/admin/backup']]){
+      const result=await fullAdminApi(new Request('https://example.test'+path,{method}),env(),{},worker);
+      assert.equal(result.status,403);
+    }
+  }
+  const worker={fetch:async()=>Response.json({loggedIn:true,user:{id:'1033453785416208564'}})};
+  assert.equal((await fullAdminApi(new Request('https://example.test/api/admin/backups'),env(),{},worker)).status,200);
 });

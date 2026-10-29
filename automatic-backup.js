@@ -25,6 +25,9 @@ async function ensure(env){
   await env.ACCESS_DB.prepare('CREATE TABLE IF NOT EXISTS repository_backup_jobs (id TEXT PRIMARY KEY, slot TEXT NOT NULL UNIQUE, tag TEXT NOT NULL, source_sha TEXT NOT NULL, created_at TEXT NOT NULL, status TEXT NOT NULL, validation_only INTEGER NOT NULL DEFAULT 0, backup_path TEXT, file_count INTEGER, size_bytes INTEGER, run_id TEXT, error TEXT, notified INTEGER NOT NULL DEFAULT 0)').run();
   await env.ACCESS_DB.prepare('CREATE TABLE IF NOT EXISTS automatic_backups (slot TEXT PRIMARY KEY, tag TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
 }
+async function expirePending(env,now=new Date()){
+  await env.ACCESS_DB.prepare("UPDATE repository_backup_jobs SET status='failed',error=? WHERE status='pending' AND created_at<?").bind('Seit über 45 Minuten keine Abschlussmeldung. Bitte den GitHub-Workflow prüfen.',new Date(now.getTime()-45*60000).toISOString()).run();
+}
 export function backupTimeParts(now=new Date()){
   return Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now).map(p=>[p.type,p.value]));
 }
@@ -58,6 +61,7 @@ async function queueBackup(env,now,manual,validationOnly=false){
 }
 export async function createScheduledBackup(env,now=new Date()){
   await ensure(env);
+  await expirePending(env,now);
   const retry=await env.ACCESS_DB.prepare("SELECT * FROM repository_backup_jobs WHERE status='completed' AND notified=0 AND validation_only=0 ORDER BY created_at DESC LIMIT 3").all();
   for(const job of retry.results||[])if(await notifyOwner(job,env).catch(()=>false))await env.ACCESS_DB.prepare('UPDATE repository_backup_jobs SET notified=1 WHERE id=?').bind(job.id).run();
   return queueBackup(env,now,false);
@@ -144,7 +148,7 @@ export async function backupCompletionApi(request,env){
   }
   try{
     const snapshot=await verifySnapshot(job,env);
-    const changed=await env.ACCESS_DB.prepare("UPDATE repository_backup_jobs SET status='completed',file_count=?,size_bytes=?,run_id=?,error=NULL WHERE id=? AND status='pending'").bind(snapshot.fileCount,snapshot.size,runId,job.id).run();
+    const changed=await env.ACCESS_DB.prepare("UPDATE repository_backup_jobs SET status='completed',file_count=?,size_bytes=?,run_id=?,error=NULL WHERE id=? AND status IN ('pending','failed')").bind(snapshot.fileCount,snapshot.size,runId,job.id).run();
     if(changed.meta?.changes===0)return json({success:true,status:'completed'});
     const completed={...job,status:'completed',file_count:snapshot.fileCount,size_bytes:snapshot.size,run_id:runId};
     const notified=await notifyOwner(completed,env).catch(()=>false);
@@ -157,11 +161,13 @@ export async function backupCompletionApi(request,env){
 }
 export async function backupJobStatus(env,id){
   await ensure(env);
+  await expirePending(env);
   const job=await env.ACCESS_DB.prepare('SELECT * FROM repository_backup_jobs WHERE id=?').bind(id).first();
   return job?publicJob(job,env):null;
 }
 export async function backupOverview(env){
   await ensure(env);
+  await expirePending(env);
   const jobs=await env.ACCESS_DB.prepare('SELECT * FROM repository_backup_jobs WHERE validation_only=0 ORDER BY created_at DESC LIMIT 100').all();
   const legacy=await env.ACCESS_DB.prepare('SELECT tag,created_at FROM automatic_backups ORDER BY created_at DESC').all();
   const rows=(jobs.results||[]).map(job=>publicJob(job,env));
