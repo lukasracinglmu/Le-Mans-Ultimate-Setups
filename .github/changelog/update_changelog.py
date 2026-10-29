@@ -113,6 +113,8 @@ def explicit_notes(message: str) -> list[dict]:
 
 
 def area(path: str) -> str:
+    # Worker modules live in src/ and served files in public/; older commits use root paths.
+    site_path = path.removeprefix("src/").removeprefix("public/")
     known = {
         "index.html": "Website-Oberfläche",
         "worker.js": "Core-Worker und API",
@@ -126,15 +128,15 @@ def area(path: str) -> str:
         "wrangler.jsonc": "Worker-Konfiguration",
         "setups.json": "Fahrzeugkatalog",
     }
-    if path in known:
-        return known[path]
+    if site_path in known:
+        return known[site_path]
     if path.startswith(".github/changelog/"):
         return "Automatische Changelog-Erstellung"
     if path.startswith(".github/workflows/"):
         return "GitHub-Automationen"
     if path.startswith("discord-presence/"):
         return "Discord Presence Bot"
-    if path.startswith("assets/"):
+    if site_path.startswith("assets/"):
         return "Bild- und Branding-Dateien"
     if Path(path).suffix.lower() in {".md", ".txt"}:
         return "Projektdokumentation"

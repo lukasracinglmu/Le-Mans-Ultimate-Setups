@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-const text = readFileSync(new URL("../ui-hotfix.js", import.meta.url), "utf8");
+const text = readFileSync(new URL("../src/ui-hotfix.js", import.meta.url), "utf8");
 const moduleContext = vm.createContext({});
 vm.runInContext(
   text.replace(/^import .*;\s*/, "").replace("export default {", "const worker = {") +

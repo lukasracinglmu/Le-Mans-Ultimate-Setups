@@ -9,8 +9,8 @@ import {
   canConfirmSetupRequest,
 } from "../discord-presence/request-manufacturers.js";
 import { matchingRequestSetups } from "../discord-presence/request-tracks.js";
-import production from "../production-worker.js";
-import base from "../worker.js";
+import production from "../src/production-worker.js";
+import base from "../src/worker.js";
 const owner = "1033453785416208564";
 const env = {
   GITHUB_TOKEN: "test-repo",
@@ -89,7 +89,7 @@ async function website(files, manufacturer) {
   base.fetch = async () =>
     Response.json({ loggedIn: true, databaseAccess: true, user: { id: owner, username: "Lukas" } });
   globalThis.fetch = async (url, options) => {
-    if (String(url).includes("/contents/setups.json"))
+    if (String(url).includes("/contents/public/setups.json"))
       return Response.json({ Hypercar: [{ name: "Toyota GR010" }] });
     if (String(url).includes("api.github.com"))
       return Response.json(files.map((name) => ({ name, type: "file" })));
@@ -128,7 +128,7 @@ test("Website sendet GO-Request trotz vorhandenem HYMO-Setup und blockiert nur d
   }
 });
 test("Formular bietet optionale Herstellerwahl mit zurücksetzbarer Egal-Option an", () => {
-  const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../public/request.html", import.meta.url), "utf8");
   assert.match(html, /<select id="manufacturer">/);
   assert.match(html, /<label for="manufacturer">Setup-Hersteller \(optional\)<\/label\s*>/);
   assert.match(html, /<option value="">Egal – keine Präferenz<\/option>/);

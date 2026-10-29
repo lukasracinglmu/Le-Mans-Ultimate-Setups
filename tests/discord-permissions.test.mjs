@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { rolePermissions, resolvePermissions } from "../discord-permissions.js";
-import accessWorker from "../access-worker.js";
-import worker from "../worker.js";
+import { rolePermissions, resolvePermissions } from "../src/discord-permissions.js";
+import accessWorker from "../src/access-worker.js";
+import worker from "../src/worker.js";
 
 const envBase = {
   DISCORD_GUILD_ID: "1464926567401652418",

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readRepoFile, readSiteFile } from "../repo-read.js";
-import production from "../production-worker.js";
-import runtime from "../runtime-worker.js";
-import worker from "../worker.js";
+import { readRepoFile, readSiteFile } from "../src/repo-read.js";
+import production from "../src/production-worker.js";
+import runtime from "../src/runtime-worker.js";
+import worker from "../src/worker.js";
 
 const envBase = {
   GITHUB_TOKEN: "server-only-secret",
@@ -44,7 +44,7 @@ test("private homepage uses authenticated raw Contents API without exposing cred
     async (url, opts) => {
       assert.equal(
         String(url),
-        "https://api.github.com/repos/lukasracinglmu/Le-Mans-Ultimate-Setups/contents/index.html?ref=release%2Ftest",
+        "https://api.github.com/repos/lukasracinglmu/Le-Mans-Ultimate-Setups/contents/public/index.html?ref=release%2Ftest",
       );
       assert.equal(opts.headers.Authorization, "Bearer " + envBase.GITHUB_TOKEN);
       assert.equal(opts.headers.Accept, "application/vnd.github.raw+json");
@@ -152,7 +152,7 @@ test("authorized catalog reads private GitHub and retains protected asset fallba
     let assets = 0;
     await withFetch(
       async (url, opts) => {
-        assert.match(String(url), /\/contents\/setups.json\?ref=/);
+        assert.match(String(url), /\/contents\/public\/setups.json\?ref=/);
         assert.equal(opts.headers.Authorization, "Bearer " + envBase.GITHUB_TOKEN);
         return available ? Response.json({ categories: [] }) : new Response("", { status: 404 });
       },
@@ -183,7 +183,7 @@ test("authorized catalog reads private GitHub and retains protected asset fallba
 test("manufacturer image reads private content and supplies image MIME type", async () => {
   await withFetch(
     async (url, opts) => {
-      assert.match(String(url), /\/contents\/assets\/manufacturers\/bealien.webp/);
+      assert.match(String(url), /\/contents\/public\/assets\/manufacturers\/bealien.webp/);
       assert.equal(opts.headers.Authorization, "Bearer " + envBase.GITHUB_TOKEN);
       return new Response(new Uint8Array([1, 2, 3]));
     },

@@ -7,9 +7,9 @@ import {
   githubFailure,
   persistSetupFile,
   readUploadForm,
-} from "../upload-storage.js";
-import worker from "../worker.js";
-import productionWorker from "../production-worker.js";
+} from "../src/upload-storage.js";
+import worker from "../src/worker.js";
+import productionWorker from "../src/production-worker.js";
 
 const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3, 4, 255]);
 const file = new File([bytes], "test.zip");

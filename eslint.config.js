@@ -31,7 +31,7 @@ export default defineConfig([
   },
   {
     // Cloudflare Worker modules
-    files: ["*.js"],
+    files: ["src/**/*.js"],
     languageOptions: {
       globals: globals.serviceworker,
     },
@@ -70,7 +70,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["index.html"],
+    files: ["public/index.html"],
     languageOptions: {
       globals: {
         // Provided at runtime by the script that ui-hotfix.js injects.

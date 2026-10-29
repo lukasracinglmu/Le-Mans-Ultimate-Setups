@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import runtime from "../runtime-worker.js";
-import worker from "../worker.js";
-import { resolvePermissions } from "../discord-permissions.js";
+import runtime from "../src/runtime-worker.js";
+import worker from "../src/worker.js";
+import { resolvePermissions } from "../src/discord-permissions.js";
 
 const id = "222222222222222222";
 const config = {
@@ -132,7 +132,7 @@ for (const [label, role, upload, admin] of [
           }
           if (value.includes("api.github.com")) {
             githubReads++;
-            return value.includes("/contents/setups.json")
+            return value.includes("/contents/public/setups.json")
               ? Response.json({ Hypercar: [{ name: "Test Car" }] })
               : Response.json([]);
           }

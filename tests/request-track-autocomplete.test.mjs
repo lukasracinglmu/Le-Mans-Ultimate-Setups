@@ -8,14 +8,14 @@ import {
   resolveRequestTrack,
   matchingRequestSetups,
 } from "../discord-presence/request-tracks.js";
-import production from "../production-worker.js";
+import production from "../src/production-worker.js";
 import {
   REQUEST_MANUFACTURERS,
   resolveRequestManufacturer,
   setupRequestPayload,
   isAnyRequestManufacturer,
 } from "../discord-presence/request-manufacturers.js";
-import base from "../worker.js";
+import base from "../src/worker.js";
 
 test("Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts", () => {
   assert.equal(REQUEST_TRACKS.length, 33);
@@ -172,7 +172,7 @@ test("Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf", async 
 });
 
 test("Browser findet Kurzformen und Layouts aus dem gelieferten Katalog", () => {
-  const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../public/request.html", import.meta.url), "utf8");
   const source = html
     .slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
     .replace(/let REQUEST_TRACKS\s*=\s*\[\]/, "const REQUEST_TRACKS=tracks");
@@ -430,7 +430,7 @@ test("Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrz
 });
 
 test("Paul bleibt Paul Ricard; Aliase treffen keine beliebigen Wortfragmente", () => {
-  const html = readFileSync(new URL("../request.html", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../public/request.html", import.meta.url), "utf8");
   const source = html
     .slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
     .replace(/let REQUEST_TRACKS\s*=\s*\[\]/, "const REQUEST_TRACKS=tracks");

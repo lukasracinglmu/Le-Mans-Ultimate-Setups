@@ -26,8 +26,9 @@ export async function readRepoFile(env, path) {
   }
 }
 
+// Site files live in public/ in the repository and at the root of the asset binding.
 export async function readSiteFile(request, env, path) {
-  const source = await readRepoFile(env, path);
+  const source = await readRepoFile(env, "public/" + path);
   if (source.ok) return source;
   await source.body?.cancel();
   try {

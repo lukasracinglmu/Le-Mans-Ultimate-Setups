@@ -206,6 +206,16 @@ class GitTest(unittest.TestCase):
 
 
 class TextTest(unittest.TestCase):
+    def test_moved_files_keep_their_area(self):
+        for old, new in [
+            ("index.html", "public/index.html"),
+            ("worker.js", "src/worker.js"),
+            ("setups.json", "public/setups.json"),
+            ("assets/banner.svg", "public/assets/banner.svg"),
+        ]:
+            self.assertEqual(app.area(new), app.area(old))
+            self.assertNotEqual(app.area(new), "Projektdateien")
+
     def test_same_day_insertion_preserves_existing_categories(self):
         original = "# Changelog\n\n## 2026-10-22 – Nachtrag\n\n### Geändert\n\n- Alter Eintrag.\n\n### Behoben\n\n- Alte Korrektur.\n\n## 2026-10-20\n\nAlt.\n"
         saved = app.insert_entries(original, "2026-10-22", "Geändert", ["- Neuer Eintrag."])

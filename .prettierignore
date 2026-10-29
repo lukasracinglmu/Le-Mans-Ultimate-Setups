@@ -10,4 +10,4 @@ CHANGELOG.md
 # matches and inject the CSS and JavaScript those rewrites depend on.
 # Reformatting the file breaks the matches. Format it once the runtime
 # patches live in the page itself (issue #9).
-index.html
+public/index.html
