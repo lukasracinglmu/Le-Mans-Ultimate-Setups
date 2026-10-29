@@ -42,3 +42,4 @@ eslint.config.js
 .prettierrc.json
 .prettierignore
 .git-blame-ignore-revs
+.nvmrc

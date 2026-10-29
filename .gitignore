@@ -15,6 +15,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Python bytecode
+__pycache__/
+
 # Wrangler local state
 .wrangler/
 .dev.vars

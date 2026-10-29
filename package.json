@@ -2,7 +2,14 @@
   "name": "le-mans-ultimate-setups",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
+    "test": "npm run test:node && npm run test:python",
+    "test:node": "node --test tests/*.test.mjs",
+    "test:python": "python3 -B -m unittest discover -s tests -p \"test_*.py\" && python3 -B -m unittest discover -s .github/changelog -p \"test_*.py\"",
+    "check:deploy": "node tools/predeploy-check.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,mjs,html}\"",

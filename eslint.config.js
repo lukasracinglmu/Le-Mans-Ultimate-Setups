@@ -17,12 +17,7 @@ const jsRules = {
 
 export default defineConfig([
   {
-    ignores: [
-      "setups/",
-      "audit-logs/",
-      // Stored base64-encoded since commit 6578b70; restore it before linting (issue #3).
-      "tests/login-only-controls.test.mjs",
-    ],
+    ignores: ["setups/", "audit-logs/"],
   },
   {
     files: ["**/*.{js,mjs}"],

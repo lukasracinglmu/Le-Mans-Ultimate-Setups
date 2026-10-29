@@ -1,1 +1,36 @@
-aW1wb3J0IHRlc3QgZnJvbSAnbm9kZTp0ZXN0JzsKaW1wb3J0IGFzc2VydCBmcm9tICdub2RlOmFzc2VydC9zdHJpY3QnOwppbXBvcnQgeyByZWFkRmlsZSB9IGZyb20gJ25vZGU6ZnMvcHJvbWlzZXMnOwoKY29uc3QgaW5kZXggPSBhd2FpdCByZWFkRmlsZShuZXcgVVJMKCcuLi9pbmRleC5odG1sJywgaW1wb3J0Lm1ldGEudXJsKSwgJ3V0ZjgnKTsKY29uc3QgaG90Zml4ID0gYXdhaXQgcmVhZEZpbGUobmV3IFVSTCgnLi4vdWktaG90Zml4LmpzJywgaW1wb3J0Lm1ldGEudXJsKSwgJ3V0ZjgnKTsKCnRlc3QoJ2xvZ2luLW9ubHkgY29udHJvbHMgYXJlIGhpZGRlbiBpbiB0aGUgaW5pdGlhbCBIVE1MJywgKCkgPT4gewogIGFzc2VydC5tYXRjaChpbmRleCwgLzxuYXYgY2xhc3M9InBhZ2UtdXRpbGl0aWVzIGxvZ2luLW9ubHktY29udHJvbCBoaWRkZW4iW14+XSo+PGEgaWQ9ImJ1Z1JlcG9ydExpbmsiLyk7CiAgYXNzZXJ0Lm1hdGNoKGluZGV4LCAvaWQ9Im1mckZpbHRlciIgY2xhc3M9Im1mci1maWx0ZXIgbG9naW4tb25seS1jb250cm9sIGhpZGRlbiIvKTsKICBhc3NlcnQubWF0Y2goaW5kZXgsIC9pZD0iY2xhc3NGaWx0ZXIiIGNsYXNzPSJtZnItZmlsdGVyIGxvZ2luLW9ubHktY29udHJvbCBoaWRkZW4iLyk7Cn0pOwoKdGVzdCgnYXV0aGVudGljYXRpb24gY29udHJvbHMgYWxsIGxvZ2luLW9ubHkgZWxlbWVudHMnLCAoKSA9PiB7CiAgYXNzZXJ0Lm1hdGNoKGhvdGZpeCwgL2NvbnN0IHNldExvZ2luQ29udHJvbHM9XCh2aXNpYmxlXCk9PmRvY3VtZW50XC5xdWVyeVNlbGVjdG9yQWxsXCgnXC5sb2dpbi1vbmx5LWNvbnRyb2wnXCkvKTsKICBhc3NlcnQubWF0Y2goaG90Zml4LCAvY3VycmVudFVzZXI9ZFwudXNlclx8XHxudWxsO1xzKnNldExvZ2luQ29udHJvbHNcKHRydWVcKTsvKTsKICBhc3NlcnQubWF0Y2goaG90Zml4LCAvaWZcKCFkXC5sb2dnZWRJblwpXHtjdXJyZW50VXNlcj1udWxsO3NldExvZ2luQ29udHJvbHNcKGZhbHNlXCk7Lyk7CiAgYXNzZXJ0LmRvZXNOb3RNYXRjaChob3RmaXgsIC9odG1sOm5vdFwoXFtkYXRhLWRiLWFjY2Vzcz0iYXV0aG9yaXplZCJcXVwpICNtZnJGaWx0ZXIvKTsKfSk7Cg==
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const hotfix = await readFile(new URL("../ui-hotfix.js", import.meta.url), "utf8");
+
+// True when the element itself or one of its ancestors starts hidden as a login-only control.
+function hiddenUntilLogin(html, id) {
+  const position = html.indexOf(`id="${id}"`);
+  assert.ok(position >= 0, `#${id} is missing`);
+  const head = html.slice(0, html.indexOf(">", position) + 1);
+  return [...head.matchAll(/<(\w+)\b[^>]*\bclass="([^"]*)"[^>]*>/g)].some((match) => {
+    const [opening, tag, classes] = match;
+    if (!/\blogin-only-control\b/.test(classes) || !/\bhidden\b/.test(classes)) return false;
+    const inside = head.slice(match.index + opening.length);
+    const opened = (inside.match(new RegExp(`<${tag}\\b`, "g")) || []).length;
+    const closed = (inside.match(new RegExp(`</${tag}>`, "g")) || []).length;
+    return opened >= closed;
+  });
+}
+
+test("login-only controls are hidden in the initial HTML", () => {
+  for (const id of ["bugReportLink", "mfrFilter", "classFilter"])
+    assert.ok(hiddenUntilLogin(index, id), `#${id} must start hidden until login`);
+});
+
+test("authentication controls all login-only elements", () => {
+  assert.match(
+    hotfix,
+    /const setLoginControls=\(visible\)=>document\.querySelectorAll\('\.login-only-control'\)/,
+  );
+  assert.match(hotfix, /currentUser=d\.user\|\|null;\s*setLoginControls\(true\);/);
+  assert.match(hotfix, /if\(!d\??\.loggedIn\)\{currentUser=null;setLoginControls\(false\);/);
+  assert.doesNotMatch(hotfix, /html:not\(\[data-db-access="authorized"\]\) #mfrFilter/);
+});

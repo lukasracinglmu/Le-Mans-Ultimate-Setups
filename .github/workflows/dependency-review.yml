@@ -6,6 +6,9 @@ permissions:
   contents: read
 jobs:
   dependency-review:
+    # Dependency review needs GitHub Code Security on private repositories, which
+    # is not enabled here. Remove this guard once it is enabled.
+    if: toJSON(github.event.repository.private) == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Dependency review
