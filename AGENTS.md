@@ -40,6 +40,13 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Feste IDs, die Worker und Bot teilen (Whitelist, Rollen-Ersatzwert des Bots), stehen nur in `discord-presence/request-manufacturers.js`.
 - Werte in `CLOUDFLARE-VARIABLEN.md` aus `wrangler.jsonc` übernehmen, nicht umgekehrt.
 
+### Gemeinsame Hilfen (`src/lib/`)
+
+- JSON-Antworten nur über `json()` aus `src/lib/http.js`. Es setzt Security-Header und `no-store`. Abweichendes `Cache-Control` oder `Retry-After` als dritten Parameter übergeben.
+- GitHub-Anfragen über `githubRequest()` aus `src/lib/github.js`. `Accept`, Timeout und Redirect-Verhalten gibt der Aufrufer mit, weil sie sich bewusst unterscheiden. ZIP-Uploads haben z. B. kein Timeout.
+- Die CSPs der HTML-Seiten (Wartungsseite, geschützte Seiten, Rest) unterscheiden sich bewusst. Nicht vereinheitlichen.
+- Verhaltensgleichheit bei Refactorings per Routen-Schnappschuss prüfen: dieselben Anfragen durch die Worker-Kette auf `main` und auf dem Branch schicken, Status und Body vergleichen.
+
 ### `public/index.html`
 
 - `production-worker.js`, `ui-hotfix.js` und `access-worker.js` ändern die Seite zur Laufzeit per exakter String- und Regex-Suche und schleusen CSS/JS ein, von dem diese Änderungen abhängen. Markup und Inline-Scripts deshalb erst nach #9 umformatieren oder verschieben.
@@ -53,6 +60,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Tests, die Quelltext per Textsuche lesen, formatierungsunabhängig halten: `\s*` statt fester Leerzeichen, Funktionen per Klammerzählung herauslösen.
 - Angepasste Tests per Gegenprobe absichern: Fehler im Code einbauen, der Test muss rot werden.
 - Test-Umgebungen setzen benötigte Variablen wie `DISCORD_OWNER_USER_ID` ausdrücklich. Es gibt keine Ersatzwerte mehr, auf die sich ein Test verlassen könnte.
+- Repo-Einstellungen in Tests per `...repositoryEnv` aus `tests/helpers/repository-env.mjs`. Die Werte kommen aus `wrangler.jsonc`.
 
 ### Repo-Pflege
 
