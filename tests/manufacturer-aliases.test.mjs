@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { readFileSync } from "node:fs";
-import { setupManufacturer, readPreviousSetups } from "../setup-lifecycle.js";
+import { setupManufacturer, readPreviousSetups } from "../src/setup-lifecycle.js";
 
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const extractFunction = (code, name) => {
@@ -14,18 +14,18 @@ const extractFunction = (code, name) => {
   }
   throw new Error(name + " not found");
 };
-const source = read("index.html");
+const source = read("public/index.html");
 const frontend = vm.runInNewContext(extractFunction(source, "classifyVendor") + ";classifyVendor");
 const access = vm.runInNewContext(
-  extractFunction(read("access-worker.js"), "classifyManufacturer") + ";classifyManufacturer",
+  extractFunction(read("src/access-worker.js"), "classifyManufacturer") + ";classifyManufacturer",
 );
 const audit = vm.runInNewContext(
-  read("audit-log.js").match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +
+  read("src/audit-log.js").match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +
     ";classifyManufacturer",
 );
 const hotfixContext = vm.createContext({});
 vm.runInContext(
-  read("ui-hotfix.js")
+  read("src/ui-hotfix.js")
     .replace(/^import .*;\s*/, "")
     .replace("export default {", "const worker = {") + ";globalThis.script=HOTFIX_JS;",
   hotfixContext,

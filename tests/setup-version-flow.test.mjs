@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
-import { compareSetupVersions, cleanSetupFileName } from "../setup-version.js";
-import { persistSetupFile, gitBlobSha } from "../upload-storage.js";
-import production from "../production-worker.js";
-const source = await readFile(new URL("../index.html", import.meta.url), "utf8");
+import { compareSetupVersions, cleanSetupFileName } from "../src/setup-version.js";
+import { persistSetupFile, gitBlobSha } from "../src/upload-storage.js";
+import production from "../src/production-worker.js";
+const source = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const client = vm.runInNewContext(
   source.slice(source.indexOf("function displaySetupFileName("), source.indexOf("function esc(")) +
     source.slice(
@@ -191,7 +191,7 @@ test("duplicate hint must match the real bytes and cannot create a false success
 });
 
 test("verified duplicate does not lower the stored version", async () => {
-  const { default: base } = await import("../worker.js"),
+  const { default: base } = await import("../src/worker.js"),
     originalBase = base.fetch;
   base.fetch = async () =>
     Response.json({

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { submitBugReport, BUG_REPORT_RECIPIENT } from "../bug-reports.js";
+import { submitBugReport, BUG_REPORT_RECIPIENT } from "../src/bug-reports.js";
 
 for (const failure of [null, "channel", "message", "network"])
   test("report acknowledgement: " + failure, async () => {
@@ -79,6 +79,6 @@ for (const failure of [null, "channel", "message", "network"])
   });
 
 test("ticket numbers use white in every status", () => {
-  const html = readFileSync(new URL("../bug-tickets.html", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../public/bug-tickets.html", import.meta.url), "utf8");
   assert.match(html, /\.nr\s*\{\s*color:\s*#fff;/);
 });

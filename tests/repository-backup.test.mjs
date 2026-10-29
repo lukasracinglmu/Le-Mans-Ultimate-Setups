@@ -8,8 +8,8 @@ import {
   backupCompletionApi,
   backupOverview,
   verifyBackupIdentity,
-} from "../automatic-backup.js";
-import { fullAdminApi } from "../full-admin.js";
+} from "../src/automatic-backup.js";
+import { fullAdminApi } from "../src/full-admin.js";
 
 function database() {
   const db = new DatabaseSync(":memory:");

@@ -6,10 +6,10 @@ import {
   applyPreviousSetups,
   deleteGithubSetup,
   enrichSetupLifecycle,
-} from "../setup-lifecycle.js";
-import { persistSetupFile, gitBlobSha } from "../upload-storage.js";
-import production from "../production-worker.js";
-import base from "../worker.js";
+} from "../src/setup-lifecycle.js";
+import { persistSetupFile, gitBlobSha } from "../src/upload-storage.js";
+import production from "../src/production-worker.js";
+import base from "../src/worker.js";
 const oldSha = "a".repeat(40),
   newSha = "b".repeat(40),
   name = "Alpine Spa HYMO.zip",

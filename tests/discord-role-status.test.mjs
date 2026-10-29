@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import worker from "../worker.js";
+import worker from "../src/worker.js";
 const env = {
   SESSION_SECRET: "diagnostic-test-secret",
   DISCORD_OWNER_USER_ID: "1033453785416208564",

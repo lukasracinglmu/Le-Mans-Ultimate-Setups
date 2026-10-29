@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import worker from "../production-worker.js";
-import baseWorker from "../worker.js";
-import { readSetupVersion, enrichSetupVersions } from "../setup-version.js";
+import worker from "../src/production-worker.js";
+import baseWorker from "../src/worker.js";
+import { readSetupVersion, enrichSetupVersions } from "../src/setup-version.js";
 
 function formWithVersion(value) {
   const form = new FormData();

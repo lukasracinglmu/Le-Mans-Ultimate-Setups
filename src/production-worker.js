@@ -15,13 +15,13 @@ import {
   resolveRequestTrack,
   searchRequestTracks,
   matchingRequestSetups,
-} from "./discord-presence/request-tracks.js";
+} from "../discord-presence/request-tracks.js";
 import {
   resolveRequestManufacturer,
   setupRequestPayload,
   canConfirmSetupRequest,
   isAnyRequestManufacturer,
-} from "./discord-presence/request-manufacturers.js";
+} from "../discord-presence/request-manufacturers.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const REQUEST_MODAL_ID = "lmu_setup_request";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readDisplayName, enrichDisplayNames } from "../setup-display-name.js";
-import accessWorker from "../access-worker.js";
+import { readDisplayName, enrichDisplayNames } from "../src/setup-display-name.js";
+import accessWorker from "../src/access-worker.js";
 const sha = "a".repeat(40),
   userId = "1033453785416208564";
 test("display name validates text and accepts an empty reset", () => {

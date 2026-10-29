@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
-const hotfix = await readFile(new URL("../ui-hotfix.js", import.meta.url), "utf8");
+const index = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+const hotfix = await readFile(new URL("../src/ui-hotfix.js", import.meta.url), "utf8");
 
 // True when the element itself or one of its ancestors starts hidden as a login-only control.
 function hiddenUntilLogin(html, id) {

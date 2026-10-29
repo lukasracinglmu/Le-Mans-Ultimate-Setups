@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ticketApi } from "../bug-tickets.js";
+import { ticketApi } from "../src/bug-tickets.js";
 
 const scenarios = [
   ["open", "progress", "in Bearbeitung"],

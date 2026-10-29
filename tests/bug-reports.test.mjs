@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { submitBugReport, BUG_REPORT_RECIPIENT, reportImage } from "../bug-reports.js";
-import runtime from "../runtime-worker.js";
+import { submitBugReport, BUG_REPORT_RECIPIENT, reportImage } from "../src/bug-reports.js";
+import runtime from "../src/runtime-worker.js";
 const user = { id: "222222222222222222", username: "Reporter" },
   reportId = "a".repeat(25),
   channelId = "333333333333333333",
