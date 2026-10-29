@@ -2,6 +2,7 @@
 import { submitBugReport } from "./bug-reports.js";
 import { ticketApi, isTicketOwner } from "./bug-tickets.js";
 import { ownerUserId } from "./config.js";
+import { hasInlinePatches } from "./lib/home-page.js";
 import { json, securityHeaders } from "./lib/http.js";
 import { fullAdminApi, isMaintenanceActive, maintenanceState } from "./full-admin.js";
 import productionWorker from "./access-worker.js";
@@ -181,9 +182,11 @@ export default {
       response.headers.get("content-type")?.includes("text/html")
     ) {
       let html = await response.text();
-      html = injectHomeLogo(html);
-      html = injectRoleHeader(html);
-      html = hideEmbeddedSections(html);
+      if (!hasInlinePatches(html)) {
+        html = injectHomeLogo(html);
+        html = injectRoleHeader(html);
+        html = hideEmbeddedSections(html);
+      }
       const headers = new Headers(response.headers);
       headers.delete("Content-Length");
       headers.set("Cache-Control", "private, no-store");

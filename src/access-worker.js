@@ -8,6 +8,7 @@ import { storeSetupVersion } from "./setup-version.js";
 import { writeSetupAuditEvent } from "./audit-log.js";
 import { githubBranch } from "./config.js";
 import { githubRequest } from "./lib/github.js";
+import { hasInlinePatches } from "./lib/home-page.js";
 import { json, safeJson } from "./lib/http.js";
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -289,8 +290,10 @@ export default {
       response.headers.get("content-type")?.includes("text/html")
     ) {
       let html = await response.text();
-      html = fixHeaderLogo(html);
-      html = injectAdminUi(html);
+      if (!hasInlinePatches(html)) {
+        html = fixHeaderLogo(html);
+        html = injectAdminUi(html);
+      }
       const headers = new Headers(response.headers);
       headers.set("Content-Length", String(new TextEncoder().encode(html).length));
       return new Response(html, {

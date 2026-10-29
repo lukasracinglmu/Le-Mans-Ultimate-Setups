@@ -1,3 +1,4 @@
+import { hasInlinePatches } from "./lib/home-page.js";
 import productionWorker from "./production-worker.js";
 
 const HOTFIX_CSS = `
@@ -215,7 +216,8 @@ export default {
     const headers = new Headers(response.headers);
     headers.set("Cache-Control", "no-store");
     headers.delete("Content-Length");
-    return new Response(applyHotfix(await response.text()), {
+    const html = await response.text();
+    return new Response(hasInlinePatches(html) ? html : applyHotfix(html), {
       status: response.status,
       statusText: response.statusText,
       headers,
