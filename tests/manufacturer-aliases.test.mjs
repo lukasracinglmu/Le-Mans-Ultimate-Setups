@@ -5,9 +5,10 @@ import {readFileSync} from 'node:fs';
 import {setupManufacturer,readPreviousSetups} from '../setup-lifecycle.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const extractFunction=(code,name)=>{const start=code.indexOf('function '+name+'(');let depth=0;for(let i=code.indexOf('{',start);start>=0&&i<code.length;i++){if(code[i]==='{')depth++;if(code[i]==='}'&&--depth===0)return code.slice(start,i+1);}throw new Error(name+' not found');};
 const source=read('index.html');
 const frontend=vm.runInNewContext(source.match(/function classifyVendor\(name\)\{[^\n]+/)[0]+';classifyVendor');
-const access=vm.runInNewContext(read('access-worker.js').match(/function classifyManufacturer\(name\) \{[^\n]+/)[0]+';classifyManufacturer');
+const access=vm.runInNewContext(extractFunction(read('access-worker.js'),'classifyManufacturer')+';classifyManufacturer');
 const audit=vm.runInNewContext(read('audit-log.js').match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0]+';classifyManufacturer');
 const hotfixContext=vm.createContext({});
 vm.runInContext(read('ui-hotfix.js').replace(/^import .*;\s*/,'').replace('export default {','const worker = {')+';globalThis.script=HOTFIX_JS;',hotfixContext);
