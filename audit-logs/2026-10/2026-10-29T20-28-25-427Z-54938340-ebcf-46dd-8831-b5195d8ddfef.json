@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-29T20:28:25.427Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Martin H",
+  "discordUserId": "646758275714514955",
+  "setup": "GO V1.4.3 992GT3 LMGT3 BAR.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "GO V1.4.3 992GT3 LMGT3 BAR",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
