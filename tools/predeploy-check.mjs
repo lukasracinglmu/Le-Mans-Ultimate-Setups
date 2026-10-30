@@ -20,7 +20,10 @@ const workerFiles = (await readdir('src', { recursive: true }))
 const botFiles = (await readdir('discord-presence'))
 	.filter((file) => file.endsWith('.js'))
 	.map((file) => 'discord-presence/' + file);
-const jsFiles = [...workerFiles, ...botFiles];
+const pageFiles = (await readdir('public/js', { recursive: true }))
+	.filter((file) => file.endsWith('.js'))
+	.map((file) => 'public/js/' + file);
+const jsFiles = [...workerFiles, ...botFiles, ...pageFiles];
 for (const file of jsFiles) {
 	const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
 	if (result.status !== 0)

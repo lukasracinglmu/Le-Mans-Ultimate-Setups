@@ -13,7 +13,7 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 | Ordner | Inhalt |
 |---|---|
 | `src/` | Worker-Code. Läuft nur auf dem Server und wird nie ausgeliefert. |
-| `public/` | Alles, was der Worker ausliefern darf: HTML-Seiten, Bilder, `setups.json`. Ist das Asset-Verzeichnis in `wrangler.jsonc`. |
+| `public/` | Alles, was der Worker ausliefern darf: HTML-Seiten, ihre Scripts in `public/js/`, Bilder, `setups.json`. Ist das Asset-Verzeichnis in `wrangler.jsonc`. |
 | `discord-presence/` | Discord-Bot, läuft getrennt vom Worker |
 | `tests/` | Tests, `npm test` |
 | `tools/` | Hilfsskripte, z. B. `npm run check:deploy` |
@@ -53,6 +53,16 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - GitHub-Anfragen über `githubRequest()` aus `src/lib/github.js`. `Accept`, Timeout und Redirect-Verhalten gibt der Aufrufer mit, weil sie sich bewusst unterscheiden. ZIP-Uploads haben z. B. kein Timeout.
 - Die CSPs der HTML-Seiten (Wartungsseite, geschützte Seiten, Rest) unterscheiden sich bewusst. Nicht vereinheitlichen.
 - Verhaltensgleichheit bei Refactorings per Routen-Schnappschuss prüfen: dieselben Anfragen durch die Worker-Kette auf `main` und auf dem Branch schicken, Status und Body vergleichen.
+
+### Seiten-Scripts (`public/js/`)
+
+- Jede Seite hat `public/js/<seite>/main.js` als Einstieg, der nur die Teile startet. Die Teile daneben tun beim Import nichts, deshalb können Tests sie direkt importieren.
+- `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`.
+- Keine Inline-Scripts und keine `on*`-Attribute. `tests/page-scripts.test.mjs` prüft das für jede umgestellte Seite, neue Seiten dort eintragen. Die geschützten Seiten laufen mit `script-src 'self'`.
+- Dateien in `public/` dürfen nicht wie Module in `src/` heißen. `npm run check:deploy` vergleicht nur Dateinamen und hält z. B. `public/js/bug-tickets.js` für Worker-Code.
+- Umbauten im Browser gegen `main` vergleichen: derselbe Ablauf mit Mock-API auf beiden Ständen, der Branch mit der echten CSP. Dazu die String-Literale von altem und neuem Code vergleichen.
+- agent-browser klickt auf Koordinaten. Liegt das Ziel außerhalb des Sichtbereichs, geht der Klick ohne Fehlermeldung ins Leere. Vorher per `scrollIntoView()` ins Bild holen.
+- Unicode-Escapes wie `̀` in Regexen nach dem Schreiben per `grep` prüfen. Manche Werkzeuge schreiben stattdessen das Zeichen selbst.
 
 ### `public/index.html`
 

@@ -1,19 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-
-const html = readFileSync(new URL('../public/admin.html', import.meta.url), 'utf8');
-const helpers = html.slice(
-	html.indexOf('function grantTime('),
-	html.search(/const backupButton\s*=/)
-);
-const formatter = html.match(/const formatGrantDate\s*=[\s\S]*?;/)[0];
-const renderer = html.slice(
-	html.indexOf('function renderGrantList('),
-	html.indexOf('async function change(')
-);
-const dates = vm.runInNewContext(helpers + ';({grantTime,latestGrantTime,compareGrantUsers})');
+import { mergeGrantUsers, parseUserIds } from '../public/js/admin/access.js';
+import * as dates from '../public/js/admin/grants.js';
+import { renderGrantList, selectGrantUsers } from '../public/js/admin/grants.js';
 
 test('Freigabedatum behandelt SQLite, ISO und Zeitzonen gleich und verwirft fehlende Daten', () => {
 	const expected = Date.parse('2026-10-27T12:00:00Z');
@@ -56,23 +45,14 @@ class Element {
 		this.children.push(child);
 		return child;
 	}
+	addEventListener() {}
 }
+globalThis.document = { createElement: () => new Element() };
 function page(users, fullRows = []) {
 	const list = new Element();
-	const context = vm.createContext({
-		document: { createElement: () => new Element() },
-		list,
-		grantUsers: users,
-		grantFullRows: fullRows,
-		permissionFilter: { value: 'all' },
-		grantSort: { value: 'newest' },
-		me: { isOwner: true },
-	});
-	vm.runInContext(helpers + formatter + renderer, context);
 	const render = (order, permission = 'all') => {
-		context.grantSort.value = order;
-		context.permissionFilter.value = permission;
-		vm.runInContext('renderGrantList()', context);
+		const shown = selectGrantUsers(users, fullRows, permission, order);
+		renderGrantList(list, shown, { isOwner: true, change() {} });
 		return list.children;
 	};
 	return { render, list };
@@ -134,4 +114,34 @@ test('Rechtefilter und Reihenfolge kombinieren sich ohne weitere Abfragen oder v
 		'198399938739175424',
 	]);
 	assert.equal(list.children.length, 4);
+});
+
+test('Mehrere Discord-IDs werden getrennt, entdoppelt und ungültige verworfen', () => {
+	assert.deepEqual(
+		parseUserIds('1033453785416208564, 222222222222222222;1033453785416208564\n123 abc'),
+		['1033453785416208564', '222222222222222222']
+	);
+	assert.deepEqual(parseUserIds(undefined), []);
+});
+
+test('Full-Admin-Freigaben ergänzen die Rechteliste und übernehmen Name und Avatar', () => {
+	const users = mergeGrantUsers(
+		[
+			{ userId: '222222222222222222', username: 'alt', databaseAccess: true },
+			{ userId: '222222222222222222', username: 'doppelt', databaseAccess: true },
+		],
+		[
+			{ user_id: '222222222222222222', username: 'neu', avatar: 'a.png' },
+			{ user_id: '333333333333333333', created_at: '2026-10-26 12:00:00' },
+		]
+	);
+	assert.deepEqual(users, [
+		{ userId: '222222222222222222', username: 'neu', avatar: 'a.png', databaseAccess: true },
+		{
+			userId: '333333333333333333',
+			username: 'Discord-Nutzer',
+			fullAdminAccess: true,
+			fullAdminGrantedAt: '2026-10-26 12:00:00',
+		},
+	]);
 });

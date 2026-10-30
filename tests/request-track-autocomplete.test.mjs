@@ -18,7 +18,15 @@ import {
 	isAnyRequestManufacturer,
 } from '../discord-presence/request-manufacturers.js';
 import base from '../src/worker.js';
+import * as requestPage from '../public/js/request/tracks.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+
+// The request page searches the list it loads from /api/request/tracks.
+const browser = {
+	resolveRequestTrack: (value) => requestPage.resolveRequestTrack(REQUEST_TRACKS, value),
+	searchRequestTracks: (value, limit) =>
+		requestPage.searchRequestTracks(REQUEST_TRACKS, value, limit),
+};
 
 test('Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
 	assert.equal(REQUEST_TRACKS.length, 33);
@@ -179,13 +187,7 @@ test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf', async 
 });
 
 test('Browser findet Kurzformen und Layouts aus dem gelieferten Katalog', () => {
-	const html = readFileSync(new URL('../public/request.html', import.meta.url), 'utf8');
-	const source = html
-		.slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
-		.replace(/let REQUEST_TRACKS\s*=\s*\[\]/, 'const REQUEST_TRACKS=tracks');
-	const search = vm.runInNewContext(source + ';({searchRequestTracks,resolveRequestTrack})', {
-		tracks: REQUEST_TRACKS,
-	});
+	const search = browser;
 	assert.equal(search.resolveRequestTrack('portimao').name, 'Algarve / Portimão');
 	assert.equal(search.searchRequestTracks('spa')[0].name, 'Spa-Francorchamps');
 	assert.equal(search.searchRequestTracks('silver').length, 3);
@@ -439,13 +441,6 @@ test('Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrz
 });
 
 test('Paul bleibt Paul Ricard; Aliase treffen keine beliebigen Wortfragmente', () => {
-	const html = readFileSync(new URL('../public/request.html', import.meta.url), 'utf8');
-	const source = html
-		.slice(html.search(/let REQUEST_TRACKS\s*=\s*\[\]/), html.search(/const form\s*=/))
-		.replace(/let REQUEST_TRACKS\s*=\s*\[\]/, 'const REQUEST_TRACKS=tracks');
-	const browser = vm.runInNewContext(source + ';({searchRequestTracks,resolveRequestTrack})', {
-		tracks: REQUEST_TRACKS,
-	});
 	for (const search of [searchRequestTracks, browser.searchRequestTracks]) {
 		assert.ok(search('Pa').every((track) => track.name !== 'Interlagos'));
 		for (const query of ['Pau', 'Paul', 'paul ric', 'Ricard']) {

@@ -321,7 +321,16 @@ test('report page comes from the canonical asset path without a redirect loop', 
 		);
 		assert.equal(response.status, 200);
 		assert.equal(response.headers.get('Location'), null);
-		assert.match(response.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
+		const csp = response.headers.get('Content-Security-Policy');
+		assert.match(csp, /frame-ancestors 'none'/);
+		// The protected pages load their scripts from public/js only.
+		assert.equal(
+			csp
+				.split(';')
+				.map((directive) => directive.trim())
+				.find((directive) => directive.startsWith('script-src')),
+			"script-src 'self'"
+		);
 		assert.deepEqual(paths, ['/bug-report']);
 		assert.deepEqual(repositoryReads, []);
 	} finally {
