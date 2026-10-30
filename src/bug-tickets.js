@@ -1,4 +1,3 @@
-import { ownerUserId } from './config.js';
 import { readMe } from './features/auth.js';
 import { DISCORD_API } from './lib/discord.js';
 import { json } from './lib/http.js';
@@ -34,7 +33,8 @@ async function owner(request, env) {
 	const me = await readMe(request, env);
 	if (!me?.loggedIn || !me.user?.id)
 		return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
-	if (String(me.user.id) !== ownerUserId(env) || !me.user?.canViewTickets)
+	// Who may see tickets is decided in rolePermissions() only.
+	if (!me.user?.canViewTickets)
 		return { error: json({ success: false, error: 'Kein Zugriff.' }, 403) };
 	return { user: me.user };
 }

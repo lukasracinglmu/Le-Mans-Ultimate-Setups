@@ -50,17 +50,22 @@ test('personal owner retains all capabilities without a Discord role', () => {
 		p.databaseAccess && p.canUpload && p.canManageDatabaseAccess && p.canManageUploadAccess
 	);
 });
-test('configured full admins get Full Admin rights but no owner-only tools', () => {
+test('configured full admins get Full Admin rights and tickets, but no owner tools', () => {
 	const env = {
 		...envBase,
 		DISCORD_FULL_ADMIN_USER_IDS: ' 444444444444444444 , ' + userId + ',',
 	};
 	const p = rolePermissions(userId, [], env);
-	assert.ok(p.fullAdmin && p.canViewAdminPanel && p.canManageAdminAccess);
+	assert.ok(p.fullAdmin && p.canViewAdminPanel && p.canManageAdminAccess && p.canViewTickets);
 	assert.ok(p.databaseAccess && p.canUpload && p.canManageDatabaseAccess);
-	assert.ok(!p.isOwner && !p.canViewTickets && !p.canViewBackups && !p.canManageMaintenance);
+	assert.ok(!p.isOwner && !p.canViewBackups && !p.canManageMaintenance);
 	assert.equal(p.individualFullAdmin, false);
 	assert.equal(rolePermissions(targetId, [], env).fullAdmin, false);
+});
+test('a Full Admin grant from the panel does not open the tickets', () => {
+	const p = rolePermissions(userId, [], envBase, { fullAdmin: true });
+	assert.ok(p.fullAdmin);
+	assert.equal(p.canViewTickets, false);
 });
 test('without configured full admins nobody gets Full Admin from the list', () => {
 	for (const value of [undefined, '', ' , '])
