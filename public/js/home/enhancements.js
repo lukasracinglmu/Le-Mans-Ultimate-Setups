@@ -99,18 +99,8 @@
 		logo.onerror = null;
 	};
 	const initManufacturerCarousel = () => {
-		const original = document.getElementById('manufacturerImage');
-		if (!original) return;
-		const img = original.cloneNode(false);
-		original.replaceWith(img);
-		['manufacturerPrev', 'manufacturerNext'].forEach((id) => {
-			const old = document.getElementById(id);
-			if (old) {
-				const clean = old.cloneNode(false);
-				old.replaceWith(clean);
-				clean.remove();
-			}
-		});
+		const img = document.getElementById('manufacturerImage');
+		if (!img) return;
 		let index = 0,
 			timer = 0,
 			swapTimer = 0;
@@ -166,7 +156,6 @@
 			const target = { ...editSetup },
 				input = document.getElementById('versionEditInput'),
 				nameInput = document.getElementById('displayNameEditInput'),
-				toggle = document.getElementById('outdatedToggle'),
 				err = document.getElementById('versionEditError'),
 				btn = document.getElementById('versionEditSave'),
 				cancel = document.getElementById('versionEditCancel');

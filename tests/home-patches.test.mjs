@@ -57,5 +57,4 @@ test('the home page loads the former runtime patches', () => {
 		.join('\n');
 	assert.ok(index.includes('id="manufacturerImage"'), 'manufacturer carousel missing');
 	assert.match(scripts, /const setLoginControls\s*=/, 'login controls script missing');
-	assert.ok(scripts.includes('loadAdminAccessList'), 'admin access list script missing');
 });

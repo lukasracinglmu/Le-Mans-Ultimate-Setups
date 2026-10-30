@@ -69,7 +69,8 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus.
 - Die Scripts haben absolute Pfade wie `/js/home/app.js` und laden deshalb nicht per `file://`. Lokal über einen Server mit `public/` als Wurzel öffnen, z. B. `python3 -m http.server -d public`. Ohne erreichbare API zeigt die Seite die Zugangsprüfung.
 - Die Scripts in `public/js/home/` sind noch klassische Scripts mit gemeinsamen Globals. `enhancements.js` ersetzt Funktionen aus `app.js` zur Laufzeit. Die Reihenfolge der `<script>`-Tags nicht ändern. Welche Globals eine Datei von anderen nutzt, steht in `/* global */` und `/* exported */` am Dateianfang.
-- Buttons haben `data-action` statt `onclick`. `public/js/home/actions.js` bindet sie und schlägt die Funktion erst beim Klick nach.
+- Buttons haben `data-action` statt `onclick`. `public/js/home/actions.js` bindet sie.
+- Admin-Panel und Request-Formular gibt es nur noch als eigene Seiten (`/admin`, `/request`). Die Startseite hatte beide früher eingebaut, aber immer versteckt.
 - `tests/home-scripts.test.mjs` prüft, dass die Startseite keine Inline-Scripts hat, dass jedes geladene Script parsebar ist und dass jeder Button seinen früheren Aufruf macht. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
 
 ### Übergänge

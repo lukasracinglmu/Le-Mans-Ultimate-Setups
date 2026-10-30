@@ -25,7 +25,7 @@ function hiddenUntilLogin(html, id) {
 }
 
 test('login-only controls are hidden in the initial HTML', () => {
-	for (const id of ['bugReportLink', 'mfrFilter', 'classFilter'])
+	for (const id of ['mfrFilter', 'classFilter'])
 		assert.ok(hiddenUntilLogin(index, id), `#${id} must start hidden until login`);
 });
 
