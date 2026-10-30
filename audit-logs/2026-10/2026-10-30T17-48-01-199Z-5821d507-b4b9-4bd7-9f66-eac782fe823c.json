@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-30T17:48:01.199Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Huracan Interlagos HYMO.zip",
+  "vehicle": "Lamborghini Huracán LMGT3",
+  "track": "Huracan Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
