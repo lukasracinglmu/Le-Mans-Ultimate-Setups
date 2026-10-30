@@ -8,6 +8,7 @@ const hotfix = await readFile(
 	new URL('../public/js/home/enhancements.js', import.meta.url),
 	'utf8'
 );
+const css = await readFile(new URL('../public/css/home.css', import.meta.url), 'utf8');
 
 // True when the element itself or one of its ancestors starts hidden as a login-only control.
 function hiddenUntilLogin(html, id) {
@@ -39,5 +40,5 @@ test('authentication controls all login-only elements', () => {
 		hotfix,
 		/if\s*\(!d\??\.loggedIn\)\s*\{\s*currentUser\s*=\s*null;\s*setLoginControls\(false\);/
 	);
-	assert.doesNotMatch(index, /html:not\(\[data-db-access="authorized"\]\) #mfrFilter/);
+	assert.doesNotMatch(css, /html:not\(\[data-db-access=['"]authorized['"]\]\)\s+#mfrFilter/);
 });

@@ -9,10 +9,10 @@ import { readPage, readSiteFile } from './repo-read.js';
 import { writeSetupAuditEvent } from './audit-log.js';
 import { createScheduledBackup, backupCompletionApi } from './automatic-backup.js';
 
-// CSP of the home page and the protected pages. Their scripts all come from
-// public/js, so the policy allows no inline scripts.
+// CSP of the home page and the protected pages. Their scripts and styles all
+// come from public/js and public/css, so the policy allows nothing inline.
 const PAGE_CSP =
-	"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'";
+	"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'";
 
 export default {
 	async fetch(request, env, ctx) {

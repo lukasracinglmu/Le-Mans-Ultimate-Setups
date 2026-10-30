@@ -7,11 +7,11 @@ import { repositoryEnv } from './helpers/repository-env.mjs';
 const index = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 
 // Headers of GET / in production before the runtime patches moved into index.html,
-// plus the page CSP since the home page has no inline scripts.
+// plus the page CSP since the home page has no inline scripts or styles.
 const HOME_HEADERS = {
 	'cache-control': 'private, no-store',
 	'content-security-policy':
-		"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'",
+		"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'",
 	'content-type': 'text/html; charset=utf-8',
 	'referrer-policy': 'strict-origin-when-cross-origin',
 	'strict-transport-security': 'max-age=31536000; includeSubDomains',

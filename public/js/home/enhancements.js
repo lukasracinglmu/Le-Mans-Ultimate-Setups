@@ -134,7 +134,7 @@
 		modal.id = 'versionEditModal';
 		modal.className = 'version-edit-backdrop';
 		modal.innerHTML =
-			'<div class="version-edit-modal"><h3>Setup bearbeiten</h3><label for="displayNameEditInput">Anzeigename</label><input id="displayNameEditInput" type="text" maxlength="160"><p class="edit-name-hint">Nur der Name in der Übersicht wird geändert. Leer lassen, um den normalen Dateinamen zu verwenden.</p><label for="versionEditInput">Version (optional)</label><input id="versionEditInput" type="text" maxlength="40"><div id="versionEditError" class="version-edit-error"></div><div class="version-edit-actions" style="display:grid;grid-template-columns:1fr 1.45fr 1fr;gap:9px;align-items:stretch"><button type="button" id="versionEditCancel" style="width:100%;min-height:42px;padding:10px 12px;white-space:nowrap">Abbrechen</button><button type="button" id="outdatedToggle" class="action" style="width:100%;min-height:42px;padding:10px 12px;white-space:nowrap"></button><button type="button" id="versionEditSave" style="width:100%;min-height:42px;padding:10px 12px;white-space:nowrap">Speichern</button></div></div>';
+			'<div class="version-edit-modal"><h3>Setup bearbeiten</h3><label for="displayNameEditInput">Anzeigename</label><input id="displayNameEditInput" type="text" maxlength="160"><p class="edit-name-hint">Nur der Name in der Übersicht wird geändert. Leer lassen, um den normalen Dateinamen zu verwenden.</p><label for="versionEditInput">Version (optional)</label><input id="versionEditInput" type="text" maxlength="40"><div id="versionEditError" class="version-edit-error"></div><div class="version-edit-actions"><button type="button" id="versionEditCancel">Abbrechen</button><button type="button" id="outdatedToggle" class="action"></button><button type="button" id="versionEditSave">Speichern</button></div></div>';
 		document.body.appendChild(modal);
 		let saving = false;
 		modal.setAttribute('role', 'dialog');
@@ -281,7 +281,7 @@
 		}
 		if (mode === 'unavailable') {
 			box.innerHTML =
-				'<h2>Rollenprüfung momentan nicht verfügbar</h2><p>Discord konnte gerade nicht erreicht werden. Dein Zugriff wurde deshalb noch nicht bestätigt. Bitte versuche es erneut.</p><button type="button" id="retryRoleCheck" style="margin-top:16px">Erneut prüfen</button>';
+				'<h2>Rollenprüfung momentan nicht verfügbar</h2><p>Discord konnte gerade nicht erreicht werden. Dein Zugriff wurde deshalb noch nicht bestätigt. Bitte versuche es erneut.</p><button type="button" id="retryRoleCheck">Erneut prüfen</button>';
 			document.getElementById('retryRoleCheck').addEventListener('click', () => authorize(true));
 			return;
 		}

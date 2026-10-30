@@ -25,9 +25,9 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 
 ## Code-Stil
 
-- JS und HTML: Tabs mit Breite 2, einfache Quotes, Semikolons, Trailing Commas nach ES5, 100 Zeichen pro Zeile.
+- JS, HTML und CSS: Tabs mit Breite 2, einfache Quotes, Semikolons, Trailing Commas nach ES5, 100 Zeichen pro Zeile.
 - Die Einrückung steht in `.editorconfig`, der Rest in `.prettierrc.json`. Andere Dateitypen behalten Leerzeichen, Python 4.
-- `npm run format` formatiert, `npm run format:check` prüft. Beides deckt `js`, `mjs` und `html` ab.
+- `npm run format` formatiert, `npm run format:check` prüft. Beides deckt `js`, `mjs`, `html` und `css` ab.
 
 ## Learnings
 
@@ -64,6 +64,15 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - agent-browser klickt auf Koordinaten. Liegt das Ziel außerhalb des Sichtbereichs, geht der Klick ohne Fehlermeldung ins Leere. Vorher per `scrollIntoView()` ins Bild holen.
 - Unicode-Escapes wie `\u0300` in Regexen nach dem Schreiben per `grep` prüfen. Manche Werkzeuge schreiben stattdessen das Zeichen selbst.
 
+### CSS (`public/css/`)
+
+- Jede Seite hat `public/css/<seite>.css`, die Startseite `home.css`. Gemeinsames liegt in `public/css/shared/`, aber nur, wenn es wirklich gleich ist.
+- Keine `<style>`-Blöcke und keine `style`-Attribute, auch nicht in HTML, das JS erzeugt. `PAGE_CSP` erlaubt nur `style-src 'self'`, Inline-Styles würden nicht greifen. `tests/page-styles.test.mjs` prüft das.
+- Styles per `element.style` setzen bleibt erlaubt, das erfasst die CSP nicht.
+- Inline-Styles schlagen jede Regel, eine Klasse nicht. Beim Umzug prüfen, welche Regeln dieselben Eigenschaften setzen, und dann ID-Selektoren nehmen.
+- Fenster aus `window.open` erben die CSP der Seite. Was darin angezeigt wird, lädt seine Styles als Datei.
+- Umzüge per Vergleich der berechneten Styles prüfen: `getComputedStyle` für jedes Element samt `::before` und `::after`, auf beiden Ständen und in mehreren Zuständen der Seite. Animationen vorher anhalten. Die Eigenschaften vor dem Vergleich sortieren, denn die Reihenfolge der CSS-Variablen folgt der Reihenfolge der Stylesheets. Die Origin aus aufgelösten URLs herausrechnen, falls beide Stände auf verschiedenen Ports laufen.
+
 ### `public/index.html`
 
 - Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus.
@@ -85,6 +94,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Mocks für D1, Discord und GitHub reagieren auf SQL-Text bzw. URLs. Neue Anweisungen oder Pfade brauchen passende Mocks. Anweisungen im Mock unterscheiden, nicht pauschal zählen.
 - Tests, die Quelltext per Textsuche lesen, formatierungsunabhängig halten: `\s*` statt fester Leerzeichen, Funktionen per Klammerzählung herauslösen.
 - Angepasste Tests per Gegenprobe absichern: Fehler im Code einbauen, der Test muss rot werden.
+- `doesNotMatch`-Prüfungen werden still wirkungslos, wenn sich die Schreibweise ändert, z. B. Quotes durch Prettier. Auch sie per Gegenprobe absichern.
 - Test-Umgebungen setzen benötigte Variablen wie `DISCORD_OWNER_USER_ID` ausdrücklich. Es gibt keine Ersatzwerte mehr, auf die sich ein Test verlassen könnte.
 - Repo-Einstellungen in Tests per `...repositoryEnv` aus `tests/helpers/repository-env.mjs`. Die Werte kommen aus `wrangler.jsonc`.
 - Ohne `...repositoryEnv` stellt der Worker gar keine GitHub-Anfrage. Ein Test, der „GitHub wird nicht gefragt“ prüft, wäre dann immer grün.
