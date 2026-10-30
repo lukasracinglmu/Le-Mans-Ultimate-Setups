@@ -6,6 +6,8 @@ Das Admin-Panel führt Database-, Upload/Delete-, Admin-Panel- und Full-Admin-Re
 
 ## Ticketverwaltung
 
+Tickets sehen und bearbeiten der Owner (`DISCORD_OWNER_USER_ID`) und die festen Full Admins (`DISCORD_FULL_ADMIN_USER_IDS`). Full Admins aus dem Admin-Panel sehen sie nicht.
+
 Tickets besitzen die Status Offen, In Bearbeitung und Geschlossen. Geschlossene Tickets können gelöscht werden; ihre Nummer wird wegen AUTOINCREMENT nicht wiederverwendet. Die Suche berücksichtigt Ticketnummer, Titel, Ersteller, Discord-ID, Beschreibung, Priorität, Status und Abschlussnachricht.
 
 ## Benachrichtigungen

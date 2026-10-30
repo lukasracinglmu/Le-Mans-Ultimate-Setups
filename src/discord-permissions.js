@@ -10,7 +10,8 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 	const hasSetupSupplyRole = hasRole(env.DISCORD_UPLOAD_ROLE_ID || env.DISCORD_ROLE_ID);
 	const hasTeamRole = hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
 
-	// Nur der konfigurierte Owner besitzt Wartungsmodus, Backups und Tickets.
+	// Maintenance and backups belong to the configured owner only. Tickets are also open
+	// to the fixed full admins, but not to Full Admins granted in the admin panel.
 	// Full Admin comes from the owner ID, the fixed list in wrangler.jsonc or a grant.
 	const isConfiguredFullAdmin = fullAdminUserIds(env).includes(String(userId));
 	const fullAdmin = isOwner || isConfiguredFullAdmin || Boolean(grants.fullAdmin);
@@ -31,7 +32,7 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 		canViewAdminPanel,
 		isOwner,
 		fullAdmin,
-		canViewTickets: isOwner,
+		canViewTickets: isOwner || isConfiguredFullAdmin,
 		isAdmin: canManageDatabaseAccess,
 		canManageDatabaseAccess,
 		canManageUploadAccess,
