@@ -12,8 +12,8 @@
     "check:deploy": "node tools/predeploy-check.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,mjs,html}\"",
-    "format:check": "prettier --check \"**/*.{js,mjs,html}\""
+    "format": "prettier --write \"**/*.{js,mjs,html,css}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,html,css}\""
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,0 +1,28 @@
+button,
+a,
+.card,
+.user,
+.vehicle,
+.ticket,
+.setup-card,
+.manufacturer-card {
+	transition:
+		transform 0.18s ease,
+		box-shadow 0.18s ease,
+		border-color 0.18s ease,
+		filter 0.18s ease;
+}
+button:hover,
+a:not(.brand):hover {
+	transform: translateY(-2px);
+}
+.card:hover,
+.user:hover,
+.vehicle:hover,
+.ticket:hover,
+.setup-card:hover,
+.manufacturer-card:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 12px 28px #0003;
+	border-color: var(--accent, #5865f2);
+}
