@@ -323,7 +323,7 @@ test('report page comes from the canonical asset path without a redirect loop', 
 		assert.equal(response.headers.get('Location'), null);
 		const csp = response.headers.get('Content-Security-Policy');
 		assert.match(csp, /frame-ancestors 'none'/);
-		// The protected pages load their scripts from public/js only.
+		// The protected pages load their scripts and styles from files only.
 		assert.equal(
 			csp
 				.split(';')
@@ -331,6 +331,7 @@ test('report page comes from the canonical asset path without a redirect loop', 
 				.find((directive) => directive.startsWith('script-src')),
 			"script-src 'self'"
 		);
+		assert.match(csp, /(^|; )style-src 'self'(;|$)/);
 		assert.deepEqual(paths, ['/bug-report']);
 		assert.deepEqual(repositoryReads, []);
 	} finally {
