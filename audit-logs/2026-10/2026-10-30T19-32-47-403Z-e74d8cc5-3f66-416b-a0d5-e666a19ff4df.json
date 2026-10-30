@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-30T19:32:47.403Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "SC63 Barcelona GO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Barcelona GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
