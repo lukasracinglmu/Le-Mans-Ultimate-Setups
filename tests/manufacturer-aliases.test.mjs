@@ -14,7 +14,7 @@ const extractFunction = (code, name) => {
 	}
 	throw new Error(name + ' not found');
 };
-const source = read('public/index.html');
+const source = read('public/js/home/app.js');
 const frontend = vm.runInNewContext(extractFunction(source, 'classifyVendor') + ';classifyVendor');
 const access = vm.runInNewContext(
 	extractFunction(read('src/access-worker.js'), 'classifyManufacturer') + ';classifyManufacturer'
@@ -23,9 +23,13 @@ const audit = vm.runInNewContext(
 	read('src/audit-log.js').match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +
 		';classifyManufacturer'
 );
-// The former ui-hotfix.js script with its fallback classifier now lives in index.html.
-const fallbackLine = source.split('\n').find((line) => line.trim().startsWith('const classify='));
-const fallback = vm.runInNewContext(fallbackLine + ';classify');
+// The former ui-hotfix.js script with its fallback classifier.
+const enhancements = read('public/js/home/enhancements.js');
+const fallbackSource = enhancements.slice(
+	enhancements.search(/\bconst classify\s*=/),
+	enhancements.search(/\n\s*const currentMfr\s*=/)
+);
+const fallback = vm.runInNewContext(fallbackSource + ';classify');
 const classifiers = [
 	['server lifecycle', setupManufacturer],
 	['website', frontend],

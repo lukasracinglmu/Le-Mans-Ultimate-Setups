@@ -44,6 +44,14 @@ export default defineConfig([
 		},
 	},
 	{
+		// The home page scripts are still classic scripts that share globals.
+		// Each file names the globals it uses from another file.
+		files: ['public/js/home/*.js'],
+		languageOptions: {
+			sourceType: 'script',
+		},
+	},
+	{
 		files: ['discord-presence/**/*.js', 'tests/**/*.mjs', 'tools/**/*.mjs'],
 		languageOptions: {
 			globals: globals.node,
@@ -74,15 +82,6 @@ export default defineConfig([
 			// Existing findings that would change markup or rendering.
 			'html/no-multiple-h1': 'warn',
 			'html/use-baseline': 'warn',
-		},
-	},
-	{
-		files: ['public/index.html'],
-		languageOptions: {
-			globals: {
-				// Set on window by another inline script in this file.
-				refreshVehicleCounts: 'readonly',
-			},
 		},
 	},
 ]);

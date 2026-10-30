@@ -28,14 +28,14 @@ async function servedHome() {
 	}
 }
 
-test('every inline script of the served home page parses', async () => {
-	const scripts = [...(await servedHome()).matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
-		(match) => match[1]
-	);
-	assert.ok(scripts.length > 0);
-	for (const [position, code] of scripts.entries())
-		assert.doesNotThrow(
-			() => new Function(code),
-			`inline script #${position} does not parse: ${code.slice(0, 80)}`
-		);
+// A syntax error stops a whole script without any visible error on the page.
+test('every script of the served home page exists and parses', async () => {
+	const html = await servedHome();
+	assert.doesNotMatch(html, /<script>/, 'inline script on the home page');
+	const sources = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((match) => match[1]);
+	assert.ok(sources.length > 0);
+	for (const src of sources) {
+		const code = readFileSync(new URL('../public' + src, import.meta.url), 'utf8');
+		assert.doesNotThrow(() => new Function(code), src + ' does not parse');
+	}
 });
