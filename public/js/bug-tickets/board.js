@@ -65,7 +65,7 @@ export function initTicketBoard() {
 					: 'geschlossenen';
 		const shown = tickets.filter((ticket) => ticketMatches(ticket, query));
 		list.innerHTML = shown.length
-			? '<table><colgroup><col style="width:110px"><col><col style="width:150px"><col style="width:180px"><col style="width:120px"><col style="width:48px"></colgroup><thead><tr><th>Ticket-Nr.</th><th>Thema</th><th>Von</th><th>Aktualisiert</th><th>Priorität</th><th></th></tr></thead><tbody>' +
+			? '<table><colgroup><col class="col-number"><col><col class="col-reporter"><col class="col-updated"><col class="col-priority"><col class="col-delete"></colgroup><thead><tr><th>Ticket-Nr.</th><th>Thema</th><th>Von</th><th>Aktualisiert</th><th>Priorität</th><th></th></tr></thead><tbody>' +
 				shown
 					.map(
 						(t) =>
@@ -162,7 +162,7 @@ export function initTicketBoard() {
 					? '<button id="progress" class="action progress">In Bearbeitung setzen</button><button id="close" class="action close">Ticket schließen</button>'
 					: t.status === 'progress'
 						? '<button id="reopen" class="action reopen">Auf Offen setzen</button><button id="close" class="action close">Ticket schließen</button>'
-						: '<button id="reopen" class="action reopen">Ticket wieder öffnen</button><button id="delete" class="action" style="background:#b52f3b;border-color:#b52f3b;color:#fff">Ticket löschen</button>') +
+						: '<button id="reopen" class="action reopen">Ticket wieder öffnen</button><button id="delete" class="action">Ticket löschen</button>') +
 				'</div><div id="extra"></div></div><aside class="card"><b>Ticket Details</b><div class="info"><span>Von</span>' +
 				escapeHtml(t.reporter_name) +
 				'</div><div class="info"><span>Discord ID</span>' +
@@ -226,7 +226,7 @@ export function initTicketBoard() {
 
 	function closeBox(id) {
 		document.getElementById('extra').innerHTML =
-			'<div class="field" style="margin-top:18px"><label>Nachricht (optional)</label><textarea id="msg" maxlength="2000" placeholder="Leer lassen für die Standardnachricht"></textarea><button id="confirmClose" class="action close" style="margin-top:8px">Ticket schließen</button></div>';
+			'<div class="field"><label>Nachricht (optional)</label><textarea id="msg" maxlength="2000" placeholder="Leer lassen für die Standardnachricht"></textarea><button id="confirmClose" class="action close">Ticket schließen</button></div>';
 		document.getElementById('confirmClose').addEventListener('click', () => closeTicket(id));
 	}
 

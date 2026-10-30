@@ -317,3 +317,31 @@ textarea {
 		max-width: none;
 	}
 }
+
+/* Formerly style attributes in the HTML that board.js builds. */
+.col-number {
+	width: 110px;
+}
+.col-reporter {
+	width: 150px;
+}
+.col-updated {
+	width: 180px;
+}
+.col-priority {
+	width: 120px;
+}
+.col-delete {
+	width: 48px;
+}
+#delete {
+	background: #b52f3b;
+	border-color: #b52f3b;
+	color: #fff;
+}
+#extra .field {
+	margin-top: 18px;
+}
+#confirmClose {
+	margin-top: 8px;
+}

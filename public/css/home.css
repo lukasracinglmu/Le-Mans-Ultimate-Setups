@@ -1470,3 +1470,20 @@ body.no-database-access #classFilter {
 #trackSearch {
 	display: none;
 }
+
+/* Formerly style attributes in the HTML that enhancements.js builds. */
+#versionEditModal .version-edit-actions {
+	display: grid;
+	grid-template-columns: 1fr 1.45fr 1fr;
+	gap: 9px;
+	align-items: stretch;
+}
+#versionEditModal .version-edit-actions button {
+	width: 100%;
+	min-height: 42px;
+	padding: 10px 12px;
+	white-space: nowrap;
+}
+#retryRoleCheck {
+	margin-top: 16px;
+}
