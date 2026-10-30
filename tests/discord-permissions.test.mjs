@@ -50,6 +50,25 @@ test('personal owner retains all capabilities without a Discord role', () => {
 		p.databaseAccess && p.canUpload && p.canManageDatabaseAccess && p.canManageUploadAccess
 	);
 });
+test('configured full admins get Full Admin rights but no owner-only tools', () => {
+	const env = {
+		...envBase,
+		DISCORD_FULL_ADMIN_USER_IDS: ' 444444444444444444 , ' + userId + ',',
+	};
+	const p = rolePermissions(userId, [], env);
+	assert.ok(p.fullAdmin && p.canViewAdminPanel && p.canManageAdminAccess);
+	assert.ok(p.databaseAccess && p.canUpload && p.canManageDatabaseAccess);
+	assert.ok(!p.isOwner && !p.canViewTickets && !p.canViewBackups && !p.canManageMaintenance);
+	assert.equal(p.individualFullAdmin, false);
+	assert.equal(rolePermissions(targetId, [], env).fullAdmin, false);
+});
+test('without configured full admins nobody gets Full Admin from the list', () => {
+	for (const value of [undefined, '', ' , '])
+		assert.equal(
+			rolePermissions(userId, [], { ...envBase, DISCORD_FULL_ADMIN_USER_IDS: value }).fullAdmin,
+			false
+		);
+});
 
 async function cookie(id) {
 	const payload = Buffer.from(
@@ -162,6 +181,18 @@ test('/api/me exposes the Team/Supply/Owner capabilities', async () => {
 			assert.equal(me.user.canManageDatabaseAccess, roles.includes(envBase.DISCORD_OWNER_ROLE_ID));
 		});
 	}
+});
+
+test('a configured full admin opens /admin without any role or grant', async () => {
+	await harness([], async ({ env, request, ctx }) => {
+		env.ASSETS = { fetch: async () => new Response('<h1>Admin Panel</h1>') };
+		assert.equal((await app.fetch(await request('/admin'), env, ctx)).status, 404);
+		env.DISCORD_FULL_ADMIN_USER_IDS = userId;
+		const me = await (await app.fetch(await request('/api/me'), env, ctx)).json();
+		assert.equal(me.user.fullAdmin, true);
+		assert.equal(me.user.canViewAdminPanel, true);
+		assert.equal((await app.fetch(await request('/admin'), env, ctx)).status, 200);
+	});
 });
 
 test('Owner role can grant database, upload and combined access', async () => {
