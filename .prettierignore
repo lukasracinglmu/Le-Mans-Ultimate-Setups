@@ -5,8 +5,3 @@ audit-logs/
 
 # Maintained by the changelog automation
 CHANGELOG.md
-
-# Still contains the minified scripts and styles of the former runtime patches.
-# Format it when the inline scripts move into JS modules (issue #16), so the
-# page is not reformatted twice.
-public/index.html
