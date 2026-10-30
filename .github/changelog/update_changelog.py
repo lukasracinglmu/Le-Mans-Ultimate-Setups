@@ -119,6 +119,9 @@ def area(path: str) -> str:
         "index.html": "Website-Oberfläche",
         "worker.js": "Core-Worker und API",
         "runtime-worker.js": "Runtime-Routing",
+        "index.js": "Runtime-Routing",
+        "router.js": "Runtime-Routing",
+        "routes.js": "Runtime-Routing",
         "production-worker.js": "Website-Integrationen",
         "ui-hotfix.js": "Ergänzungen der Website-Oberfläche",
         "access-worker.js": "Zugriffsverwaltung",
@@ -130,6 +133,10 @@ def area(path: str) -> str:
     }
     if site_path in known:
         return known[site_path]
+    if site_path.startswith("middleware/"):
+        return "Runtime-Routing"
+    if site_path.startswith("features/"):
+        return "Core-Worker und API"
     if path.startswith(".github/changelog/"):
         return "Automatische Changelog-Erstellung"
     if path.startswith(".github/workflows/"):

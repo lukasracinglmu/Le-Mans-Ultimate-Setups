@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import worker from '../src/worker.js';
 import { rolePermissions } from '../src/discord-permissions.js';
 import { fullAdminApi } from '../src/full-admin.js';

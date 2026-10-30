@@ -5,9 +5,10 @@ import { cleanSetupFileName } from './setup-version.js';
 import { githubBranch, ownerUserId } from './config.js';
 import { githubRequest } from './lib/github.js';
 import { json, securityHeaders, withSecurityHeaders } from './lib/http.js';
+import { enforceSameOriginForStateChange } from './middleware/origin.js';
 import { resolvePermissions, rolePermissions } from './discord-permissions.js';
 import { readPreviousSetups, deleteGithubSetup } from './setup-lifecycle.js';
-import { readPage, readRepoFile } from './repo-read.js';
+import { readRepoFile } from './repo-read.js';
 import { persistSetupFile, readUploadForm } from './upload-storage.js';
 
 const DISCORD_API = 'https://discord.com/api/v10';
@@ -18,14 +19,11 @@ const SESSION_TTL = 604800;
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
 const MAX_REQUEST_BODY_BYTES = 26 * 1024 * 1024;
-const REQUEST_MODAL_ID = 'lmu_setup_request';
 const DISCORD_TEXT_CHANNEL_TYPES = new Set([0, 5, 15]);
 const DISCORD_DISPLAY_CHANNEL_TYPES = new Set([0, 2, 4, 5, 10, 11, 12, 13, 15]);
 const PERM_VIEW_CHANNEL = 1024n;
 const PERM_SEND_MESSAGES = 2048n;
 const PERM_ADMINISTRATOR = 8n;
-
-let discordVerifyKeyCache = { key: null, expiresAt: 0 };
 
 export default {
 	async fetch(request, env, ctx, uploadForm) {
@@ -44,31 +42,23 @@ export default {
 			if (p === '/auth/discord') return discordLogin(env);
 			if (p === '/auth/discord/callback') return discordCallback(request, env);
 			if (p === '/auth/logout') return logout();
-			if (p === '/interactions/discord' && m === 'POST') return discordInteraction(request, env);
 
 			if (p === '/api/me' && m === 'GET') return currentUser(request, env);
 			if (p === '/api/admin/discord/role-status' && m === 'GET')
 				return discordRoleStatus(request, env);
-			if (p === '/api/favorites' && (m === 'GET' || m === 'POST' || m === 'DELETE'))
-				return favoritesApi(request, env);
 			if (p === '/api/setups/summary' && m === 'GET') return setupSummary(request, env);
 			if (p === '/api/setups' && m === 'GET') return listSetups(request, env);
 			if (p === '/api/setups/download' && m === 'GET') return downloadSetup(request, env);
 			if (p === '/api/setups/upload' && m === 'POST') return uploadSetups(request, env, uploadForm);
 			if (p === '/api/setups/delete' && m === 'POST') return deleteSetup(request, env);
-			if (p === '/api/request' && m === 'POST') return createRequest(request, env);
 
 			if (p === '/api/admin/upload-access' && m === 'GET') return listUploadAccess(request, env);
-			if (p === '/api/admin/upload-access' && m === 'POST') return grantUploadAccess(request, env);
-			if (p === '/api/admin/upload-access' && m === 'DELETE')
-				return revokeUploadAccess(request, env);
 			if (p === '/api/admin/discord/register-request' && m === 'POST')
 				return registerRequestCommand(request, env);
 			if (p === '/api/discord/channels' && m === 'GET') return discordChannels(request, env);
 			if (p === '/api/discord/messages' && m === 'GET') return discordMessages(request, env);
 			if (p === '/api/discord/messages' && m === 'POST') return discordSendMessage(request, env);
 
-			if (m === 'GET' && p === '/') return serveHome(request, env);
 			return withSecurityHeaders(await env.ASSETS.fetch(request));
 		} catch (e) {
 			console.error('Worker error', safeError(e));
@@ -81,30 +71,6 @@ function isHttpsRequest(request) {
 	const url = new URL(request.url);
 	if (url.protocol === 'https:') return true;
 	return request.headers.get('X-Forwarded-Proto') === 'https';
-}
-
-export function enforceSameOriginForStateChange(request, env) {
-	const method = request.method.toUpperCase();
-	if (!new Set(['POST', 'PUT', 'PATCH', 'DELETE']).has(method)) return null;
-	const url = new URL(request.url);
-	if (url.pathname === '/interactions/discord') return null;
-	const allowedOrigins = new Set([url.origin]);
-	try {
-		if (env.SITE_URL) allowedOrigins.add(new URL(env.SITE_URL).origin);
-	} catch {}
-	const origin = request.headers.get('Origin');
-	if (origin && !allowedOrigins.has(origin))
-		return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-	const referer = request.headers.get('Referer');
-	if (!origin && referer) {
-		try {
-			if (!allowedOrigins.has(new URL(referer).origin))
-				return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-		} catch {
-			return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-		}
-	}
-	return null;
 }
 
 function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {
@@ -229,56 +195,6 @@ async function requireDatabaseAccess(request, env) {
 	return { session };
 }
 
-async function favoritesApi(request, env) {
-	try {
-		const session = await readSession(request, env.SESSION_SECRET);
-		if (!session) return json({ success: false, error: 'Nicht angemeldet.' }, 401);
-		if (!env.ACCESS_DB)
-			return json({ success: false, error: 'Favoriten-Datenbank nicht verfügbar.' }, 503);
-		await env.ACCESS_DB.prepare(
-			'CREATE TABLE IF NOT EXISTS vehicle_favorites (user_id TEXT NOT NULL, category TEXT NOT NULL, vehicle TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,category,vehicle))'
-		).run();
-		if (request.method === 'GET') {
-			const rows = await env.ACCESS_DB.prepare(
-				'SELECT category,vehicle FROM vehicle_favorites WHERE user_id=? ORDER BY created_at DESC'
-			)
-				.bind(String(session.id))
-				.all();
-			return json({ success: true, favorites: rows.results || [] });
-		}
-		let body;
-		try {
-			body = await request.json();
-		} catch {
-			return json({ success: false, error: 'Ungültige Anfrage.' }, 400);
-		}
-		const category = String(body?.category || '')
-			.replace(/[\u0000-\u001F\u007F]/g, ' ')
-			.trim()
-			.slice(0, 100);
-		const vehicle = String(body?.vehicle || '')
-			.replace(/[\u0000-\u001F\u007F]/g, ' ')
-			.trim()
-			.slice(0, 150);
-		if (!category || !vehicle) return json({ success: false, error: 'Fahrzeug fehlt.' }, 400);
-		if (request.method === 'POST')
-			await env.ACCESS_DB.prepare(
-				'INSERT OR IGNORE INTO vehicle_favorites (user_id,category,vehicle,created_at) VALUES (?,?,?,CURRENT_TIMESTAMP)'
-			)
-				.bind(String(session.id), category, vehicle)
-				.run();
-		else
-			await env.ACCESS_DB.prepare(
-				'DELETE FROM vehicle_favorites WHERE user_id=? AND category=? AND vehicle=?'
-			)
-				.bind(String(session.id), category, vehicle)
-				.run();
-		return json({ success: true, category, vehicle, favorite: request.method === 'POST' });
-	} catch (error) {
-		console.error('favoritesApi failed', error);
-		return json({ success: false, error: 'Favorit konnte nicht gespeichert werden.' }, 503);
-	}
-}
 async function currentUser(request, env) {
 	const session = await readSession(request, env.SESSION_SECRET);
 	if (!session) return json({ loggedIn: false, databaseAccess: false });
@@ -410,45 +326,6 @@ async function listUploadAccess(request, env) {
 	).all();
 	return json({ success: true, grants: result.results || [] });
 }
-async function grantUploadAccess(request, env) {
-	const auth = await requireOwner(request, env);
-	if (auth.error) return auth.error;
-	if (!env.ACCESS_DB)
-		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
-	let body;
-	try {
-		body = await request.json();
-	} catch {
-		return json({ success: false, error: 'Ungültige Anfrage.' }, 400);
-	}
-	const userId = String(body.userId || '').trim();
-	if (!/^\d{16,22}$/.test(userId))
-		return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
-	await env.ACCESS_DB.prepare(
-		'INSERT INTO upload_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by = excluded.granted_by, created_at = CURRENT_TIMESTAMP'
-	)
-		.bind(userId, auth.session.id)
-		.run();
-	return json({ success: true, userId });
-}
-async function revokeUploadAccess(request, env) {
-	const auth = await requireOwner(request, env);
-	if (auth.error) return auth.error;
-	if (!env.ACCESS_DB)
-		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
-	let body;
-	try {
-		body = await request.json();
-	} catch {
-		return json({ success: false, error: 'Ungültige Anfrage.' }, 400);
-	}
-	const userId = String(body.userId || '').trim();
-	if (!/^\d{16,22}$/.test(userId))
-		return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
-	await env.ACCESS_DB.prepare('DELETE FROM upload_access WHERE user_id = ?').bind(userId).run();
-	return json({ success: true, userId });
-}
-
 function safe(v) {
 	return String(v || '')
 		.trim()
@@ -682,36 +559,6 @@ async function deleteSetup(request, env) {
 	return json(result, result.success ? 200 : result.status || 502);
 }
 
-async function createRequest(request, env) {
-	const s = await readSession(request, env.SESSION_SECRET);
-	if (!s) return json({ success: false, error: 'Nicht angemeldet.' }, 401);
-	let b;
-	try {
-		b = await request.json();
-	} catch {
-		return json({ success: false, error: 'Ungültige Anfrage.' }, 400);
-	}
-	const vehicle = clean(b.vehicle, 100),
-		carClass = clean(b.carClass, 80),
-		track = clean(b.track, 100),
-		message = clean(b.message, 1000);
-	if (!vehicle || !track)
-		return json({ success: false, error: 'Fahrzeug und Strecke sind erforderlich.' }, 400);
-	const content = [
-		'**Setup Request**',
-		`**Fahrer:** ${s.username} (<@${s.id}>)`,
-		`**Fahrzeug:** ${vehicle}`,
-		carClass ? `**Klasse:** ${carClass}` : null,
-		`**Strecke:** ${track}`,
-		message ? `**Nachricht:** ${message}` : null,
-	]
-		.filter(Boolean)
-		.join('\n');
-	const r = await sendDiscord(env, content, { parse: [], users: [s.id] });
-	if (!r.ok) return json({ success: false, error: 'Request konnte nicht gesendet werden.' }, 502);
-	return json({ success: true });
-}
-
 async function discordChannels(request, env) {
 	const s = await readSession(request, env.SESSION_SECRET);
 	if (!s) return json({ success: false, error: 'Nicht angemeldet.' }, 401);
@@ -920,145 +767,8 @@ async function registerRequestCommand(request, env) {
 		return json({ success: false, error: '/request konnte nicht registriert werden.' }, 502);
 	return json({ success: true });
 }
-async function discordInteraction(request, env) {
-	if (!(await verifyDiscord(request, env)))
-		return new Response('invalid request signature', { status: 401 });
-	const b = await request.json();
-	if (b.type === 1) return json({ type: 1 });
-	if (b.type === 2 && b.data?.name === 'request')
-		return json({
-			type: 9,
-			data: {
-				custom_id: REQUEST_MODAL_ID,
-				title: 'Setup anfragen',
-				components: [
-					{
-						type: 1,
-						components: [
-							{
-								type: 4,
-								custom_id: 'vehicle',
-								label: 'Fahrzeug',
-								style: 1,
-								required: true,
-								max_length: 100,
-							},
-						],
-					},
-					{
-						type: 1,
-						components: [
-							{
-								type: 4,
-								custom_id: 'car_class',
-								label: 'Klasse',
-								style: 1,
-								required: false,
-								max_length: 80,
-							},
-						],
-					},
-					{
-						type: 1,
-						components: [
-							{
-								type: 4,
-								custom_id: 'track',
-								label: 'Strecke',
-								style: 1,
-								required: true,
-								max_length: 100,
-							},
-						],
-					},
-					{
-						type: 1,
-						components: [
-							{
-								type: 4,
-								custom_id: 'message',
-								label: 'Nachricht',
-								style: 2,
-								required: false,
-								max_length: 1000,
-							},
-						],
-					},
-				],
-			},
-		});
-	if (b.type === 5 && b.data?.custom_id === REQUEST_MODAL_ID) {
-		const f = {};
-		for (const row of b.data.components || [])
-			for (const x of row.components || [])
-				f[x.custom_id] = clean(x.value, x.custom_id === 'message' ? 1000 : 100);
-		const uid = b.member?.user?.id || b.user?.id;
-		const uname =
-			b.member?.user?.global_name ||
-			b.member?.user?.username ||
-			b.user?.global_name ||
-			b.user?.username ||
-			'Unbekannt';
-		const content = [
-			'**Setup Request**',
-			uid ? `**Fahrer:** ${uname} (<@${uid}>)` : `**Fahrer:** ${uname}`,
-			`**Fahrzeug:** ${f.vehicle || '-'}`,
-			f.car_class ? `**Klasse:** ${f.car_class}` : null,
-			`**Strecke:** ${f.track || '-'}`,
-			f.message ? `**Nachricht:** ${f.message}` : null,
-		]
-			.filter(Boolean)
-			.join('\n');
-		const r = await sendDiscord(env, content, { parse: [], users: uid ? [uid] : [] });
-		return r.ok
-			? json({ type: 4, data: { content: 'Setup Request wurde gesendet.', flags: 64 } })
-			: json({
-					type: 4,
-					data: { content: 'Setup Request konnte nicht gesendet werden.', flags: 64 },
-				});
-	}
-	return json({ type: 4, data: { content: 'Nicht unterstützt.', flags: 64 } });
-}
-async function verifyDiscord(request, env) {
-	if (!env.DISCORD_PUBLIC_KEY) return false;
-	const sig = request.headers.get('X-Signature-Ed25519'),
-		ts = request.headers.get('X-Signature-Timestamp');
-	if (!sig || !ts) return false;
-	const body = await request.clone().text();
-	try {
-		const key = await getVerifyKey(env.DISCORD_PUBLIC_KEY);
-		return crypto.subtle.verify(
-			{ name: 'Ed25519' },
-			key,
-			hex(sig),
-			new TextEncoder().encode(ts + body)
-		);
-	} catch {
-		return false;
-	}
-}
-async function getVerifyKey(h) {
-	if (discordVerifyKeyCache.key && discordVerifyKeyCache.expiresAt > Date.now())
-		return discordVerifyKeyCache.key;
-	const key = await crypto.subtle.importKey('raw', hex(h), { name: 'Ed25519' }, false, ['verify']);
-	discordVerifyKeyCache = { key, expiresAt: Date.now() + 3600000 };
-	return key;
-}
-function hex(s) {
-	const out = new Uint8Array(s.length / 2);
-	for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16);
-	return out;
-}
 async function df(path, opts = {}) {
 	return fetch(`${DISCORD_API}${path}`, opts);
-}
-async function sendDiscord(env, content, allowed_mentions = { parse: [] }) {
-	if (!env.DISCORD_CHANNEL_ID || !env.DISCORD_BOT_TOKEN) return { ok: false };
-	return df(`/channels/${env.DISCORD_CHANNEL_ID}/messages`, {
-		method: 'POST',
-		headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-		body: JSON.stringify({ content, allowed_mentions }),
-	});
 }
 function parseCookies(h) {
 	return Object.fromEntries(
@@ -1136,11 +846,4 @@ function logout() {
 	const h = securityHeaders(new Headers({ Location: '/' }));
 	h.append('Set-Cookie', cookie(SESSION_COOKIE, '', 0));
 	return new Response(null, { status: 302, headers: h });
-}
-async function serveHome(request, env) {
-	const r = await readPage(request, env, 'index.html');
-	const h = securityHeaders(new Headers(r.headers));
-	h.set('Content-Type', r.ok ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8');
-	h.set('Cache-Control', 'no-store');
-	return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
 }

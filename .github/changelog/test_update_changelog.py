@@ -216,6 +216,11 @@ class TextTest(unittest.TestCase):
             self.assertEqual(app.area(new), app.area(old))
             self.assertNotEqual(app.area(new), "Projektdateien")
 
+    def test_router_files_keep_the_routing_area(self):
+        for path in ["src/index.js", "src/router.js", "src/routes.js", "src/middleware/origin.js"]:
+            self.assertEqual(app.area(path), app.area("src/runtime-worker.js"))
+        self.assertEqual(app.area("src/features/pages.js"), app.area("src/worker.js"))
+
     def test_same_day_insertion_preserves_existing_categories(self):
         original = "# Changelog\n\n## 2026-10-22 – Nachtrag\n\n### Geändert\n\n- Alter Eintrag.\n\n### Behoben\n\n- Alte Korrektur.\n\n## 2026-10-20\n\nAlt.\n"
         saved = app.insert_entries(original, "2026-10-22", "Geändert", ["- Neuer Eintrag."])

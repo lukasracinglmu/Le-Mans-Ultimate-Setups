@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const index = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');

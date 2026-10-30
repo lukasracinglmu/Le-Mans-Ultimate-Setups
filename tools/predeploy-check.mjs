@@ -1,6 +1,8 @@
 /* @file-notes: Prüft vor einem Deployment Syntax, Assets und zentrale Konfigurationsfehler. */
+import { createHash } from 'node:crypto';
 import { access, readdir, readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { REQUIRED_VARS } from '../src/config.js';
 
 const wrangler = await readFile('wrangler.jsonc', 'utf8');
@@ -31,10 +33,20 @@ for (const file of jsFiles) {
 }
 const assets = await readdir('public/assets');
 if (!assets.includes('bp-logo.webp')) throw new Error('public/assets/bp-logo.webp fehlt.');
-const workerNames = new Set(workerFiles.map((file) => file.split('/').pop()));
-const exposed = (await readdir('public', { recursive: true })).filter((file) =>
-	workerNames.has(file.split('/').pop())
-);
+// Worker code must never be served. A copy of a src/ module in public/ has the same
+// content; same file names are fine, e.g. a feature and the page script it serves.
+const fingerprint = async (file) =>
+	createHash('sha256')
+		.update(await readFile(file))
+		.digest('hex');
+const workerFingerprints = new Set(await Promise.all(workerFiles.map(fingerprint)));
+const publicFiles = (await readdir('public', { recursive: true, withFileTypes: true }))
+	.filter((entry) => entry.isFile())
+	.map((entry) => join(entry.parentPath, entry.name));
+const exposed = [];
+for (const file of publicFiles) {
+	if (workerFingerprints.has(await fingerprint(file))) exposed.push(file);
+}
 if (exposed.length) throw new Error(`Worker-Module in public/ gefunden: ${exposed.join(', ')}`);
 console.log(
 	`Pre-deploy check erfolgreich: ${jsFiles.length} JavaScript-Dateien und ${assets.length} Asset-Einträge geprüft.`

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const index = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');

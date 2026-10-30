@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import worker from '../src/worker.js';
 import { resolvePermissions } from '../src/discord-permissions.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
