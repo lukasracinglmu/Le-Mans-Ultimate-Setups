@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
+import { uploadSetupFamily } from '../public/js/home/setup-names.js';
 import { compareSetupVersions, cleanSetupFileName } from '../src/setup-version.js';
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
 import production from '../src/production-worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
-const source = await readFile(new URL('../public/js/home/app.js', import.meta.url), 'utf8');
-const client = vm.runInNewContext(
-	source.slice(source.indexOf('function displaySetupFileName('), source.indexOf('function esc(')) +
-		source.slice(
-			source.indexOf('function uploadSetupFamily('),
-			source.indexOf('async function uploadFileIdentity(')
-		) +
-		';({uploadSetupFamily})'
-);
+const client = { uploadSetupFamily };
 
 test('the server compares numeric versions and leaves unknown formats undecided', () => {
 	for (const [a, b, expected] of [

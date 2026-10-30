@@ -1,4 +1,5 @@
-(() => {
+// The brand in the header links to the home page.
+export function initBrandLink() {
 	const brand = document.querySelector('header .brand');
 	if (!brand) return;
 	brand.style.cursor = 'pointer';
@@ -18,4 +19,4 @@
 			go();
 		}
 	});
-})();
+}

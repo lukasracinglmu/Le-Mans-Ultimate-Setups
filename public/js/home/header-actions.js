@@ -1,4 +1,5 @@
-(() => {
+// Quick links in the header, depending on the permissions of the visitor.
+export function initHeaderActions() {
 	const header = document.querySelector('header');
 	if (!header) return;
 	const icons = {
@@ -63,4 +64,4 @@
 			add('Bug melden', '/bug-report', 'bug-action', 'bug');
 		})
 		.catch(() => {});
-})();
+}

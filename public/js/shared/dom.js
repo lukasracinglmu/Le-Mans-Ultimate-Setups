@@ -1,3 +1,5 @@
+export const $ = (id) => document.getElementById(id);
+
 const HTML_ENTITIES = {
 	'&': '&amp;',
 	'<': '&lt;',
