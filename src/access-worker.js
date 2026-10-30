@@ -25,7 +25,6 @@ export default {
 				return json({ success: false, error: 'Rechte-Datenbank nicht verfügbar.' }, 503);
 			}
 		}
-		if (path === '/api/me' && method === 'GET') return augmentedMe(request, env, ctx);
 		if (path === '/api/admin/admin-panel-access' && method === 'GET')
 			return listAdminPanelAccess(request, env, ctx);
 		if (path === '/api/admin/admin-panel-access' && (method === 'POST' || method === 'DELETE'))
@@ -276,12 +275,6 @@ export default {
 			return response;
 		}
 
-		if ((path === '/api/setups' || path === '/api/setups/download') && method === 'GET') {
-			// worker.js validates the signed session and database access for both routes.
-			// Do not repeat that same Discord/D1 check in every wrapping layer.
-			return productionWorker.fetch(request, env, ctx);
-		}
-
 		return productionWorker.fetch(request, env, ctx);
 	},
 };
@@ -293,10 +286,6 @@ async function getBaseMe(request, env, ctx, freshRoles = false) {
 	);
 	const response = await productionWorker.fetch(meRequest, env, ctx);
 	return safeJson(response);
-}
-
-async function augmentedMe(request, env, ctx) {
-	return productionWorker.fetch(request, env, ctx);
 }
 
 async function ensureAccessSchema(env) {
