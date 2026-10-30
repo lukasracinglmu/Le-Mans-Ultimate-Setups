@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ticketApi } from '../src/bug-tickets.js';
+import { sessionCookie } from './helpers/session.mjs';
+
+const OWNER = '111111111111111111';
 
 const scenarios = [
 	['open', 'progress', 'in Bearbeitung'],
@@ -19,7 +22,8 @@ for (const [status, action, label] of scenarios)
 			let saved = false;
 			const env = {
 				DISCORD_BOT_TOKEN: 'test',
-				DISCORD_OWNER_USER_ID: 'owner',
+				DISCORD_OWNER_USER_ID: OWNER,
+				SESSION_SECRET: 'test-secret',
 				ACCESS_DB: {
 					async batch() {},
 					prepare(sql) {
@@ -62,23 +66,17 @@ for (const [status, action, label] of scenarios)
 			try {
 				const request = new Request('https://example.test/api/admin/bug-tickets/7/' + action, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {
+						'Content-Type': 'application/json',
+						Cookie: await sessionCookie(OWNER, env.SESSION_SECRET),
+					},
 					body: JSON.stringify({
 						title: 'New title',
 						description: 'New description',
 						priority: 'High',
 					}),
 				});
-				const result = await ticketApi(
-					request,
-					env,
-					{},
-					{
-						async fetch() {
-							return Response.json({ loggedIn: true, user: { id: 'owner', canViewTickets: true } });
-						},
-					}
-				);
+				const result = await ticketApi(request, env);
 				assert.equal(result.status, status === 'closed' && action === 'progress' ? 409 : 200);
 				assert.equal(saved, !!label);
 				if (!label) assert.equal(calls.length, 0);

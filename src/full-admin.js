@@ -4,6 +4,7 @@ import { setFullAdminAccess } from './managed-grants.js';
 import { writeSetupAuditEvent } from './audit-log.js';
 import { ownerUserId } from './config.js';
 import { createManualBackup, backupOverview, backupJobStatus } from './automatic-backup.js';
+import { readMe } from './features/auth.js';
 import { json } from './lib/http.js';
 const validUserId = (v) => (/^\d{16,22}$/.test(String(v || '').trim()) ? String(v).trim() : null);
 
@@ -16,13 +17,8 @@ async function ensure(env) {
 		await env.ACCESS_DB.prepare('ALTER TABLE full_admin_access ADD COLUMN username TEXT').run();
 	} catch {}
 }
-async function ownerOnly(request, env, ctx, legacyWorker) {
-	const r = await legacyWorker.fetch(
-		new Request(new URL('/api/me', request.url), { headers: request.headers }),
-		env,
-		ctx
-	);
-	const me = await r.json().catch(() => null);
+async function ownerOnly(request, env) {
+	const me = await readMe(request, env);
 	if (!me?.loggedIn) return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
 	const configuredOwner = String(me.user?.id) === ownerUserId(env);
 	if (!configuredOwner && !me.user?.isOwner && !me.user?.fullAdmin)
@@ -66,9 +62,9 @@ export async function maintenanceState(env) {
 		return { enabled: false, message: '' };
 	}
 }
-export async function fullAdminApi(request, env, ctx, legacyWorker) {
+export async function fullAdminApi(request, env, ctx) {
 	const path = new URL(request.url).pathname;
-	const auth = await ownerOnly(request, env, ctx, legacyWorker);
+	const auth = await ownerOnly(request, env);
 	if (auth.error) return auth.error;
 	if (path === '/api/admin/maintenance' && String(auth.user?.id) !== ownerUserId(env))
 		return json({ success: false, error: 'Nur der Owner darf den Wartungsmodus verwalten.' }, 403);

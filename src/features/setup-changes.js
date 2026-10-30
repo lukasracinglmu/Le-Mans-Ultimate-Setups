@@ -10,13 +10,13 @@ import {
 	readStoredDisplayName,
 } from '../setup-display-name.js';
 import { storeSetupVersion } from '../setup-version.js';
-import { readProfile } from './auth.js';
+import { readMe } from './auth.js';
 import { storeUploadedSetups } from './setup-upload.js';
 
 const storeUpload = catchErrors(storeUploadedSetups);
 
-async function requireUploadDeleteAccess(request, env, ctx) {
-	const me = await readProfile(request, env, ctx, true);
+async function requireUploadDeleteAccess(request, env) {
+	const me = await readMe(request, env, { refresh: true });
 	if (!me?.loggedIn || !me.user?.id)
 		return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
 	if (!me.user.canUpload)
@@ -38,7 +38,7 @@ async function requireUploadDeleteAccess(request, env, ctx) {
 
 // Checks the permission first and records every stored and replaced setup afterwards.
 export async function uploadSetups(request, env, ctx) {
-	const permission = await requireUploadDeleteAccess(request, env, ctx);
+	const permission = await requireUploadDeleteAccess(request, env);
 	if (permission.error) return permission.error;
 	const response = await storeUpload(request, env, ctx);
 	if (response.ok) {
@@ -88,7 +88,7 @@ export async function uploadSetups(request, env, ctx) {
 }
 
 export async function updateSetupVersion(request, env, ctx) {
-	const permission = await requireUploadDeleteAccess(request, env, ctx);
+	const permission = await requireUploadDeleteAccess(request, env);
 	if (permission.error) return permission.error;
 	let body;
 	try {
@@ -227,7 +227,7 @@ export async function updateSetupVersion(request, env, ctx) {
 // The deletion itself happens in the older worker; this checks the permission first and
 // records the deleted setup afterwards.
 export async function deleteSetup(request, env, ctx) {
-	const permission = await requireUploadDeleteAccess(request, env, ctx);
+	const permission = await requireUploadDeleteAccess(request, env);
 	if (permission.error) return permission.error;
 	const clone = request.clone();
 	let meta = { category: '', vehicle: '', name: '', version: null };

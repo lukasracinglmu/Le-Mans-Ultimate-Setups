@@ -12,6 +12,7 @@ import { createWebsiteRequest } from '../src/features/requests.js';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import base from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 const oldSha = 'a'.repeat(40),
 	newSha = 'b'.repeat(40),
 	name = 'Alpine Spa HYMO.zip',
@@ -235,15 +236,8 @@ test('delete refuses a changed selected file without any DELETE', async () => {
 });
 
 test('Setup Request derives class from catalog and mentions exactly the configured role and requester', async () => {
-	const originalBase = base.fetch,
-		originalFetch = globalThis.fetch,
+	const originalFetch = globalThis.fetch,
 		sends = [];
-	base.fetch = async () =>
-		Response.json({
-			loggedIn: true,
-			databaseAccess: true,
-			user: { id: '1033453785416208564', username: 'Lukas' },
-		});
 	globalThis.fetch = async (url, options = {}) => {
 		if (String(url).includes('api.github.com'))
 			return Response.json({
@@ -254,10 +248,13 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 		return Response.json({ id: 'message' });
 	};
 	try {
+		const cookie = await sessionCookie('1033453785416208564', 'request-test', {
+			username: 'Lukas',
+		});
 		const req = (vehicle) =>
 			new Request('https://example.test/api/request', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', Cookie: cookie },
 				body: JSON.stringify({
 					vehicle,
 					carClass: 'wrong',
@@ -271,6 +268,8 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 			DISCORD_SETUP_REQUEST_ROLE_ID: '1538601074074849330',
 			DISCORD_BOT_TOKEN: 'test',
 			DISCORD_CHANNEL_ID: '1557002876906377258',
+			DISCORD_OWNER_USER_ID: '1033453785416208564',
+			SESSION_SECRET: 'request-test',
 		};
 		assert.equal((await createWebsiteRequest(req('BMW M4 LMGT3'), env)).status, 200);
 		assert.equal(sends[0].embeds[0].fields.find((field) => field.name === 'Klasse').value, 'LMGT3');
@@ -279,7 +278,6 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 		assert.equal((await createWebsiteRequest(req('BMW'), env)).status, 400);
 		assert.equal(sends.length, 1);
 	} finally {
-		base.fetch = originalBase;
 		globalThis.fetch = originalFetch;
 	}
 });

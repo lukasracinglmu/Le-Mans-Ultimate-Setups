@@ -123,7 +123,9 @@ function environment(options = {}) {
 	};
 }
 
-async function cookie(id, roles) {
+// A role snapshot counts for one minute after `checkedAt`, which covers the whole run.
+// Older snapshots make the worker ask Discord for the roles again.
+async function cookie(id, roles, checkedAt = Date.now()) {
 	const configuration = [
 		vars.DISCORD_GUILD_ID,
 		vars.DISCORD_DATABASE_ROLE_ID,
@@ -136,7 +138,7 @@ async function cookie(id, roles) {
 			username: 'User' + id.slice(0, 3),
 			accessToken: 'oauth',
 			exp: 4102444800,
-			memberSnapshot: { userId: id, configuration, roles, checkedAt: 4102444800000 },
+			memberSnapshot: { userId: id, configuration, roles, checkedAt },
 		})
 	).toString('base64url');
 	const key = await crypto.subtle.importKey(
@@ -157,6 +159,7 @@ const users = {
 	member: await cookie(MEMBER, [vars.DISCORD_DATABASE_ROLE_ID]),
 	uploader: await cookie(UPLOADER, [vars.DISCORD_DATABASE_ROLE_ID, vars.DISCORD_UPLOAD_ROLE_ID]),
 	owner: await cookie(OWNER, [vars.DISCORD_DATABASE_ROLE_ID, vars.DISCORD_OWNER_ROLE_ID]),
+	stale: await cookie(MEMBER, [vars.DISCORD_DATABASE_ROLE_ID], 0),
 };
 
 const json = (body) => ({ type: 'application/json', body: JSON.stringify(body) });

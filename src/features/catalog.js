@@ -3,8 +3,8 @@ import { json, securityHeaders } from '../lib/http.js';
 import { readSiteFile } from '../repo-read.js';
 import { readMe } from './auth.js';
 
-export async function catalogFile(request, env, ctx) {
-	const me = await readMe(request, env, ctx);
+export async function catalogFile(request, env) {
+	const me = await readMe(request, env);
 	if (!me?.loggedIn) return json({ success: false, error: 'Nicht angemeldet.' }, 401);
 	if (!me?.databaseAccess) {
 		const unavailable = me?.rolesAvailable === false;

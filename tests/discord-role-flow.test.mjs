@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import runtime from '../src/index.js';
-import worker from '../src/worker.js';
 import { resolvePermissions } from '../src/discord-permissions.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
@@ -141,14 +140,14 @@ for (const [label, role, upload, admin] of [
 					throw Error('Unexpected request');
 				},
 				async () => {
-					const login = await worker.fetch(request('/auth/discord'), env, ctx);
+					const login = await runtime.fetch(request('/auth/discord'), env, ctx);
 					assert.equal(
 						new URL(login.headers.get('location')).searchParams.get('scope'),
 						'identify guilds.members.read'
 					);
 					const stateCookie = login.headers.get('set-cookie').split(';')[0];
 					const state = new URL(login.headers.get('location')).searchParams.get('state');
-					const callback = await worker.fetch(
+					const callback = await runtime.fetch(
 						request('/auth/discord/callback?code=test-code&state=' + state, stateCookie),
 						env,
 						ctx
@@ -216,7 +215,7 @@ for (const [label, role, upload, admin] of [
 				},
 				async () => {
 					const data = await (
-						await worker.fetch(
+						await runtime.fetch(
 							request('/api/me', await signedCookie({ accessToken: undefined })),
 							env,
 							ctx
@@ -316,7 +315,7 @@ test('expired token and inaccessible bot ask for renewed Discord authorization',
 			),
 		async () => {
 			const me = await (
-				await worker.fetch(request('/api/me', await signedCookie()), env, ctx)
+				await runtime.fetch(request('/api/me', await signedCookie()), env, ctx)
 			).json();
 			assert.equal(me.databaseAccess, false);
 			assert.equal(me.rolesAvailable, false);
@@ -366,7 +365,7 @@ test('tampering with the role snapshot invalidates the whole session', async () 
 	payload.memberSnapshot = snapshot([config.DISCORD_UPLOAD_ROLE_ID]);
 	const forged =
 		'lmu_session=' + Buffer.from(JSON.stringify(payload)).toString('base64url') + '.' + sig;
-	const me = await (await worker.fetch(request('/api/me', forged), env, ctx)).json();
+	const me = await (await runtime.fetch(request('/api/me', forged), env, ctx)).json();
 	assert.equal(me.loggedIn, false);
 });
 test('fresh setup mutations ignore cached Supply roles after the role was removed', async () => {
@@ -408,7 +407,7 @@ test('explicit role refresh bypasses the snapshot and can immediately remove rea
 		async () => roleResult([]),
 		async () => {
 			const cookie = await signedCookie({ memberSnapshot: snapshot() });
-			const me = await worker.fetch(request('/api/me?refresh=1', cookie), env, ctx);
+			const me = await runtime.fetch(request('/api/me?refresh=1', cookie), env, ctx);
 			assert.equal((await me.json()).databaseAccess, false);
 			const fresh = me.headers.get('set-cookie').split(';')[0];
 			assert.equal((await runtime.fetch(request('/setups.json', fresh), env, ctx)).status, 403);
