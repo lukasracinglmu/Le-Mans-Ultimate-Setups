@@ -54,6 +54,8 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Handler liegen nach Aufgabe in `src/features/`, Querschnittsaufgaben in `src/middleware/`.
 - Umbauten am Routing mit der Routen-Matrix prüfen. `node tools/route-matrix.mjs <checkout> <datei>` auf `main` und auf dem Branch laufen lassen, dann `node tools/compare-route-matrix.mjs` mit beiden Dateien. Jede Abweichung ist eine Verhaltensänderung.
 - Eine Route in einer inneren Schicht kann toter Code sein, wenn eine äußere Schicht sie zuerst beantwortet. Vor dem Umzug prüfen, welche Variante wirklich greift.
+- Auch interne Weiterleitungen zählen: Eine Schicht kann eine Anfrage per `new Request(...)` an eine tiefere Route schicken. Vor dem Löschen einer Route danach suchen.
+- Die Routen-Matrix erreicht keine signierten Discord-Interaktionen. Die prüft `tests/discord-interactions.test.mjs` mit eigenem Schlüsselpaar.
 
 ### Gemeinsame Hilfen (`src/lib/`)
 
