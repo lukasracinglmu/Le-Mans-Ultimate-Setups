@@ -530,10 +530,8 @@ async function discordInteraction(request, env, ctx) {
 		else await task;
 		return json({ type: 5, data: { flags: 64 } });
 	}
-	return baseWorker.fetch(
-		new Request(request.url, { method: 'POST', headers: request.headers, body: rawBody }),
-		env
-	);
+	// Discord reports a failed interaction unless every interaction gets an answer.
+	return json({ type: 4, data: { content: 'Nicht unterstützt.', flags: 64 } });
 }
 
 function requestModalResponse() {
