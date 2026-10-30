@@ -59,6 +59,9 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Die Routen-Matrix erreicht keine signierten Discord-Interaktionen. Die prüft `tests/discord-interactions.test.mjs` mit eigenem Schlüsselpaar.
 - Ein `try` fängt nur, was darin mit `await` läuft. `return handler()` ohne `await` lässt den Fehler durch. Beim Umzug nur die Routen in `catchErrors()` hüllen, deren Fehler die alte Schicht wirklich gefangen hat.
 - Tests ersetzen `worker.fetch` am Objekt. Deshalb `legacyWorker.fetch(...)` aufrufen und nie destrukturieren.
+- Das Profil des Besuchers nur über `readMe()` aus `src/features/auth.js` lesen, nie per internem Request auf `/api/me`. Es ist dieselbe Antwort, nur ohne das erneuerte Session-Cookie.
+- HTTPS-Pflicht gibt es nur auf den Routen des früheren Basis-Workers (`requireHttps()`), und `readMe()` wertet HTTP als abgemeldet. Als globale Middleware wäre sie eine Verhaltensänderung für alle anderen Routen.
+- Die Routen-Matrix prüft auch Rollen: Ihre Sessions tragen einen gültigen Rollen-Snapshot, der Nutzer `stale` einen abgelaufenen, der Discord neu fragt.
 
 ### Gemeinsame Hilfen (`src/lib/`)
 
@@ -113,6 +116,8 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Test-Umgebungen setzen benötigte Variablen wie `DISCORD_OWNER_USER_ID` ausdrücklich. Es gibt keine Ersatzwerte mehr, auf die sich ein Test verlassen könnte.
 - Repo-Einstellungen in Tests per `...repositoryEnv` aus `tests/helpers/repository-env.mjs`. Die Werte kommen aus `wrangler.jsonc`.
 - Ohne `...repositoryEnv` stellt der Worker gar keine GitHub-Anfrage. Ein Test, der „GitHub wird nicht gefragt“ prüft, wäre dann immer grün.
+- Angemeldete Nutzer in Tests per signiertem Cookie aus `tests/helpers/session.mjs`, nicht per gemocktem Profil. Der Owner aus `DISCORD_OWNER_USER_ID` braucht keine Discord-Abfrage. Für Rollen einen `memberSnapshot` mit `checkedAt: Date.now()` mitgeben, er gilt eine Minute.
+- Session-IDs in Tests numerisch halten. Ohne Avatar rechnet `/api/me` mit `BigInt(id)` und wirft sonst.
 
 ### Repo-Pflege
 
