@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { submitBugReport, reportImage } from '../src/bug-reports.js';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 const user = { id: '222222222222222222', username: 'Reporter' },
 	reportId = 'a'.repeat(25),

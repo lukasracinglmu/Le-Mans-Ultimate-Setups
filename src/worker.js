@@ -5,6 +5,7 @@ import { cleanSetupFileName } from './setup-version.js';
 import { githubBranch, ownerUserId } from './config.js';
 import { githubRequest } from './lib/github.js';
 import { json, securityHeaders, withSecurityHeaders } from './lib/http.js';
+import { enforceSameOriginForStateChange } from './middleware/origin.js';
 import { resolvePermissions, rolePermissions } from './discord-permissions.js';
 import { readPreviousSetups, deleteGithubSetup } from './setup-lifecycle.js';
 import { readRepoFile } from './repo-read.js';
@@ -70,30 +71,6 @@ function isHttpsRequest(request) {
 	const url = new URL(request.url);
 	if (url.protocol === 'https:') return true;
 	return request.headers.get('X-Forwarded-Proto') === 'https';
-}
-
-export function enforceSameOriginForStateChange(request, env) {
-	const method = request.method.toUpperCase();
-	if (!new Set(['POST', 'PUT', 'PATCH', 'DELETE']).has(method)) return null;
-	const url = new URL(request.url);
-	if (url.pathname === '/interactions/discord') return null;
-	const allowedOrigins = new Set([url.origin]);
-	try {
-		if (env.SITE_URL) allowedOrigins.add(new URL(env.SITE_URL).origin);
-	} catch {}
-	const origin = request.headers.get('Origin');
-	if (origin && !allowedOrigins.has(origin))
-		return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-	const referer = request.headers.get('Referer');
-	if (!origin && referer) {
-		try {
-			if (!allowedOrigins.has(new URL(referer).origin))
-				return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-		} catch {
-			return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-		}
-	}
-	return null;
 }
 
 function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {

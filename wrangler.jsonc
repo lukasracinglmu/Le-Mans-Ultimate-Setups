@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
   "name": "le-mans-ultimate-setups",
-  "main": "src/runtime-worker.js",
+  "main": "src/index.js",
   "compatibility_date": "2026-10-06",
   "triggers": { "crons": ["0 * * * *"] },
   "assets": {

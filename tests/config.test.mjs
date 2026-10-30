@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ownerUserId, setupRequestRoleId, setupSupplyRoleId } from '../src/config.js';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import {
 	canConfirmSetupRequest,
 	SETUP_CONFIRMATION_WHITELIST,

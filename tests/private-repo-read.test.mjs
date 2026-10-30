@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { readRepoFile, readSiteFile } from '../src/repo-read.js';
 import production from '../src/production-worker.js';
-import runtime from '../src/runtime-worker.js';
+import runtime from '../src/index.js';
 import worker from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
