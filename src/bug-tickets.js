@@ -1,7 +1,7 @@
 import { ownerUserId } from './config.js';
+import { DISCORD_API } from './lib/discord.js';
 import { json } from './lib/http.js';
 
-const DISCORD_API = 'https://discord.com/api/v10';
 const validTicket = (value) => Number.isInteger(Number(value)) && Number(value) > 0;
 const clean = (v, max) =>
 	String(v || '')

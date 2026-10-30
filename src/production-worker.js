@@ -7,6 +7,7 @@ import {
 	enrichSetupLifecycle,
 } from './setup-lifecycle.js';
 import { githubBranch, setupRequestRoleId, setupSupplyRoleId } from './config.js';
+import { DISCORD_API } from './lib/discord.js';
 import { githubRequest } from './lib/github.js';
 import { json, safeJson } from './lib/http.js';
 import { readPage, readSiteFile } from './repo-read.js';
@@ -26,7 +27,6 @@ import {
 	isAnyRequestManufacturer,
 } from '../discord-presence/request-manufacturers.js';
 
-const DISCORD_API = 'https://discord.com/api/v10';
 const REQUEST_MODAL_ID = 'lmu_setup_request';
 const REPO_ASSETS = new Set([
 	'/assets/manufacturers/go-setups.webp',

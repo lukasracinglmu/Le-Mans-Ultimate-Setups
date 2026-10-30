@@ -3,6 +3,7 @@ import { buildSetupSummary } from './setup-summary.js';
 /* @file-notes: Basis-Worker für Authentifizierung, Discord-Login, Setup-APIs und grundlegende Website-Funktionen. */
 import { cleanSetupFileName } from './setup-version.js';
 import { githubBranch, ownerUserId } from './config.js';
+import { DISCORD_API } from './lib/discord.js';
 import { githubRequest } from './lib/github.js';
 import { json, securityHeaders, withSecurityHeaders } from './lib/http.js';
 import { enforceSameOriginForStateChange } from './middleware/origin.js';
@@ -11,7 +12,6 @@ import { readPreviousSetups, deleteGithubSetup } from './setup-lifecycle.js';
 import { readRepoFile } from './repo-read.js';
 import { persistSetupFile, readUploadForm } from './upload-storage.js';
 
-const DISCORD_API = 'https://discord.com/api/v10';
 const DISCORD_OAUTH = 'https://discord.com/oauth2';
 const SESSION_COOKIE = 'lmu_session';
 const STATE_COOKIE = 'lmu_oauth_state';

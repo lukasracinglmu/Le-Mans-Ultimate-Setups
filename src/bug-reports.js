@@ -1,7 +1,7 @@
 import { createTicket } from './bug-tickets.js';
 import { ownerUserId } from './config.js';
+import { DISCORD_API } from './lib/discord.js';
 import { json } from './lib/http.js';
-const DISCORD_API = 'https://discord.com/api/v10';
 export const MAX_REPORT_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = MAX_REPORT_IMAGE_BYTES + 128 * 1024;
 const priorities = ['Low', 'Medium', 'High'];
