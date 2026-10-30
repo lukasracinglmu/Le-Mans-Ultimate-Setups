@@ -19,7 +19,7 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 | `tools/` | Hilfsskripte, z. B. `npm run check:deploy` |
 | `setups/`, `audit-logs/` | Daten, nicht von Hand ändern |
 
-- Worker-Code gehört nie nach `public/`. `npm run check:deploy` bricht ab, wenn dort ein Modul aus `src/` liegt.
+- Worker-Code gehört nie nach `public/`. `npm run check:deploy` bricht ab, wenn dort eine Kopie eines Moduls aus `src/` liegt. Es vergleicht den Inhalt, gleiche Dateinamen sind erlaubt.
 - Geschützte Seiten liegen trotzdem in `public/`. Die Zugriffsprüfung passiert in den Routen des Workers.
 - Seiten liefert der Worker aus den deployten Assets (`readPage`). Daten wie `setups.json` und die Herstellerbilder liest er live über die GitHub API (`readSiteFile`) und fällt bei einem Fehler auf die Assets zurück.
 
@@ -47,11 +47,19 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Feste IDs, die Worker und Bot teilen (Whitelist, Rollen-Ersatzwert des Bots), stehen nur in `discord-presence/request-manufacturers.js`.
 - Werte in `CLOUDFLARE-VARIABLEN.md` aus `wrangler.jsonc` übernehmen, nicht umgekehrt.
 
+### Worker-Routing
+
+- Einstieg ist `src/index.js`. Jede Route steht genau einmal in `src/routes.js`, und die erste passende antwortet. Vorher läuft die Middleware: Origin-Prüfung, dann Wartungsmodus.
+- Routen ohne Eintrag gehen noch durch die alten Schichten: `src/legacy.js` → `access-worker.js` → `production-worker.js` → `worker.js`. Neue Routen nur in `routes.js` anlegen (#10).
+- Handler liegen nach Aufgabe in `src/features/`, Querschnittsaufgaben in `src/middleware/`.
+- Umbauten am Routing mit der Routen-Matrix prüfen. `node tools/route-matrix.mjs <checkout> <datei>` auf `main` und auf dem Branch laufen lassen, dann `node tools/compare-route-matrix.mjs` mit beiden Dateien. Jede Abweichung ist eine Verhaltensänderung.
+- Eine Route in einer inneren Schicht kann toter Code sein, wenn eine äußere Schicht sie zuerst beantwortet. Vor dem Umzug prüfen, welche Variante wirklich greift.
+
 ### Gemeinsame Hilfen (`src/lib/`)
 
 - JSON-Antworten nur über `json()` aus `src/lib/http.js`. Es setzt Security-Header und `no-store`. Abweichendes `Cache-Control` oder `Retry-After` als dritten Parameter übergeben.
 - GitHub-Anfragen über `githubRequest()` aus `src/lib/github.js`. `Accept`, Timeout und Redirect-Verhalten gibt der Aufrufer mit, weil sie sich bewusst unterscheiden. ZIP-Uploads haben z. B. kein Timeout.
-- Die CSPs unterscheiden sich bewusst: Wartungsseite, Seiten (`PAGE_CSP` in `src/runtime-worker.js`) und der Rest (`securityHeaders()`). Nicht vereinheitlichen.
+- Die CSPs unterscheiden sich bewusst: Wartungsseite, Seiten (`PAGE_CSP` in `src/features/pages.js`) und der Rest (`securityHeaders()`). Nicht vereinheitlichen.
 - Verhaltensgleichheit bei Refactorings per Routen-Schnappschuss prüfen: dieselben Anfragen durch die Worker-Kette auf `main` und auf dem Branch schicken, Status und Body vergleichen.
 
 ### Seiten-Scripts (`public/js/`)
@@ -59,7 +67,6 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Jede Seite hat `public/js/<seite>/main.js` als Einstieg, der nur die Teile startet. Die Teile daneben tun beim Import nichts, deshalb können Tests sie direkt importieren.
 - `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`.
 - Keine Inline-Scripts und keine `on*`-Attribute. `tests/page-scripts.test.mjs` prüft das für jede umgestellte Seite, neue Seiten dort eintragen. Alle Seiten laufen mit `PAGE_CSP`, also `script-src 'self'`.
-- Dateien in `public/` dürfen nicht wie Module in `src/` heißen. `npm run check:deploy` vergleicht nur Dateinamen und hält z. B. `public/js/bug-tickets.js` für Worker-Code.
 - Umbauten im Browser gegen `main` vergleichen: derselbe Ablauf mit Mock-API auf beiden Ständen, der Branch mit der echten CSP. Dazu die String-Literale von altem und neuem Code vergleichen.
 - agent-browser klickt auf Koordinaten. Liegt das Ziel außerhalb des Sichtbereichs, geht der Klick ohne Fehlermeldung ins Leere. Vorher per `scrollIntoView()` ins Bild holen.
 - Beim Aufteilen großer Scripts Globals per `eslint-scope` umbenennen, nicht per Suchen und Ersetzen. Nur so bleiben gleichnamige lokale Variablen und Objekt-Schlüssel unberührt.
