@@ -26,7 +26,9 @@ function buildSetup(s) {
 		(s.outdated ? '<span class="setup-outdated-tag">Veraltet</span>' : '');
 	const meta = document.createElement('div');
 	meta.className = 'setup-meta';
-	meta.textContent = [s.series, s.variant, 'ZIP'].filter(Boolean).join(' · ');
+	meta.textContent = [s.series, s.variant === 'Standard' ? null : s.variant, 'ZIP']
+		.filter(Boolean)
+		.join(' · ');
 	const version = document.createElement('span');
 	version.className = 'setup-version-value' + (s.version ? '' : ' is-empty');
 	version.textContent = 'Version: ' + (s.version || '—');
@@ -110,7 +112,7 @@ export function renderSetups(setups) {
 			const title = document.createElement('div');
 			title.className = 'setup-group-title';
 			title.textContent = group;
-			wrap.appendChild(title);
+			if (group !== 'Standard') wrap.appendChild(title);
 			items.forEach((s) => wrap.appendChild(buildSetup(s)));
 			section.appendChild(wrap);
 		}
@@ -124,7 +126,7 @@ export function renderSetups(setups) {
 			const title = document.createElement('div');
 			title.className = 'setup-group-title';
 			title.textContent = group;
-			wrap.appendChild(title);
+			if (group !== 'Standard') wrap.appendChild(title);
 			items.forEach((s) => wrap.appendChild(buildSetup(s)));
 			list.appendChild(wrap);
 		}
