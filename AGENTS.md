@@ -46,6 +46,8 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Neue Pflichtvariablen in `REQUIRED_VARS` eintragen, dann prüft sie `npm run check:deploy`.
 - Feste IDs, die Worker und Bot teilen (Whitelist, Rollen-Ersatzwert des Bots), stehen nur in `discord-presence/request-manufacturers.js`.
 - Werte in `CLOUDFLARE-VARIABLEN.md` aus `wrangler.jsonc` übernehmen, nicht umgekehrt.
+- Rechte nur in `rolePermissions()` ableiten. Alle Prüfungen lesen das Ergebnis, auch die Admin-API in `src/full-admin.js`. Ausnahmen prüfen direkt `DISCORD_OWNER_USER_ID`: Wartungsmodus, Backups, Tickets.
+- Feste Full Admins (`DISCORD_FULL_ADMIN_USER_IDS`) stehen nicht in der Datenbank. Das Admin-Panel zeigt sie nicht und kann sie nicht entziehen, das geht nur per PR.
 
 ### Worker-Routing
 
