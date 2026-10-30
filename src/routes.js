@@ -1,6 +1,7 @@
 /* @file-notes: Routing-Tabelle des Workers. Jede Route steht hier genau einmal. */
 import { backupCompletionApi } from './automatic-backup.js';
 import { ticketApi } from './bug-tickets.js';
+import { staticFile } from './features/assets.js';
 import { currentUser, discordCallback, discordLogin, logout } from './features/auth.js';
 import { catalogFile } from './features/catalog.js';
 import { favoritesApi } from './features/favorites.js';
@@ -20,18 +21,25 @@ import {
 	listAdminPanelAccess,
 	listCombinedAccess,
 	listDatabaseAccess,
+	listUploadAccess,
 	revokeDatabaseAccess,
 	withAccessSchema,
 } from './features/access.js';
+import { discordRoleStatus, registerRequestCommand } from './features/discord-admin.js';
+import {
+	discordChannels,
+	discordMessages,
+	discordSendMessage,
+} from './features/discord-channels.js';
 import { discordInteraction } from './features/discord-interactions.js';
 import { manufacturerImage } from './features/manufacturer-images.js';
 import { withPermissionAudit } from './features/permission-audit.js';
 import { bugReportsApi } from './features/reports.js';
 import { createWebsiteRequest, requestTracks } from './features/requests.js';
 import { deleteSetup, updateSetupVersion, uploadSetups } from './features/setup-changes.js';
+import { downloadSetup, setupSummary } from './features/setup-files.js';
 import { listSetups } from './features/setup-list.js';
 import { fullAdminApi } from './full-admin.js';
-import legacyWorker from './legacy.js';
 import { catchErrors } from './lib/http.js';
 import { requireHttps } from './middleware/https.js';
 import { maintenanceGate } from './middleware/maintenance.js';
@@ -40,13 +48,14 @@ import { enforceSameOriginForStateChange } from './middleware/origin.js';
 // Runs before every route, in this order.
 export const middleware = [enforceSameOriginForStateChange, maintenanceGate];
 
-// The methods the former base worker accepted. It answers every other method with 405.
+// Login and logout take the methods that staticFile() accepts; the others get its 405.
 const BASE_METHODS = ['GET', 'HEAD', 'POST', 'DELETE'];
 
 // The first matching route answers.
 export const routes = [
 	{ method: '*', path: '/api/internal/backups/complete', handler: backupCompletionApi },
-	// Login and logout answer synchronously, so the base worker caught their errors.
+	// Login and logout answer synchronously, so the former base worker caught their errors.
+	// It also required HTTPS for every route that came from it.
 	{ method: BASE_METHODS, path: '/auth/discord', handler: requireHttps(catchErrors(discordLogin)) },
 	{ method: BASE_METHODS, path: '/auth/discord/callback', handler: requireHttps(discordCallback) },
 	{ method: BASE_METHODS, path: '/auth/logout', handler: requireHttps(catchErrors(logout)) },
@@ -128,7 +137,20 @@ export const routes = [
 		path: '/api/admin/all-access',
 		handler: grantChange((request, env) => changeManagedAccess(request, env, true)),
 	},
-	{ method: 'GET', path: '/api/setups', handler: catchErrors(listSetups) },
+	{ method: 'GET', path: '/api/admin/upload-access', handler: ownerTool(listUploadAccess) },
+	{ method: 'GET', path: '/api/admin/discord/role-status', handler: ownerTool(discordRoleStatus) },
+	{
+		method: 'POST',
+		path: '/api/admin/discord/register-request',
+		handler: ownerTool(registerRequestCommand),
+	},
+	{ method: 'GET', path: '/api/discord/channels', handler: requireHttps(discordChannels) },
+	{ method: 'GET', path: '/api/discord/messages', handler: requireHttps(discordMessages) },
+	{ method: 'POST', path: '/api/discord/messages', handler: requireHttps(discordSendMessage) },
+	{ method: 'GET', path: '/api/setups/summary', handler: requireHttps(setupSummary) },
+	{ method: 'GET', path: '/api/setups', handler: requireHttps(catchErrors(listSetups)) },
+	{ method: 'GET', path: '/api/setups/download', handler: requireHttps(downloadSetup) },
+	// Upload and delete need no HTTPS check: readMe() treats plain HTTP as logged out.
 	{ method: 'POST', path: '/api/setups/upload', handler: uploadSetups },
 	{ method: 'POST', path: '/api/setups/version', handler: updateSetupVersion },
 	{ method: 'POST', path: '/api/setups/delete', handler: deleteSetup },
@@ -139,10 +161,16 @@ function grantChange(handler) {
 	return withPermissionAudit(withAccessSchema(handler));
 }
 
-// Routes without an entry still pass the older worker (#10). Its admin APIs also need the
-// grant tables.
-const legacyAdmin = withAccessSchema((request, env, ctx) => legacyWorker.fetch(request, env, ctx));
+// Owner tools under /api/admin/ of the former base worker.
+function ownerTool(handler) {
+	return withAccessSchema(requireHttps(handler));
+}
+
+// Everything else is a deployed file. Paths under /api/admin/ still create the grant tables
+// first, as every admin request did before (#8 removes this).
+const staticPublic = requireHttps(catchErrors(staticFile));
+const staticAdmin = withAccessSchema(staticPublic);
 export const fallback = (request, env, ctx) =>
 	new URL(request.url).pathname.startsWith('/api/admin/')
-		? legacyAdmin(request, env, ctx)
-		: legacyWorker.fetch(request, env, ctx);
+		? staticAdmin(request, env, ctx)
+		: staticPublic(request, env, ctx);

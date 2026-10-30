@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import worker from '../src/worker.js';
+import { discordRoleStatus } from '../src/features/discord-admin.js';
 const env = {
 	SESSION_SECRET: 'diagnostic-test-secret',
 	DISCORD_OWNER_USER_ID: '1033453785416208564',
@@ -36,11 +36,15 @@ async function request(id = env.DISCORD_OWNER_USER_ID, query = '') {
 }
 test('diagnostic cannot be accessed by anonymous or non-owner users', async () => {
 	assert.equal(
-		(await worker.fetch(new Request('https://test.invalid/api/admin/discord/role-status'), env))
-			.status,
+		(
+			await discordRoleStatus(
+				new Request('https://test.invalid/api/admin/discord/role-status'),
+				env
+			)
+		).status,
 		401
 	);
-	assert.equal((await worker.fetch(await request('222222222222222222'), env)).status, 403);
+	assert.equal((await discordRoleStatus(await request('222222222222222222'), env)).status, 403);
 });
 test('diagnostic reports actual role responses without credentials', async () => {
 	const original = fetch;
@@ -51,7 +55,7 @@ test('diagnostic reports actual role responses without credentials', async () =>
 				? Response.json([{ id: env.DISCORD_DATABASE_ROLE_ID, name: 'Team' }])
 				: Response.json({ roles: [env.DISCORD_DATABASE_ROLE_ID] });
 	try {
-		const response = await worker.fetch(await request(), env);
+		const response = await discordRoleStatus(await request(), env);
 		const text = await response.text();
 		assert.ok(!text.includes(env.DISCORD_BOT_TOKEN) && !text.includes('private-oauth'));
 		const data = JSON.parse(text);
@@ -67,7 +71,7 @@ test('diagnostic distinguishes inaccessible guilds from missing user roles', asy
 	globalThis.fetch = async () =>
 		Response.json({ code: 50001, message: 'Missing Access' }, { status: 403 });
 	try {
-		const data = await (await worker.fetch(await request(), env)).json();
+		const data = await (await discordRoleStatus(await request(), env)).json();
 		assert.equal(data.guild.status, 403);
 		assert.equal(data.guild.code, 50001);
 		assert.equal(data.member.status, 403);

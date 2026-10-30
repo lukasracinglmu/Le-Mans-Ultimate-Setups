@@ -2,7 +2,7 @@
 import { mapProfiles } from '../discord-profile.js';
 import { json } from '../lib/http.js';
 import { setFullAdminAccess } from '../managed-grants.js';
-import { readMe } from './auth.js';
+import { readMe, requireOwnerSession } from './auth.js';
 
 // The grant tables are still created at runtime; issue #8 moves them into migrations.
 async function ensureAccessSchema(env) {
@@ -164,6 +164,18 @@ export async function revokeDatabaseAccess(request, env) {
 		);
 	await env.ACCESS_DB.prepare('DELETE FROM database_access WHERE user_id = ?').bind(userId).run();
 	return json({ success: true, userId });
+}
+
+// Unlike the other grant lists, only the configured owner may read this one.
+export async function listUploadAccess(request, env) {
+	const auth = await requireOwnerSession(request, env);
+	if (auth.error) return auth.error;
+	if (!env.ACCESS_DB)
+		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
+	const result = await env.ACCESS_DB.prepare(
+		'SELECT user_id, granted_by, created_at FROM upload_access ORDER BY created_at DESC'
+	).all();
+	return json({ success: true, grants: result.results || [] });
 }
 
 export async function changeManagedAccess(request, env, all) {

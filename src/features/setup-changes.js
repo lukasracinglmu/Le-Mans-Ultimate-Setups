@@ -1,7 +1,6 @@
 /* @file-notes: Prüft Upload, Versionsänderung und Löschen von Setups und schreibt das Audit-Log. */
 import { writeSetupAuditEvent } from '../audit-log.js';
 import { githubBranch } from '../config.js';
-import legacyWorker from '../legacy.js';
 import { githubRequest } from '../lib/github.js';
 import { catchErrors, json, safeJson } from '../lib/http.js';
 import {
@@ -11,6 +10,7 @@ import {
 } from '../setup-display-name.js';
 import { storeSetupVersion } from '../setup-version.js';
 import { readMe } from './auth.js';
+import { deleteSetupFile } from './setup-files.js';
 import { storeUploadedSetups } from './setup-upload.js';
 
 const storeUpload = catchErrors(storeUploadedSetups);
@@ -224,8 +224,8 @@ export async function updateSetupVersion(request, env, ctx) {
 	});
 }
 
-// The deletion itself happens in the older worker; this checks the permission first and
-// records the deleted setup afterwards.
+// deleteSetupFile() removes the ZIP; this checks the permission first and records the
+// deleted setup afterwards.
 export async function deleteSetup(request, env, ctx) {
 	const permission = await requireUploadDeleteAccess(request, env);
 	if (permission.error) return permission.error;
@@ -239,7 +239,7 @@ export async function deleteSetup(request, env, ctx) {
 		if (meta.category && meta.vehicle && meta.name)
 			meta.version = await readStoredVersion(meta.category, meta.vehicle, meta.name, env);
 	} catch {}
-	const response = await legacyWorker.fetch(request, env, ctx);
+	const response = await deleteSetupFile(request, env);
 	if (response.ok) {
 		const data = await safeJson(response.clone());
 		if (data?.success && data.deleted !== false && meta.name)

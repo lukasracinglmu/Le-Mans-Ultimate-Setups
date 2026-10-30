@@ -1,13 +1,13 @@
 /* @file-notes: Speichert die Version hochgeladener Setups und ersetzt oder markiert ältere Setups. */
-import legacyWorker from '../legacy.js';
 import { json, safeJson } from '../lib/http.js';
 import { readPreviousSetups, applyPreviousSetups } from '../setup-lifecycle.js';
 import { readSetupVersion, storeSetupVersion } from '../setup-version.js';
 import { readUploadForm } from '../upload-storage.js';
+import { storeSetupFiles } from './setup-files.js';
 
-// The older worker writes the ZIP files; this reads the form once, stores the version of
+// Reads the form once, has storeSetupFiles() write the ZIP files, then stores the version of
 // every uploaded setup and retires the setups it replaces.
-export async function storeUploadedSetups(request, env, ctx) {
+export async function storeUploadedSetups(request, env) {
 	let form;
 	try {
 		form = await readUploadForm(request);
@@ -30,7 +30,7 @@ export async function storeUploadedSetups(request, env, ctx) {
 	if (parsed.error) return json({ success: false, error: parsed.error }, 400);
 	const category = String(form.get('category') || '').trim();
 	const vehicle = String(form.get('vehicle') || '').trim();
-	const response = await legacyWorker.fetch(request, env, ctx, form);
+	const response = await storeSetupFiles(request, env, form);
 	if (!response.ok) return response;
 	const data = await safeJson(response.clone());
 	if (!data?.success) return response;

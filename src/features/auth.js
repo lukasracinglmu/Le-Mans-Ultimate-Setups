@@ -1,4 +1,5 @@
 /* @file-notes: Discord-Anmeldung, Abmeldung und das Profil des Besuchers mit seinen Rechten. */
+import { ownerUserId } from '../config.js';
 import { resolvePermissions } from '../discord-permissions.js';
 import { DISCORD_API } from '../lib/discord.js';
 import { json, securityHeaders } from '../lib/http.js';
@@ -161,6 +162,15 @@ export async function currentUser(request, env) {
 export async function readMe(request, env, { refresh = false } = {}) {
 	if (!isHttpsRequest(request)) return null;
 	return (await readProfile(request, env, refresh)).me;
+}
+
+// Only the owner from DISCORD_OWNER_USER_ID, judged by the session alone.
+export async function requireOwnerSession(request, env) {
+	const session = await readSession(request, env.SESSION_SECRET);
+	if (!session) return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
+	if (session.id !== ownerUserId(env))
+		return { error: json({ success: false, error: 'Keine Admin-Berechtigung.' }, 403) };
+	return { session };
 }
 
 export function hasSiteAccess(me) {

@@ -5,6 +5,7 @@ import { compareSetupVersions, cleanSetupFileName } from '../src/setup-version.j
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 const client = { uploadSetupFamily };
 
 test('the server compares numeric versions and leaves unknown formats undecided', () => {
@@ -183,20 +184,15 @@ test('duplicate hint must match the real bytes and cannot create a false success
 });
 
 test('verified duplicate does not lower the stored version', async () => {
-	const { default: base } = await import('../src/worker.js'),
-		originalBase = base.fetch;
-	base.fetch = async () =>
-		Response.json({
-			success: true,
-			uploaded: [
-				{
-					name: 'Spa HYMO.zip',
-					originalName: 'Spa v1 HYMO.zip',
-					sha: 'a'.repeat(40),
-					alreadyExists: true,
-				},
-			],
-		});
+	const originalFetch = globalThis.fetch,
+		sha = await gitBlobSha(new TextEncoder().encode('PK\x03\x04')),
+		owner = '1033453785416208564';
+	// GitHub already holds the same bytes under the name of the duplicate.
+	globalThis.fetch = async (url, options = {}) => {
+		assert.notEqual(options.method, 'PUT');
+		assert.match(decodeURIComponent(String(url)), /\/Spa HYMO\.zip\?/);
+		return Response.json({ sha });
+	};
 	let writes = 0;
 	try {
 		const form = new FormData();
@@ -209,11 +205,13 @@ test('verified duplicate does not lower the stored version', async () => {
 			JSON.stringify({
 				action: 'keep',
 				targets: [],
-				duplicateOf: { name: 'Spa HYMO.zip', sha: 'a'.repeat(40) },
+				duplicateOf: { name: 'Spa HYMO.zip', sha },
 			})
 		);
 		const env = {
 			...repositoryEnv,
+			DISCORD_OWNER_USER_ID: owner,
+			SESSION_SECRET: 'upload-test',
 			ACCESS_DB: {
 				prepare() {
 					return {
@@ -229,13 +227,18 @@ test('verified duplicate does not lower the stored version', async () => {
 			},
 		};
 		const r = await storeUploadedSetups(
-			new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
+			new Request('https://example.test/api/setups/upload', {
+				method: 'POST',
+				headers: { Cookie: await sessionCookie(owner, env.SESSION_SECRET) },
+				body: form,
+			}),
 			env
 		);
 		assert.equal(r.status, 200);
+		assert.equal((await r.json()).uploaded[0].alreadyExists, true);
 		assert.equal(writes, 0);
 	} finally {
-		base.fetch = originalBase;
+		globalThis.fetch = originalFetch;
 	}
 });
 

@@ -10,7 +10,6 @@ import {
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
 import { createWebsiteRequest } from '../src/features/requests.js';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
-import base from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 import { sessionCookie } from './helpers/session.mjs';
 const oldSha = 'a'.repeat(40),
@@ -283,24 +282,32 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 });
 
 test('failed ZIP upload never applies its selected cleanup plan', async () => {
-	const originalBase = base.fetch,
-		originalFetch = globalThis.fetch;
-	let reads = 0;
-	base.fetch = async () =>
-		Response.json({ success: false, error: 'storage unavailable' }, { status: 503 });
-	globalThis.fetch = async () => {
-		reads++;
+	const originalFetch = globalThis.fetch;
+	let cleanups = 0;
+	// GitHub cannot store the new ZIP; any other request would touch the old setup.
+	globalThis.fetch = async (url) => {
+		if (decodeURIComponent(String(url)).includes(newName))
+			return Response.json({ message: 'unavailable' }, { status: 503 });
+		cleanups++;
 		throw Error('must not clean up');
 	};
 	try {
+		const owner = '1033453785416208564';
 		const form = planForm('replace', [{ name, sha: oldSha }]);
 		form.set('files', new File(['PK\x03\x04'], newName));
 		form.set('category', 'Hypercar');
 		form.set('vehicle', 'Alpine A424');
 		form.set('version', 'v2');
 		const response = await storeUploadedSetups(
-			new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
+			new Request('https://example.test/api/setups/upload', {
+				method: 'POST',
+				headers: { Cookie: await sessionCookie(owner, 'upload-test') },
+				body: form,
+			}),
 			{
+				...repositoryEnv,
+				DISCORD_OWNER_USER_ID: owner,
+				SESSION_SECRET: 'upload-test',
 				ACCESS_DB: {
 					prepare() {
 						return {
@@ -313,9 +320,8 @@ test('failed ZIP upload never applies its selected cleanup plan', async () => {
 			}
 		);
 		assert.equal(response.status, 503);
-		assert.equal(reads, 0);
+		assert.equal(cleanups, 0);
 	} finally {
-		base.fetch = originalBase;
 		globalThis.fetch = originalFetch;
 	}
 });
