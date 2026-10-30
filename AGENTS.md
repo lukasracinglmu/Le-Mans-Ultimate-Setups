@@ -5,7 +5,7 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 ## Sprache
 
 - Pull Requests: Titel und Beschreibung auf Deutsch.
-- Fachbegriffe, Datei- und Funktionsnamen bleiben unverändert, z. B. `worker.js`, Branch, Commit.
+- Fachbegriffe, Datei- und Funktionsnamen bleiben unverändert, z. B. `routes.js`, Branch, Commit.
 - GitHub-Schlüsselwörter zum Schließen von Issues bleiben englisch (`Closes #4`), sonst erkennt GitHub sie nicht.
 
 ## Struktur
@@ -50,7 +50,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 ### Worker-Routing
 
 - Einstieg ist `src/index.js`. Jede Route steht genau einmal in `src/routes.js`, und die erste passende antwortet. Vorher läuft die Middleware: Origin-Prüfung, dann Wartungsmodus.
-- Routen ohne Eintrag gehen über `src/legacy.js` noch an `worker.js`. Neue Routen nur in `routes.js` anlegen (#10).
+- Routen ohne Eintrag liefert der Fallback als Datei aus `public/` aus (`staticFile()` in `src/features/assets.js`). Neue Routen nur in `routes.js` anlegen.
 - Querschnitt einer Route als Hülle um den Handler: `withAccessSchema()` legt die Rechte-Tabellen an (bis #8), `withPermissionAudit()` protokolliert Rechteänderungen. Die Reihenfolge der Hüllen ist die Reihenfolge der Prüfungen.
 - Handler liegen nach Aufgabe in `src/features/`, Querschnittsaufgaben in `src/middleware/`.
 - Umbauten am Routing mit der Routen-Matrix prüfen. `node tools/route-matrix.mjs <checkout> <datei>` auf `main` und auf dem Branch laufen lassen, dann `node tools/compare-route-matrix.mjs` mit beiden Dateien. Jede Abweichung ist eine Verhaltensänderung.
@@ -58,10 +58,12 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Auch interne Weiterleitungen zählen: Eine Schicht kann eine Anfrage per `new Request(...)` an eine tiefere Route schicken. Vor dem Löschen einer Route danach suchen.
 - Die Routen-Matrix erreicht keine signierten Discord-Interaktionen. Die prüft `tests/discord-interactions.test.mjs` mit eigenem Schlüsselpaar.
 - Ein `try` fängt nur, was darin mit `await` läuft. `return handler()` ohne `await` lässt den Fehler durch. Beim Umzug nur die Routen in `catchErrors()` hüllen, deren Fehler die alte Schicht wirklich gefangen hat.
-- Tests ersetzen `worker.fetch` am Objekt. Deshalb `legacyWorker.fetch(...)` aufrufen und nie destrukturieren.
+- Tests mocken nur die Grenzen: GitHub und Discord über `globalThis.fetch`, D1 über `ACCESS_DB`. Interne Module rufen sie direkt auf und ersetzen sie nicht.
 - Das Profil des Besuchers nur über `readMe()` aus `src/features/auth.js` lesen, nie per internem Request auf `/api/me`. Es ist dieselbe Antwort, nur ohne das erneuerte Session-Cookie.
 - HTTPS-Pflicht gibt es nur auf den Routen des früheren Basis-Workers (`requireHttps()`), und `readMe()` wertet HTTP als abgemeldet. Als globale Middleware wäre sie eine Verhaltensänderung für alle anderen Routen.
 - Die Routen-Matrix prüft auch Rollen: Ihre Sessions tragen einen gültigen Rollen-Snapshot, der Nutzer `stale` einen abgelaufenen, der Discord neu fragt.
+- Die Matrix schickt jede Route zusätzlich per HTTP und ohne Rechte-Datenbank. So fallen fehlende oder vertauschte Hüllen (`requireHttps()`, `withAccessSchema()`) auf.
+- `persistSetupFile()` fängt jeden GitHub-Fehler selbst ab. Ein unerwarteter Fehler beim Upload entsteht nur davor, z. B. beim Hashen der ZIP. Tests lösen ihn über `crypto.subtle.digest` aus.
 
 ### Gemeinsame Hilfen (`src/lib/`)
 

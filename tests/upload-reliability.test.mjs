@@ -8,7 +8,7 @@ import {
 	persistSetupFile,
 	readUploadForm,
 } from '../src/upload-storage.js';
-import worker from '../src/worker.js';
+import { storeSetupFiles } from '../src/features/setup-files.js';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
@@ -309,9 +309,10 @@ test('full upload handler recovers ZIP after D1 fails without re-uploading its b
 		assert.equal(writes, 1);
 		assert.equal(versionWrites, 2);
 		assert.equal(lifecycleClears, 1);
-		const unauth = await worker.fetch(
+		const unauth = await storeSetupFiles(
 			new Request('https://example.test/api/setups/upload', { method: 'POST', body: 'x' }),
-			env
+			env,
+			new FormData()
 		);
 		assert.equal(unauth.status, 401);
 	} finally {

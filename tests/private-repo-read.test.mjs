@@ -5,7 +5,7 @@ import { readRepoFile, readSiteFile } from '../src/repo-read.js';
 import { manufacturerImage } from '../src/features/manufacturer-images.js';
 import { homePage } from '../src/features/pages.js';
 import runtime from '../src/index.js';
-import worker from '../src/worker.js';
+import { fallback } from '../src/routes.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const envBase = {
@@ -92,9 +92,9 @@ test('pages come from the canonical asset root and never from GitHub', async () 
 			assert.equal(r.headers.get('location'), null);
 			assert.equal(await r.text(), deployedHome);
 			assert.deepEqual(paths, ['/']);
-			const base = await worker.fetch(request('/'), env, {});
-			assert.equal(base.status, 200);
-			assert.equal(await base.text(), deployedHome);
+			const asset = await fallback(request('/'), env, {});
+			assert.equal(asset.status, 200);
+			assert.equal(await asset.text(), deployedHome);
 			assert.deepEqual(paths, ['/', '/']);
 			assert.deepEqual(github, []);
 		}

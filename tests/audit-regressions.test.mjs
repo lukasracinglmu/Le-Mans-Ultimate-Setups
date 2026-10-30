@@ -4,8 +4,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import runtime from '../src/index.js';
-import worker from '../src/worker.js';
 import { rolePermissions } from '../src/discord-permissions.js';
+import { setupSummary } from '../src/features/setup-files.js';
 import { fullAdminApi } from '../src/full-admin.js';
 import { createTicket, ticketApi } from '../src/bug-tickets.js';
 import { submitBugReport } from '../src/bug-reports.js';
@@ -525,19 +525,19 @@ test('Summary uses one GitHub call, is protected and never turns upstream failur
 		const db = database(),
 			env = { ...config, ACCESS_DB: db };
 		assert.equal(
-			(await worker.fetch(new Request(config.SITE_URL + '/api/setups/summary'), env, {})).status,
+			(await setupSummary(new Request(config.SITE_URL + '/api/setups/summary'), env)).status,
 			401
 		);
 		assert.equal(calls.length, 0);
-		let response = await worker.fetch(await request('/api/setups/summary'), env, {});
+		let response = await setupSummary(await request('/api/setups/summary'), env);
 		assert.equal(response.status, 200);
 		assert.equal((await response.json()).vehicles[0].count, 4);
 		assert.equal(calls.length, 1);
 		assert.match(calls[0], /git\/trees\/main\?recursive=1/);
 		body = { truncated: true, tree: [] };
-		assert.equal((await worker.fetch(await request('/api/setups/summary'), env, {})).status, 502);
+		assert.equal((await setupSummary(await request('/api/setups/summary'), env)).status, 502);
 		status = 503;
-		assert.equal((await worker.fetch(await request('/api/setups/summary'), env, {})).status, 502);
+		assert.equal((await setupSummary(await request('/api/setups/summary'), env)).status, 502);
 		db.sqlite.close();
 	} finally {
 		globalThis.fetch = previous;

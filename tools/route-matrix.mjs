@@ -118,7 +118,7 @@ function environment(options = {}) {
 		DISCORD_PUBLIC_KEY: '00'.repeat(32),
 		GITHUB_TOKEN: 'gh',
 		BACKUP_GITHUB_TOKEN: 'backup',
-		ACCESS_DB: database(options),
+		ACCESS_DB: options.noDatabase ? undefined : database(options),
 		ASSETS: assets(),
 	};
 }
@@ -220,6 +220,8 @@ const routes = [
 	['GET', '/api/admin/bug-tickets/1'],
 	['GET', '/api/admin/discord/role-status'],
 	['POST', '/api/admin/discord/register-request', json({})],
+	['GET', '/api/admin/unknown'],
+	['PUT', '/api/admin/access'],
 	['GET', '/api/discord/channels'],
 	['GET', '/api/discord/messages?channelId=1'],
 	['POST', '/api/discord/messages', json({ channelId: '1', content: 'x' })],
@@ -285,14 +287,19 @@ for (const [method, path, body] of routes.filter(([m]) => m === 'POST' || m === 
 		headers: { Origin: 'https://evil.test' },
 	});
 }
-for (const path of [
-	'/',
-	'/api/me',
-	'/admin',
-	'/api/setups?category=Hypercar&vehicle=Test',
-	'/js/home/main.js',
-]) {
-	await send(`http GET ${path}`, 'GET', path, { user: users.owner, env: normal, scheme: 'http' });
+const noDatabase = environment({ noDatabase: true });
+for (const [method, path, body] of routes) {
+	await send(`http ${method} ${path}`, method, path, {
+		body,
+		user: users.owner,
+		env: normal,
+		scheme: 'http',
+	});
+	await send(`no database ${method} ${path}`, method, path, {
+		body,
+		user: users.owner,
+		env: noDatabase,
+	});
 }
 
 writeFileSync(out, JSON.stringify(results, null, 1));

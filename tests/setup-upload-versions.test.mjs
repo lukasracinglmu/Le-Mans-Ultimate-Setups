@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
-import baseWorker from '../src/worker.js';
 import { readSetupVersion, enrichSetupVersions } from '../src/setup-version.js';
+import { gitBlobSha } from '../src/upload-storage.js';
+import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 
 function formWithVersion(value) {
 	const form = new FormData();
@@ -22,11 +24,15 @@ test('upload versions are optional and still validate supplied values', () => {
 });
 
 test('separate uploads store their own versions, including an empty replacement', async () => {
-	const originalFetch = baseWorker.fetch;
+	const originalFetch = globalThis.fetch;
 	const rows = new Map([['first.zip', 'old-version']]);
-	const forwarded = [];
+	const stored = [];
 	const clearedLifecycle = [];
+	const owner = '1033453785416208564';
 	const env = {
+		...repositoryEnv,
+		DISCORD_OWNER_USER_ID: owner,
+		SESSION_SECRET: 'upload-test',
 		ACCESS_DB: {
 			prepare(sql) {
 				return {
@@ -49,17 +55,14 @@ test('separate uploads store their own versions, including an empty replacement'
 			},
 		},
 	};
-	baseWorker.fetch = async (request, env, ctx, form) => {
-		assert.equal(request.bodyUsed, true, 'multipart parsed once before forwarding');
-		const name = form.get('files').name;
-		forwarded.push({
-			name,
-			category: form.get('category'),
-			vehicle: form.get('vehicle'),
-			version: form.get('version'),
-		});
-		return Response.json({ success: true, uploaded: [{ name }] });
+	const sha = await gitBlobSha(new TextEncoder().encode('PK\x03\x04'));
+	// GitHub holds none of the files yet and confirms every new one.
+	globalThis.fetch = async (url, options = {}) => {
+		if (options.method !== 'PUT') return Response.json({ message: 'Not Found' }, { status: 404 });
+		stored.push(decodeURIComponent(new URL(url).pathname).split('/contents/setups/')[1]);
+		return Response.json({ content: { sha } }, { status: 201 });
 	};
+	const cookie = await sessionCookie(owner, env.SESSION_SECRET);
 	try {
 		for (const [name, version] of [
 			['first.zip', ''],
@@ -71,18 +74,22 @@ test('separate uploads store their own versions, including an empty replacement'
 			form.set('vehicle', 'Test Car');
 			form.set('files', new File(['PK\x03\x04'], name));
 			const response = await storeUploadedSetups(
-				new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
+				new Request('https://example.test/api/setups/upload', {
+					method: 'POST',
+					headers: { Cookie: cookie },
+					body: form,
+				}),
 				env
 			);
 			assert.equal(response.status, 200);
 			assert.equal((await response.json()).uploaded[0].version, version);
 			assert.equal(rows.get(name), version);
 		}
-		assert.deepEqual(
-			forwarded.map((x) => x.version),
-			['', 'v2', 'v3']
-		);
-		assert.ok(forwarded.every((x) => x.category === 'Hypercar' && x.vehicle === 'Test Car'));
+		assert.deepEqual(stored, [
+			'Hypercar/Test Car/first.zip',
+			'Hypercar/Test Car/second.zip',
+			'Hypercar/Test Car/third.zip',
+		]);
 		assert.deepEqual(clearedLifecycle, ['first.zip', 'second.zip', 'third.zip']);
 		const setups = await enrichSetupVersions(
 			[...rows.keys()].map((name) => ({ name })),
@@ -96,12 +103,16 @@ test('separate uploads store their own versions, including an empty replacement'
 		);
 		const invalid = formWithVersion('v'.repeat(41));
 		const response = await storeUploadedSetups(
-			new Request('https://example.test/api/setups/upload', { method: 'POST', body: invalid }),
+			new Request('https://example.test/api/setups/upload', {
+				method: 'POST',
+				headers: { Cookie: cookie },
+				body: invalid,
+			}),
 			env
 		);
 		assert.equal(response.status, 400);
-		assert.equal(forwarded.length, 3, 'invalid version must not reach ZIP storage');
+		assert.equal(stored.length, 3, 'invalid version must not reach ZIP storage');
 	} finally {
-		baseWorker.fetch = originalFetch;
+		globalThis.fetch = originalFetch;
 	}
 });
