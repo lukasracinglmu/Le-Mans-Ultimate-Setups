@@ -37,6 +37,13 @@ export default defineConfig([
 		},
 	},
 	{
+		// Scripts of the pages, loaded by the browser
+		files: ['public/js/**/*.js'],
+		languageOptions: {
+			globals: globals.browser,
+		},
+	},
+	{
 		files: ['discord-presence/**/*.js', 'tests/**/*.mjs', 'tools/**/*.mjs'],
 		languageOptions: {
 			globals: globals.node,
