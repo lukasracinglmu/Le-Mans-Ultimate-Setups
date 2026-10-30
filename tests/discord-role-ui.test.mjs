@@ -42,6 +42,9 @@ async function run(data, { ok = true, invalid = false, network = false } = {}) {
 		if (network) throw Error('offline');
 		return {
 			ok,
+			clone() {
+				return { ...this };
+			},
 			json: async () => {
 				if (invalid) throw Error('bad json');
 				return data;

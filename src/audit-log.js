@@ -133,7 +133,6 @@ async function writeDiscordAuditEvent(event, env) {
 }
 
 export async function writeSetupAuditEvent(event, env) {
-	if (!env.GITHUB_TOKEN) throw new Error('GitHub audit token unavailable');
 	const safe = normalizeEvent({
 		...event,
 		manufacturer: event.manufacturer || classifyManufacturer(event.setup),
@@ -147,21 +146,37 @@ export async function writeSetupAuditEvent(event, env) {
 		content: btoa(unescape(encodeURIComponent(JSON.stringify(safe, null, 2) + '\n'))),
 		branch: githubBranch(env),
 	};
-	const response = await githubRequest(
-		env,
-		`/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
-		{
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body),
-			signal: AbortSignal.timeout(20000),
+
+	// Independent sinks: a GitHub conflict must not suppress the Discord audit.
+	const saveGithub = async () => {
+		if (!env.GITHUB_TOKEN) throw Error('GitHub audit token unavailable');
+		for (let attempt = 0; attempt < 3; attempt++) {
+			const response = await githubRequest(
+				env,
+				'/contents/' + path.split('/').map(encodeURIComponent).join('/'),
+				{
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(body),
+					signal: AbortSignal.timeout(20000),
+				}
+			);
+			if (response.ok) return;
+			await response.body?.cancel();
+			if (![409, 422].includes(response.status) || attempt === 2)
+				throw Error('GitHub audit write failed (' + response.status + ')');
+			await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
 		}
-	);
-	if (!response.ok) throw new Error(`GitHub audit write failed (${response.status})`);
-	try {
-		await writeDiscordAuditEvent(safe, env);
-	} catch (error) {
-		console.error('Discord audit failed', error instanceof Error ? error.message : 'unknown');
-	}
+	};
+	const results = await Promise.allSettled([saveGithub(), writeDiscordAuditEvent(safe, env)]);
+	results.forEach((result, index) => {
+		if (result.status === 'rejected')
+			console.error(
+				(index ? 'Discord' : 'GitHub') + ' audit failed',
+				String(result.reason?.message || 'unavailable')
+			);
+	});
+	if (results.every((result) => result.status === 'rejected'))
+		throw Error('Audit destinations unavailable');
 	return safe;
 }

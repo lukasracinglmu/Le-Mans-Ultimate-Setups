@@ -36,6 +36,7 @@ const requestChannelId =
 	process.env.DISCORD_SETUP_REQUEST_CHANNEL_ID?.trim() || process.env.DISCORD_CHANNEL_ID?.trim();
 const requestRoleId =
 	process.env.DISCORD_SETUP_REQUEST_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
+const confirmingRequests = new Set();
 const setupsFile = process.env.SETUPS_FILE?.trim() || './setups.json';
 const setupsUrl = process.env.SETUPS_SOURCE_URL?.trim();
 const githubToken = process.env.GITHUB_TOKEN?.trim();
@@ -151,6 +152,8 @@ async function findExistingSetup(vehicle) {
 		const response = await fetch(
 			`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}?ref=${encodeURIComponent(githubBranch)}`,
 			{
+				redirect: 'manual',
+				signal: AbortSignal.timeout(10000),
 				headers: {
 					Accept: 'application/vnd.github+json',
 					Authorization: `Bearer ${githubToken}`,
@@ -216,7 +219,11 @@ function supplyRoleCanConfirm(interaction) {
 	const userId = String(interaction.user?.id || interaction.member?.user?.id || '');
 	return (
 		setupConfirmationWhitelist.has(userId) ||
-		Boolean(setupSupplyRoleId && interaction.member?.roles?.cache?.has(setupSupplyRoleId))
+		Boolean(
+			setupSupplyRoleId &&
+			(interaction.member?.roles?.cache?.has(setupSupplyRoleId) ||
+				interaction.member?.roles?.includes?.(setupSupplyRoleId))
+		)
 	);
 }
 
@@ -277,27 +284,77 @@ client.on('interactionCreate', async (interaction) => {
 			});
 			return;
 		}
-		const requesterId = interaction.customId.slice('setup_ready:'.length);
-		const embed = interaction.message.embeds?.[0];
-		const vehicle = requestField(embed, 'fahrzeug');
-		const track = requestField(embed, 'strecke');
-		const manufacturer = resolveRequestManufacturer(requestField(embed, 'setup-hersteller'))?.name;
-		const pageUrl = requestVehicleUrl(embed);
-		await interaction.update({
-			embeds: embed
-				? [
-						EmbedBuilder.from(embed)
-							.setColor(0x2b9b68)
-							.setFooter({ text: 'Setup als hochgeladen bestätigt' }),
-					]
-				: [],
-			components: [],
-		});
-		await interaction.channel.send({
-			content: `<@${requesterId}> Das ${manufacturer ? manufacturer + '-' : ''}Setup für **${vehicle || 'deine Anfrage'}**${track ? ` auf **${track}**` : ''} wurde hochgeladen und kann jetzt genutzt werden: ${pageUrl}`,
-			allowedMentions: { users: [requesterId] },
-			flags: MessageFlags.SuppressNotifications,
-		});
+
+		const key = interaction.message.id;
+		if (confirmingRequests.has(key)) {
+			await interaction.reply({
+				content: 'Dieses Setup wird gerade bestätigt.',
+				flags: MessageFlags.Ephemeral,
+			});
+			return;
+		}
+		confirmingRequests.add(key);
+		try {
+			const message = interaction.message.fetch
+				? await interaction.message.fetch()
+				: interaction.message;
+			const embed = message.embeds?.[0];
+			const requesterId = interaction.customId.slice('setup_ready:'.length);
+			if (
+				!/^\d{16,22}$/.test(requesterId) ||
+				!embed ||
+				requestField(embed, 'angefragt von') !== '<@' + requesterId + '>'
+			) {
+				await interaction.reply({
+					content: 'Ungültige Setup-Anfrage.',
+					flags: MessageFlags.Ephemeral,
+				});
+				return;
+			}
+			if (
+				(Array.isArray(message.components) && !message.components.length) ||
+				/Setup als hochgeladen bestätigt/.test(embed.footer?.text || '')
+			) {
+				await interaction.reply({
+					content: 'Dieses Setup wurde bereits bestätigt.',
+					flags: MessageFlags.Ephemeral,
+				});
+				return;
+			}
+			const vehicle = requestField(embed, 'fahrzeug'),
+				track = requestField(embed, 'strecke');
+			const manufacturer = resolveRequestManufacturer(
+				requestField(embed, 'setup-hersteller')
+			)?.name;
+			const pageUrl = requestVehicleUrl(embed);
+			await interaction.update({
+				embeds: [
+					EmbedBuilder.from(embed)
+						.setColor(0x2b9b68)
+						.setFooter({ text: 'Setup als hochgeladen bestätigt' }),
+				],
+				components: [],
+			});
+			try {
+				await interaction.channel.send({
+					content: `<@${requesterId}> Das ${manufacturer ? manufacturer + '-' : ''}Setup für **${vehicle || 'deine Anfrage'}**${track ? ` auf **${track}**` : ''} wurde hochgeladen und kann jetzt genutzt werden: ${pageUrl}`,
+					allowedMentions: { parse: [], users: [requesterId], roles: [] },
+					nonce: key,
+					enforceNonce: true,
+				});
+			} catch {
+				console.warn('Setup confirmation notification could not be delivered.');
+				await interaction
+					.followUp?.({
+						content:
+							'Die Bestätigung wurde gespeichert, die Benachrichtigung konnte aber nicht zugestellt werden.',
+						flags: MessageFlags.Ephemeral,
+					})
+					.catch(() => {});
+			}
+		} finally {
+			confirmingRequests.delete(key);
+		}
 		return;
 	}
 

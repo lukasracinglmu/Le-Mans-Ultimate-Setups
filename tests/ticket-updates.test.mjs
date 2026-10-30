@@ -19,6 +19,7 @@ for (const [status, action, label] of scenarios)
 			let saved = false;
 			const env = {
 				DISCORD_BOT_TOKEN: 'test',
+				DISCORD_OWNER_USER_ID: 'owner',
 				ACCESS_DB: {
 					async batch() {},
 					prepare(sql) {

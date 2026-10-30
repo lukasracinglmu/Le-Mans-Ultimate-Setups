@@ -136,11 +136,16 @@ export async function submitBugReport(request, user, env) {
 			});
 		}
 		const lease = await env.ACCESS_DB.prepare(
-			"INSERT INTO bug_report_limits (user_id,last_attempt_at,report_id,status) VALUES (?,?,?,'sending') ON CONFLICT(user_id) DO UPDATE SET last_attempt_at=excluded.last_attempt_at,report_id=excluded.report_id,status='sending' RETURNING user_id"
+			"INSERT INTO bug_report_limits (user_id,last_attempt_at,report_id,status) VALUES (?,?,?,'sending') ON CONFLICT(user_id) DO UPDATE SET last_attempt_at=excluded.last_attempt_at,report_id=excluded.report_id,status='sending' WHERE bug_report_limits.status!='sending' OR bug_report_limits.last_attempt_at<=excluded.last_attempt_at-60 RETURNING user_id"
 		)
 			.bind(user.id, now, reportId)
 			.first();
-		if (!lease) throw Error('report persistence');
+		if (!lease)
+			return json(
+				{ success: false, error: 'Eine Bugmeldung wird gerade gesendet. Bitte kurz warten.' },
+				429,
+				{ 'Retry-After': '5' }
+			);
 		reserved = true;
 		const ticket = await createTicket({ reportId, user, title, priority, description, image }, env);
 		const opened = await discordRequest('/users/@me/channels', env, {
@@ -168,12 +173,12 @@ export async function submitBugReport(request, user, env) {
 			allowed_mentions: { parse: [] },
 			embeds: [
 				{
-					title: 'Bug-Report · ' + title,
+					title: ticket.label + ' erstellt · ' + title,
 					description,
 					fields: [
 						{
 							name: 'Absender',
-							value: String(user.username || 'Unbekannt').slice(0, 80) + ' (' + user.id + ')',
+							value: '<@' + String(user.id) + '>',
 						},
 						{ name: 'Priorität', value: priority },
 						{ name: 'Ticket-Nummer', value: ticket.label },
@@ -211,7 +216,8 @@ export async function submitBugReport(request, user, env) {
 		)
 			.bind(user.id, reportId)
 			.run();
-		await acknowledgeReport(user, ticket, env);
+		if (String(user.id) !== ownerUserId(env))
+			await acknowledgeReport(user, ticket, env, { title, priority, description });
 		return json({ success: true, ticket: String(ticket.id).padStart(4, '0') });
 	} catch (error) {
 		if (reserved) {
@@ -245,7 +251,7 @@ export async function submitBugReport(request, user, env) {
 		);
 	}
 }
-async function acknowledgeReport(user, ticket, env) {
+async function acknowledgeReport(user, ticket, env, report) {
 	try {
 		const opened = await discordRequest('/users/@me/channels', env, {
 			method: 'POST',
@@ -258,11 +264,16 @@ async function acknowledgeReport(user, ticket, env) {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
+				nonce: 'ticket-created-' + ticket.id,
+				enforce_nonce: true,
 				allowed_mentions: { parse: [] },
 				embeds: [
 					{
-						title: ticket.label + ' erstellt',
-						description: 'Deine Bugmeldung wurde erfolgreich erstellt und wird bearbeitet.',
+						title: ticket.label + ' erstellt · ' + report.title,
+						description:
+							'Deine Bugmeldung wurde erfolgreich erstellt und wird bearbeitet.\n\n' +
+							report.description,
+						fields: [{ name: 'Priorität', value: report.priority }],
 						color: 0x3498db,
 					},
 				],

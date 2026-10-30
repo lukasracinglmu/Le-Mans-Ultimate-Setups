@@ -1,3 +1,4 @@
+import { fetchMeResponse } from '../shared/session.js';
 // Quick links in the header, depending on the permissions of the visitor.
 export function initHeaderActions() {
 	const header = document.querySelector('header');
@@ -23,7 +24,7 @@ export function initHeaderActions() {
 		group.appendChild(a);
 		return a;
 	};
-	fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' })
+	fetchMeResponse()
 		.then((r) => r.json())
 		.then((me) => {
 			if (!me?.loggedIn || !me?.databaseAccess) return;
@@ -36,20 +37,15 @@ export function initHeaderActions() {
 				t.appendChild(count);
 				const refresh = async () => {
 					try {
-						const [ro, rp] = await Promise.all([
-							fetch('/api/admin/bug-tickets?status=open', {
-								credentials: 'same-origin',
-								cache: 'no-store',
-							}),
-							fetch('/api/admin/bug-tickets?status=progress', {
-								credentials: 'same-origin',
-								cache: 'no-store',
-							}),
-						]);
-						const [od, pd] = await Promise.all([ro.json(), rp.json()]);
-						if (!ro.ok || !rp.ok) return;
-						const open = (od.tickets || []).length,
-							progress = (pd.tickets || []).length,
+						if (document.hidden) return;
+						const response = await fetch('/api/admin/bug-tickets?summary=1', {
+							credentials: 'same-origin',
+							cache: 'no-store',
+						});
+						const data = await response.json();
+						if (!response.ok || !data.success) return;
+						const open = Number(data.counts.open) || 0,
+							progress = Number(data.counts.progress) || 0,
 							total = open + progress;
 						count.textContent = total;
 						t.classList.toggle('alert', open > 0);
@@ -58,6 +54,9 @@ export function initHeaderActions() {
 				};
 				refresh();
 				setInterval(refresh, 30000);
+				document.addEventListener('visibilitychange', () => {
+					if (!document.hidden) refresh();
+				});
 			}
 			if (user.canViewAdminPanel) add('Admin Panel', '/admin', 'admin-action', 'admin');
 			add('Setup Request', '/request', 'request-action', 'request');

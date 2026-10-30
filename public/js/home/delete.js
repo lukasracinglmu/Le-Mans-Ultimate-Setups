@@ -86,7 +86,7 @@ export function initDelete() {
 			}
 			deleteInFlight = false;
 			closeDeleteModal();
-			void refreshVehicleCounts().catch(() => {});
+			void refreshVehicleCounts(true).catch(() => {});
 		} catch (error) {
 			$('deleteModalText').textContent = error.message;
 		} finally {

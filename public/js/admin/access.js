@@ -109,12 +109,14 @@ export function initAccessPanel() {
 			list.textContent = error.message;
 			return;
 		}
-		let fullRows = [];
-		if (me?.isOwner || me?.user?.fullAdmin) {
-			try {
-				fullRows = (await adminApi('/api/admin/full-admin')).grants || [];
-			} catch {}
-		}
+		const fullRows = (data.users || [])
+			.filter((user) => user.fullAdminAccess)
+			.map((user) => ({
+				user_id: user.userId,
+				created_at: user.fullAdminGrantedAt,
+				username: user.username,
+				avatar: user.avatar,
+			}));
 		grantUsers = mergeGrantUsers(data.users || [], fullRows);
 		grantFullRows = fullRows;
 		renderGrants();

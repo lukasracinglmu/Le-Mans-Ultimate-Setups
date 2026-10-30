@@ -1,3 +1,5 @@
+import { mapProfiles } from './discord-profile.js';
+import { setFullAdminAccess } from './managed-grants.js';
 /* @file-notes: Verwaltet Full-Admin-Freigaben, Owner-only-Einstellungen und den Wartungsmodus. */
 import { writeSetupAuditEvent } from './audit-log.js';
 import { ownerUserId } from './config.js';
@@ -64,38 +66,6 @@ export async function maintenanceState(env) {
 		return { enabled: false, message: '' };
 	}
 }
-async function discordProfile(userId, env) {
-	if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return null;
-	try {
-		const headers = { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` };
-		let r = env.DISCORD_GUILD_ID
-			? await fetch(
-					`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,
-					{ headers, signal: AbortSignal.timeout(8000) }
-				)
-			: null;
-		let member = r?.ok ? await r.json() : null;
-		if (!member) {
-			r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-				headers,
-				signal: AbortSignal.timeout(8000),
-			});
-			if (!r.ok) return null;
-			member = { user: await r.json() };
-		}
-		const user = member?.user;
-		return user
-			? {
-					username: user.global_name || user.username || null,
-					avatar: user.avatar
-						? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-						: `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(user.id) >> 22n) % 6}.png`,
-				}
-			: null;
-	} catch {
-		return null;
-	}
-}
 export async function fullAdminApi(request, env, ctx, productionWorker) {
 	const path = new URL(request.url).pathname;
 	const auth = await ownerOnly(request, env, ctx, productionWorker);
@@ -150,6 +120,8 @@ export async function fullAdminApi(request, env, ctx, productionWorker) {
 	}
 	if (path === '/api/admin/maintenance') {
 		if (request.method === 'GET') return json({ success: true, ...(await maintenanceState(env)) });
+		if (request.method !== 'POST')
+			return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 		let body;
 		try {
 			body = await request.json();
@@ -174,7 +146,7 @@ export async function fullAdminApi(request, env, ctx, productionWorker) {
 			'SELECT user_id,granted_by,created_at FROM full_admin_access ORDER BY created_at DESC'
 		).all();
 		const rows = r.results || [];
-		const profiles = await Promise.all(rows.map((row) => discordProfile(row.user_id, env)));
+		const profiles = await mapProfiles(rows, env);
 		const grants = rows.map((row, index) => {
 			const profile = profiles[index];
 			return {
@@ -193,25 +165,13 @@ export async function fullAdminApi(request, env, ctx, productionWorker) {
 	}
 	const userId = validUserId(body?.userId);
 	if (!userId) return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
-	const profile = await discordProfile(userId, env);
-	const username = profile?.username || null;
 	if (userId === String(auth.user.id))
 		return json(
 			{ success: false, error: 'Deine Haupt-Admin-Rechte können hier nicht geändert werden.' },
 			400
 		);
 	if (request.method === 'POST') {
-		await env.ACCESS_DB.batch([
-			env.ACCESS_DB.prepare(
-				'INSERT INTO full_admin_access (user_id,granted_by,created_at,username) VALUES (?,?,CURRENT_TIMESTAMP,?) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by,created_at=CURRENT_TIMESTAMP,username=excluded.username'
-			).bind(userId, auth.user.id, username),
-			env.ACCESS_DB.prepare(
-				'INSERT INTO database_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by'
-			).bind(userId, auth.user.id),
-			env.ACCESS_DB.prepare(
-				'INSERT INTO upload_access (user_id,granted_by,created_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by'
-			).bind(userId, auth.user.id),
-		]);
+		await setFullAdminAccess(env, userId, auth.user.id, true);
 		const event = {
 			action: 'PERMISSION_GRANT',
 			discordAccount: auth.user.username || null,
@@ -226,7 +186,7 @@ export async function fullAdminApi(request, env, ctx, productionWorker) {
 		return json({ success: true, userId, fullAdmin: true });
 	}
 	if (request.method === 'DELETE') {
-		await env.ACCESS_DB.prepare('DELETE FROM full_admin_access WHERE user_id=?').bind(userId).run();
+		await setFullAdminAccess(env, userId, auth.user.id, false);
 		const event = {
 			action: 'PERMISSION_REVOKE',
 			discordAccount: auth.user.username || null,

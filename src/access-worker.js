@@ -1,3 +1,5 @@
+import { mapProfiles } from './discord-profile.js';
+import { setFullAdminAccess } from './managed-grants.js';
 import {
 	readDisplayName,
 	displayNameStatement,
@@ -9,8 +11,6 @@ import { writeSetupAuditEvent } from './audit-log.js';
 import { githubBranch } from './config.js';
 import { githubRequest } from './lib/github.js';
 import { json, safeJson } from './lib/http.js';
-
-const DISCORD_API = 'https://discord.com/api/v10';
 
 export default {
 	async fetch(request, env, ctx) {
@@ -395,32 +395,17 @@ async function changeFullAdminAccess(request, env, ctx) {
 	if (auth.error) return auth.error;
 	const userId = await readUserId(request);
 	if (!userId) return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
-	if (request.method === 'POST') {
-		await env.ACCESS_DB.batch([
-			env.ACCESS_DB.prepare(
-				'INSERT INTO full_admin_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by, created_at=CURRENT_TIMESTAMP'
-			).bind(userId, auth.user.id),
-			env.ACCESS_DB.prepare(
-				'INSERT INTO admin_panel_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by, created_at=CURRENT_TIMESTAMP'
-			).bind(userId, auth.user.id),
-			env.ACCESS_DB.prepare(
-				'INSERT INTO database_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by, created_at=CURRENT_TIMESTAMP'
-			).bind(userId, auth.user.id),
-			env.ACCESS_DB.prepare(
-				'INSERT INTO upload_access (user_id, granted_by, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET granted_by=excluded.granted_by, created_at=CURRENT_TIMESTAMP'
-			).bind(userId, auth.user.id),
-		]);
-		return json({ success: true, userId, fullAdmin: true });
-	}
-	await env.ACCESS_DB.batch([
-		env.ACCESS_DB.prepare('DELETE FROM full_admin_access WHERE user_id=?').bind(userId),
-		env.ACCESS_DB.prepare('DELETE FROM admin_panel_access WHERE user_id=?').bind(userId),
-	]);
-	return json({ success: true, userId, fullAdmin: false });
+	if (userId === String(auth.user.id))
+		return json(
+			{ success: false, error: 'Deine Haupt-Admin-Rechte können hier nicht geändert werden.' },
+			400
+		);
+	await setFullAdminAccess(env, userId, auth.user.id, request.method === 'POST');
+	return json({ success: true, userId, fullAdmin: request.method === 'POST' });
 }
 
 async function changeAdminPanelAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+	const auth = await requireOwner(request, env, ctx, 'canManageAdminAccess');
 	if (auth.error) return auth.error;
 	const userId = await readUserId(request);
 	if (!userId) return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
@@ -559,50 +544,23 @@ async function listCombinedAccess(request, env, ctx) {
 		item.uploadAccess = true;
 		item.fullAdminGrantedAt = row.created_at;
 	}
-	const out = await Promise.all(
-		[...users.values()].map(async (item) => {
-			const member = await fetchGuildMember(item.userId, env);
-			const discordUser = member?.user ?? null;
-			const nick = member?.nick ?? null;
-			const guildAvatar = member?.avatar ?? null;
-			const globalAvatar = discordUser?.avatar ?? null;
-			item.avatar = guildAvatar
-				? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${item.userId}/avatars/${guildAvatar}.png?size=128`
-				: globalAvatar
-					? `https://cdn.discordapp.com/avatars/${item.userId}/${globalAvatar}.png?size=128`
-					: `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(String(item.userId)) % 6n)}.png`;
-			item.username =
-				nick || discordUser?.global_name || discordUser?.username || 'Unbekannt / nicht verfügbar';
-			item.permissions = [
-				item.fullAdminAccess ? 'FULL_ADMIN' : null,
-				item.adminPanelAccess ? 'ADMIN_PANEL' : null,
-				item.databaseAccess ? 'DATABASE' : null,
-				item.uploadAccess ? 'UPLOAD' : null,
-			].filter(Boolean);
-			item.permission = item.permissions.join(' · ');
-			return item;
-		})
-	);
+	const items = [...users.values()];
+	const profiles = await mapProfiles(items, env, (item) => item.userId);
+	const out = items.map((item, index) => {
+		const profile = profiles[index];
+		item.avatar = profile?.avatar || null;
+		item.username = profile?.username || 'Unbekannt / nicht verfügbar';
+		item.permissions = [
+			item.fullAdminAccess ? 'FULL_ADMIN' : null,
+			item.adminPanelAccess ? 'ADMIN_PANEL' : null,
+			item.databaseAccess ? 'DATABASE' : null,
+			item.uploadAccess ? 'UPLOAD' : null,
+		].filter(Boolean);
+		item.permission = item.permissions.join(' · ');
+		return item;
+	});
 	out.sort((a, b) => String(a.username).localeCompare(String(b.username), 'de'));
 	return json({ success: true, users: out });
-}
-async function fetchGuildMember(userId, env) {
-	if (!env.DISCORD_BOT_TOKEN || !userId) return null;
-	const headers = { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` };
-	try {
-		if (env.DISCORD_GUILD_ID) {
-			const member = await fetch(
-				`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`,
-				{ headers }
-			);
-			if (member.ok) return await member.json();
-		}
-		const user = await fetch(`${DISCORD_API}/users/${userId}`, { headers });
-		if (!user.ok) return null;
-		return { user: await user.json(), nick: null, avatar: null };
-	} catch {
-		return null;
-	}
 }
 
 function enc(value) {

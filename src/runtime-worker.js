@@ -1,3 +1,4 @@
+import { enforceSameOriginForStateChange } from './worker.js';
 /* @file-notes: Öffentlicher Worker-Einstiegspunkt für Seitenrouting, Wartung, APIs, Berechtigungen und Hintergrundaktionen. */
 import { submitBugReport } from './bug-reports.js';
 import { ticketApi, isTicketOwner } from './bug-tickets.js';
@@ -17,15 +18,26 @@ const PAGE_CSP =
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
+		const originError = enforceSameOriginForStateChange(request, env);
+		if (originError) return originError;
 		if (url.pathname === '/api/internal/backups/complete') return backupCompletionApi(request, env);
 		if (
 			url.pathname !== '/api/me' &&
+			!url.pathname.startsWith('/auth/') &&
+			!url.pathname.startsWith('/assets/') &&
+			!url.pathname.startsWith('/css/') &&
+			!url.pathname.startsWith('/js/') &&
+			url.pathname !== '/interactions/discord' &&
 			!url.pathname.startsWith('/api/admin') &&
 			(await isMaintenanceActive(env))
 		) {
 			const me = await readMe(request, env, ctx);
 			if (String(me?.user?.id) !== ownerUserId(env)) {
 				const state = await maintenanceState(env);
+				if (url.pathname.startsWith('/api/'))
+					return json({ success: false, error: state.message || 'Wartungsarbeiten.' }, 503, {
+						'Retry-After': '60',
+					});
 				return new Response(
 					'<!doctype html><meta charset="utf-8"><title>Wartungsarbeiten</title><style>*{box-sizing:border-box}@keyframes maintenanceDrift{from{background-position:70px 75px,300px 305px}to{background-position:105px 110px,335px 340px}}body{font:16px Arial;background:#111318;color:#f5f6f8;display:grid;place-items:center;min-height:100vh;text-align:center;overflow:hidden;animation:maintenanceDrift 28s ease-in-out infinite alternate;background-image:url("/assets/bp-logo.webp?v=maintenance-gray-2"),url("/assets/bp-logo.webp?v=maintenance-gray-2");background-size:460px auto;background-position:70px 75px,300px 305px;background-repeat:repeat}main{position:relative;z-index:1;max-width:620px;margin:30px;padding:34px 38px;border:1px solid #343943;border-radius:18px;background:#191c22;box-shadow:0 18px 60px #0008}main h1{margin:0 0 12px}main p{margin:0;color:#a5a9b3;line-height:1.55}</style><main><h1>Wartungsarbeiten</h1><p>' +
 						escapeHtml(state.message) +
@@ -314,20 +326,23 @@ function isPermissionChange(method, path) {
 		(path === '/api/admin/database-access' ||
 			path === '/api/admin/upload-access' ||
 			path === '/api/admin/all-access' ||
-			path === '/api/admin/admin-panel-access')
+			path === '/api/admin/admin-panel-access' ||
+			path === '/api/admin/full-admin-access')
 	);
 }
 function permissionAuditEvent(method, path, actor, targetUserId) {
 	const grant = method === 'POST',
 		database = path === '/api/admin/database-access',
 		permission =
-			path === '/api/admin/all-access'
-				? 'DATABASE_AND_UPLOAD_DELETE_ACCESS'
-				: path === '/api/admin/admin-panel-access'
-					? 'ADMIN_PANEL_ACCESS'
-					: database
-						? 'DATABASE_ACCESS'
-						: 'UPLOAD_DELETE_ACCESS';
+			path === '/api/admin/full-admin-access'
+				? 'FULL_ADMIN_ACCESS'
+				: path === '/api/admin/all-access'
+					? 'DATABASE_AND_UPLOAD_DELETE_ACCESS'
+					: path === '/api/admin/admin-panel-access'
+						? 'ADMIN_PANEL_ACCESS'
+						: database
+							? 'DATABASE_ACCESS'
+							: 'UPLOAD_DELETE_ACCESS';
 	return {
 		action: grant ? 'PERMISSION_GRANT' : 'PERMISSION_REVOKE',
 		discordAccount: actor.username || null,

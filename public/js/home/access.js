@@ -1,3 +1,4 @@
+import { fetchMeResponse } from '../shared/session.js';
 import { state } from './state.js';
 
 export function logout() {
@@ -65,10 +66,7 @@ export function createAccessCheck({ onAuthorized }) {
 			let d = null,
 				responseOk = false;
 			for (let attempt = 0; attempt < 3; attempt++) {
-				const r = await fetch(forceRefresh ? '/api/me?refresh=1' : '/api/me', {
-					cache: 'no-store',
-					credentials: 'same-origin',
-				});
+				const r = await fetchMeResponse(forceRefresh || attempt > 0);
 				d = await r.json().catch(() => null);
 				responseOk = r.ok && typeof d?.loggedIn === 'boolean';
 				if (responseOk && (!d.loggedIn || d.databaseAccess || d.rolesAvailable !== false)) break;

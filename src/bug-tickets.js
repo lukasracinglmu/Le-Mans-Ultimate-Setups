@@ -1,3 +1,4 @@
+import { ownerUserId } from './config.js';
 import { json } from './lib/http.js';
 
 const DISCORD_API = 'https://discord.com/api/v10';
@@ -37,7 +38,7 @@ async function owner(request, env, ctx, productionWorker) {
 	const me = await meResponse.json().catch(() => null);
 	if (!me?.loggedIn || !me.user?.id)
 		return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
-	if (!me.user?.canViewTickets)
+	if (String(me.user.id) !== ownerUserId(env) || !me.user?.canViewTickets)
 		return { error: json({ success: false, error: 'Kein Zugriff.' }, 403) };
 	return { user: me.user };
 }
@@ -99,12 +100,21 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 	}
 	const url = new URL(request.url),
 		match = url.pathname.match(
-			/^\/api\/admin\/bug-tickets(?:\/(\d+)(?:\/(image|close|reopen|edit|progress))?)?$/
+			/^\/api\/admin\/bug-tickets(?:\/(\d+)(?:\/(image|close|reopen|edit|progress|delete))?)?$/
 		);
 	if (!match) return json({ success: false, error: 'Nicht gefunden.' }, 404);
 	const id = match[1] ? Number(match[1]) : null,
 		action = match[2] || null;
 	if (request.method === 'GET' && !id) {
+		if (url.searchParams.get('summary') === '1') {
+			const rows = await env.ACCESS_DB.prepare(
+				'SELECT status,COUNT(*) AS count FROM bug_tickets GROUP BY status'
+			).all();
+			const counts = { open: 0, progress: 0, closed: 0 };
+			for (const row of rows.results || [])
+				if (Object.hasOwn(counts, row.status)) counts[row.status] = Number(row.count);
+			return json({ success: true, counts });
+		}
 		const status = url.searchParams.get('status');
 		if (status && !['open', 'progress', 'closed'].includes(status))
 			return json({ success: false, error: 'Ungültiger Status.' }, 400);
@@ -165,10 +175,11 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 		)
 			.bind(id)
 			.first();
+		if (!previous) return json({ success: false, error: 'Ticket nicht gefunden.' }, 404);
 		const result = await env.ACCESS_DB.prepare(
-			`UPDATE bug_tickets SET title=?,description=?,priority=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`
+			`UPDATE bug_tickets SET title=?,description=?,priority=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND (title!=? OR description!=? OR priority!=?)`
 		)
-			.bind(title, description, priority, id)
+			.bind(title, description, priority, id, title, description, priority)
 			.run();
 		if (
 			result.meta?.changes &&
@@ -184,9 +195,7 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 				'aktualisiert',
 				'Titel, Beschreibung oder Priorität deiner Bugmeldung wurden aktualisiert.'
 			);
-		return result.meta?.changes
-			? json({ success: true })
-			: json({ success: false, error: 'Ticket nicht gefunden.' }, 404);
+		return json({ success: true, unchanged: !result.meta?.changes });
 	}
 	if (request.method === 'POST' && validTicket(id) && action === 'progress') {
 		const row = await env.ACCESS_DB.prepare('SELECT status,reporter_id FROM bug_tickets WHERE id=?')
@@ -237,6 +246,41 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 			);
 		return json({ success: true, id, label: ticketLabel(id) });
 	}
+
+	if (
+		(request.method === 'DELETE' || request.method === 'POST') &&
+		validTicket(id) &&
+		action === 'delete'
+	) {
+		const row = await env.ACCESS_DB.prepare('SELECT status,image_key FROM bug_tickets WHERE id=?')
+			.bind(id)
+			.first();
+		if (!row) return json({ success: true, alreadyDeleted: true });
+		if (row.status !== 'closed')
+			return json(
+				{ success: false, error: 'Nur geschlossene Tickets können gelöscht werden.' },
+				409
+			);
+		const deleted = await env.ACCESS_DB.prepare(
+			"DELETE FROM bug_tickets WHERE id=? AND status='closed'"
+		)
+			.bind(id)
+			.run();
+		if (!deleted.meta?.changes)
+			return json(
+				{ success: false, error: 'Der Ticketstatus hat sich geändert. Bitte neu laden.' },
+				409
+			);
+		if (row.image_key && env.UPLOADS_R2) {
+			try {
+				await env.UPLOADS_R2.delete(row.image_key);
+			} catch {
+				console.warn('Ticket attachment cleanup failed for ' + ticketLabel(id));
+			}
+		}
+		// AUTOINCREMENT preserves consumed numbers. Deletion never sends a DM.
+		return json({ success: true, id, label: ticketLabel(id) });
+	}
 	if (request.method === 'POST' && validTicket(id) && action === 'close') {
 		let body;
 		try {
@@ -244,8 +288,8 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 		} catch {
 			return json({ success: false, error: 'Ungültige Anfrage.' }, 400);
 		}
-		const customResolution = clean(body?.resolution, 2000);
-		const resolution = customResolution || 'Ticket wird geschlossen. Das Problem wurde behoben';
+		const resolution =
+			clean(body?.resolution, 2000) || 'Ticket wird geschlossen. Das Problem wurde behoben';
 		const row = await env.ACCESS_DB.prepare(
 			'SELECT id,reporter_id,reporter_name,status FROM bug_tickets WHERE id=?'
 		)
@@ -254,52 +298,27 @@ export async function ticketApi(request, env, ctx, productionWorker) {
 		if (!row) return json({ success: false, error: 'Ticket nicht gefunden.' }, 404);
 		if (row.status === 'closed')
 			return json({ success: false, error: 'Ticket ist bereits geschlossen.' }, 409);
-		if (!env.DISCORD_BOT_TOKEN)
-			return json({ success: false, error: 'Discord Bot ist nicht verfügbar.' }, 503);
-		const opened = await discord('/users/@me/channels', env, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ recipient_id: row.reporter_id }),
-		});
-		const channel = await opened.json().catch(() => ({}));
-		if (!opened.ok || !channel.id)
-			return json(
-				{ success: false, error: 'Discord Nachricht konnte nicht zugestellt werden.' },
-				502
-			);
-		const message = {
-			allowed_mentions: { parse: [] },
-			embeds: [
-				{
-					title: ticketLabel(id) + ' geschlossen',
-					description: 'Deine Bugmeldung wurde bearbeitet.',
-					fields: [{ name: 'Nachricht', value: resolution }],
-					footer: { text: 'Three Peaks Racing Setup Database' },
-					color: 0x3498db,
-					timestamp: new Date().toISOString(),
-				},
-			],
-		};
-		const sent = await discord('/channels/' + channel.id + '/messages', env, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(message),
-		});
-		if (!sent.ok)
-			return json(
-				{ success: false, error: 'Discord Nachricht konnte nicht zugestellt werden.' },
-				502
-			);
-		await env.ACCESS_DB.prepare(
-			`UPDATE bug_tickets SET status='closed',resolution=?,closed_at=CURRENT_TIMESTAMP,closed_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status!='closed'`
+		// Persist first; only the request winning the conditional update notifies.
+		const changed = await env.ACCESS_DB.prepare(
+			"UPDATE bug_tickets SET status='closed',resolution=?,closed_at=CURRENT_TIMESTAMP,closed_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status!='closed'"
 		)
 			.bind(resolution, auth.user.id, id)
 			.run();
-		return json({ success: true, id, label: ticketLabel(id) });
+		const notificationDelivered = changed.meta?.changes
+			? await notifyTicketUpdate(
+					env,
+					row.reporter_id,
+					id,
+					'geschlossen',
+					'Deine Bugmeldung wurde bearbeitet.',
+					[{ name: 'Nachricht', value: resolution }]
+				)
+			: false;
+		return json({ success: true, id, label: ticketLabel(id), notificationDelivered });
 	}
 	return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 }
-async function notifyTicketUpdate(env, reporterId, id, status, description) {
+async function notifyTicketUpdate(env, reporterId, id, status, description, fields = []) {
 	try {
 		if (!env.DISCORD_BOT_TOKEN) throw Error('missing bot token');
 		const opened = await discord('/users/@me/channels', env, {
@@ -318,6 +337,7 @@ async function notifyTicketUpdate(env, reporterId, id, status, description) {
 					{
 						title: ticketLabel(id) + ' ' + status,
 						description,
+						...(fields.length ? { fields } : {}),
 						footer: { text: 'Three Peaks Racing Setup Database' },
 						color: 0x3498db,
 						timestamp: new Date().toISOString(),
@@ -326,7 +346,9 @@ async function notifyTicketUpdate(env, reporterId, id, status, description) {
 			}),
 		});
 		if (!sent.ok) throw Error('message');
+		return true;
 	} catch {
 		console.warn('Ticket update DM could not be delivered for ' + ticketLabel(id));
+		return false;
 	}
 }

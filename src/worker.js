@@ -1,3 +1,5 @@
+import { REQUEST_MANUFACTURERS } from '../discord-presence/request-manufacturers.js';
+import { buildSetupSummary } from './setup-summary.js';
 /* @file-notes: Basis-Worker für Authentifizierung, Discord-Login, Setup-APIs und grundlegende Website-Funktionen. */
 import { cleanSetupFileName } from './setup-version.js';
 import { githubBranch, ownerUserId } from './config.js';
@@ -49,6 +51,7 @@ export default {
 				return discordRoleStatus(request, env);
 			if (p === '/api/favorites' && (m === 'GET' || m === 'POST' || m === 'DELETE'))
 				return favoritesApi(request, env);
+			if (p === '/api/setups/summary' && m === 'GET') return setupSummary(request, env);
 			if (p === '/api/setups' && m === 'GET') return listSetups(request, env);
 			if (p === '/api/setups/download' && m === 'GET') return downloadSetup(request, env);
 			if (p === '/api/setups/upload' && m === 'POST') return uploadSetups(request, env, uploadForm);
@@ -80,7 +83,7 @@ function isHttpsRequest(request) {
 	return request.headers.get('X-Forwarded-Proto') === 'https';
 }
 
-function enforceSameOriginForStateChange(request, env) {
+export function enforceSameOriginForStateChange(request, env) {
 	const method = request.method.toUpperCase();
 	if (!new Set(['POST', 'PUT', 'PATCH', 'DELETE']).has(method)) return null;
 	const url = new URL(request.url);
@@ -482,6 +485,23 @@ function classifySetup(name, vehicle) {
 	}
 	return { variant, series };
 }
+async function setupSummary(request, env) {
+	const auth = await requireDatabaseAccess(request, env);
+	if (auth.error) return auth.error;
+	try {
+		const response = await githubRequest(
+			env,
+			'/git/trees/' + encodeURIComponent(githubBranch(env)) + '?recursive=1',
+			{ redirect: 'manual', signal: AbortSignal.timeout(15000) }
+		);
+		if (!response.ok)
+			return json({ success: false, error: 'Setup-Zahlen konnten nicht geladen werden.' }, 502);
+		const vehicles = buildSetupSummary(await response.json());
+		return json({ success: true, complete: true, vehicles });
+	} catch {
+		return json({ success: false, error: 'Setup-Zahlen momentan nicht verfügbar.' }, 502);
+	}
+}
 async function listSetups(request, env) {
 	const a = await requireDatabaseAccess(request, env);
 	if (a.error) return a.error;
@@ -847,7 +867,44 @@ async function registerRequestCommand(request, env) {
 	if (auth.error) return auth.error;
 	if (!env.DISCORD_CLIENT_ID || !env.DISCORD_GUILD_ID || !env.DISCORD_BOT_TOKEN)
 		return json({ success: false, error: 'Discord Bot nicht vollständig konfiguriert.' }, 503);
-	const cmd = { name: 'request', description: 'Setup für LMU anfragen', type: 1 };
+	const cmd = {
+		name: 'request',
+		description: 'Erstellt eine Setup-Anfrage',
+		type: 1,
+		options: [
+			{
+				type: 3,
+				name: 'fahrzeug',
+				description: 'Fahrzeug auswählen',
+				required: true,
+				autocomplete: true,
+			},
+			{
+				type: 3,
+				name: 'strecke',
+				description: 'Strecke auswählen',
+				required: true,
+				autocomplete: true,
+			},
+			{
+				type: 3,
+				name: 'hersteller',
+				description: 'Gewünschter Setup-Hersteller (optional)',
+				required: false,
+				choices: [
+					{ name: 'Egal', value: 'egal' },
+					...REQUEST_MANUFACTURERS.map((item) => ({ name: item.name, value: item.id })),
+				],
+			},
+			{
+				type: 3,
+				name: 'weitere_infos',
+				description: 'Weitere Informationen zur Anfrage',
+				required: false,
+				max_length: 1000,
+			},
+		],
+	};
 	const r = await df(
 		`/applications/${env.DISCORD_CLIENT_ID}/guilds/${env.DISCORD_GUILD_ID}/commands`,
 		{

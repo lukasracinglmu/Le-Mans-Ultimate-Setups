@@ -12,8 +12,8 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 
 	// Nur der konfigurierte Owner besitzt Wartungsmodus, Backups und Tickets.
 	const fullAdmin = isOwner || Boolean(grants.fullAdmin);
-	const canManageDatabaseAccess = fullAdmin || hasOwnerRole;
-	const canManageUploadAccess = fullAdmin || hasOwnerRole;
+	const canManageDatabaseAccess = fullAdmin || hasOwnerRole || Boolean(grants.adminPanel);
+	const canManageUploadAccess = canManageDatabaseAccess;
 	const canUpload = fullAdmin || hasOwnerRole || hasSetupSupplyRole || Boolean(grants.upload);
 	const databaseAccess =
 		fullAdmin ||
@@ -33,7 +33,7 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 		isAdmin: canManageDatabaseAccess,
 		canManageDatabaseAccess,
 		canManageUploadAccess,
-		canManageAdminAccess: isOwner,
+		canManageAdminAccess: fullAdmin,
 		canViewBackups: isOwner,
 		canManageMaintenance: isOwner,
 		individualDatabaseAccess: Boolean(grants.database),

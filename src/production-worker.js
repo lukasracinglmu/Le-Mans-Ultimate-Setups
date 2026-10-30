@@ -443,11 +443,16 @@ async function confirmDiscordRequest(interaction, env, ctx) {
 					'** wurde hochgeladen und kann jetzt genutzt werden: ' +
 					link,
 				allowed_mentions: { parse: [], users: [requesterId], roles: [] },
-				flags: 4096,
+				nonce: String(interaction.message.id),
+				enforce_nonce: true,
 			}),
 			signal: AbortSignal.timeout(15000),
 		}
-	).catch(() => {});
+	)
+		.then((response) => {
+			if (!response.ok) throw Error('Discord confirmation HTTP ' + response.status);
+		})
+		.catch((error) => console.warn('Setup confirmation notification failed', error.message));
 	if (ctx?.waitUntil) ctx.waitUntil(notify);
 	else await notify;
 	return json({
@@ -636,12 +641,17 @@ async function serveEnhancedHome(request, env) {
 }
 
 async function serveRepoAsset(request, env) {
-	const url = new URL(request.url);
-	const response = await readSiteFile(request, env, url.pathname.slice(1));
+	// The images are deployed with the site. Serve the edge asset before GitHub.
+	let response;
+	try {
+		response = await env.ASSETS.fetch(request);
+	} catch {}
+	if (!response?.ok)
+		response = await readSiteFile(request, env, new URL(request.url).pathname.slice(1));
 	if (!response.ok) return response;
 	const headers = new Headers(response.headers);
 	headers.set('Content-Type', 'image/webp');
-	headers.set('Cache-Control', 'no-store');
+	headers.set('Cache-Control', 'public, max-age=300');
 	headers.set('X-Content-Type-Options', 'nosniff');
 	return new Response(response.body, { status: response.status, headers });
 }

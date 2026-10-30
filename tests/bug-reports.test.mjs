@@ -109,7 +109,7 @@ test('bug report is sent to the fixed owner DM with reporter identity and no all
 		assert.equal(calls.length, 4);
 		assert.equal(calls[1].url, 'https://discord.com/api/v10/channels/' + channelId + '/messages');
 		const payload = JSON.parse(calls[1].options.body);
-		assert.equal(payload.embeds[0].title, 'Bug-Report · Upload-Liste');
+		assert.equal(payload.embeds[0].title, 'Ticket 0001 erstellt · Upload-Liste');
 		assert.equal(payload.embeds[0].description, description);
 		assert.match(payload.embeds[0].fields[0].value, new RegExp(user.id));
 		assert.deepEqual(payload.embeds[0].fields.slice(1), [
@@ -132,7 +132,7 @@ test('reporter receives a confirmation DM with the ticket number', async () => {
 			'https://discord.com/api/v10/channels/' + reporterChannelId + '/messages'
 		);
 		const confirmation = JSON.parse(calls[3].options.body);
-		assert.equal(confirmation.embeds[0].title, 'Ticket 0001 erstellt');
+		assert.equal(confirmation.embeds[0].title, 'Ticket 0001 erstellt · Upload-Liste');
 		assert.deepEqual(confirmation.allowed_mentions, { parse: [] });
 	});
 });

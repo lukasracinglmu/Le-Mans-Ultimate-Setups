@@ -1,7 +1,5 @@
 import { $ } from '../shared/dom.js';
-import { getCarSetups } from './setup-cache.js';
 import { renderSetups } from './setup-list.js';
-import { classifyVendor } from './setup-names.js';
 import { state } from './state.js';
 
 let setupData = {};
@@ -116,41 +114,75 @@ export function renderCategories(filter = '') {
 			'</div>';
 }
 
-const countFor = (setups) => {
-	const mfr = state.activeMfr;
-	return setups.filter((s) => !mfr || classifyVendor(s.name) === mfr).length;
+let countRun = 0,
+	summaryCache = null,
+	summaryPending = null,
+	summaryRevision = 0;
+const readSummary = (force = false) => {
+	if (force) {
+		summaryCache = null;
+		summaryRevision++;
+	}
+	const revision = summaryRevision;
+	if (summaryCache && Date.now() - summaryCache.at < 30000)
+		return Promise.resolve(summaryCache.vehicles);
+	if (summaryPending?.revision === revision) return summaryPending.promise;
+	const promise = fetch('/api/setups/summary', { cache: 'no-store', credentials: 'same-origin' })
+		.then(async (response) => {
+			const data = await response.json();
+			if (!response.ok || !data.success || data.complete !== true || !Array.isArray(data.vehicles))
+				throw Error('Invalid setup summary');
+			const vehicles = new Map();
+			for (const row of data.vehicles) {
+				if (
+					typeof row.category !== 'string' ||
+					typeof row.vehicle !== 'string' ||
+					!Number.isSafeInteger(row.count) ||
+					row.count < 0 ||
+					!row.manufacturers ||
+					['GO', 'HYMO', 'beAlien', 'other'].some(
+						(key) => !Number.isSafeInteger(row.manufacturers[key]) || row.manufacturers[key] < 0
+					)
+				)
+					throw Error('Invalid vehicle count');
+				vehicles.set(JSON.stringify([row.category, row.vehicle]), row);
+			}
+			if (revision === summaryRevision) summaryCache = { at: Date.now(), vehicles };
+			return vehicles;
+		})
+		.finally(() => {
+			if (summaryPending?.revision === revision) summaryPending = null;
+		});
+	summaryPending = { revision, promise };
+	return promise;
 };
-
-let countRun = 0;
-
-export async function refreshVehicleCounts() {
+export async function refreshVehicleCounts(force = false) {
 	if (document.documentElement.dataset.dbAccess !== 'authorized') return;
 	const run = ++countRun;
-	const cards = [...document.querySelectorAll('#categories .vehicle')];
-	let cursor = 0;
-	const worker = async () => {
-		while (cursor < cards.length) {
-			const card = cards[cursor++];
-			if (run !== countRun) return;
-			const vehicle = card.querySelector('.vehicle-name')?.textContent?.trim();
-			const category = card.querySelector('.vehicle-class')?.textContent?.trim();
-			if (!vehicle || !category) continue;
-			let count = null;
-			try {
-				const data = await getCarSetups(category, vehicle);
-				count = countFor(Array.isArray(data?.setups) ? data.setups : []);
-			} catch {}
-			if (run !== countRun) return;
-			let label = card.querySelector('.vehicle-setup-count');
-			if (!label) {
-				label = document.createElement('div');
-				label.className = 'vehicle-setup-count';
-				card.appendChild(label);
-			}
-			label.textContent = 'Verfügbare Setups: ' + (count === null ? 'nicht abrufbar' : count);
+	let vehicles = null;
+	try {
+		vehicles = await readSummary(force);
+	} catch {}
+	if (run !== countRun) return;
+	const manufacturer = state.activeMfr;
+	for (const card of document.querySelectorAll('#categories .vehicle')) {
+		const vehicle = card.querySelector('.vehicle-name')?.textContent?.trim(),
+			category = card.querySelector('.vehicle-class')?.textContent?.trim();
+		if (!vehicle || !category) continue;
+		const row = vehicles?.get(JSON.stringify([category, vehicle]));
+		const count = vehicles
+			? manufacturer
+				? row?.manufacturers[manufacturer] || 0
+				: row?.count || 0
+			: null;
+		let label = card.querySelector('.vehicle-setup-count');
+		if (!label) {
+			label = document.createElement('div');
+			label.className = 'vehicle-setup-count';
+			card.appendChild(label);
 		}
-	};
-	await Promise.all(Array.from({ length: Math.min(4, cards.length) }, worker));
+		label.textContent = 'Verfügbare Setups: ' + (count === null ? 'nicht abrufbar' : count);
+	}
 }
 
 export function initCatalog({ onSelectVehicle }) {
@@ -182,6 +214,7 @@ export function initCatalog({ onSelectVehicle }) {
 				.querySelectorAll('#mfrFilter .mfr-btn')
 				.forEach((b) => b.classList.toggle('active', b === btn));
 			if ($('carPage').classList.contains('active')) renderSetups(state.currentCarSetups);
+			refreshVehicleCounts();
 		})
 	);
 }

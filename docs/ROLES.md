@@ -49,3 +49,11 @@ Tickets, Backups und Wartungsmodus bleiben ausschließlich dem persönlichen Own
 ## Grundsatz
 
 Die Berechtigungen werden sowohl in der Benutzeroberfläche als auch serverseitig geprüft. Das Ausblenden eines Bereichs allein gilt nicht als Sicherheitsmaßnahme; nicht erlaubte API-Aufrufe werden ebenfalls abgewiesen.
+
+## Entzug und Aktualisierung
+
+- Full Admin kann Admin-Panel- und Full-Admin-Freigaben verwalten. Die Discord-Owner-Rolle und eine reine Admin-Panel-Freigabe dürfen nur Database/Upload verwalten.
+- Neue Full-Admin-Freigaben werden als ein Recht gespeichert; die daraus folgenden Rechte werden berechnet.
+- „Full Admin entfernen“ löscht auch alle persönlichen Database-, Upload- und Admin-Panel-Freigaben dieses Nutzers. So bleiben keine von älteren Versionen automatisch angelegten Einzelrechte zurück. Gewünschte Einzelrechte anschließend gezielt neu vergeben. Discord-Rollen bleiben unabhängig davon gültig.
+- Persönliche Freigaben werden bei jeder geschützten Anfrage neu geprüft. Lesende Anfragen dürfen Discord-Rollen aus der signierten Sitzung höchstens 60 Sekunden verwenden; Änderungen prüfen die Rollen frisch.
+- Profilnamen und Avatare sind reine Anzeigedaten und werden höchstens fünf Minuten zwischengespeichert. Sie haben keinen Einfluss auf Zugriffsrechte.

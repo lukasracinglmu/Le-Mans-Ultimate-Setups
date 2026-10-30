@@ -332,6 +332,7 @@ async function bot() {
 		searchRequestTracks,
 		resolveRequestTrack,
 		matchingRequestSetups,
+		AbortSignal,
 		URLSearchParams,
 		console: { log() {}, warn() {}, error() {} },
 		process: {

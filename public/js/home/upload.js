@@ -181,7 +181,7 @@ async function refreshUploadedCarState(category, vehicle) {
 		state.currentCarSetups = d.setups;
 		renderSetups(d.setups);
 	}
-	await refreshVehicleCounts();
+	await refreshVehicleCounts(true);
 }
 
 async function runUploadJobs(jobs, { appendRows = false } = {}) {

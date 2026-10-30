@@ -62,7 +62,7 @@ for (const failure of [null, 'channel', 'message', 'network'])
 			assert.equal(calls[0].body.recipient_id, OWNER);
 			assert.equal(calls[2].body.recipient_id, '222222222222222222');
 			if (!failure) {
-				assert.equal(calls[3].body.embeds[0].title, 'Ticket 0007 erstellt');
+				assert.equal(calls[3].body.embeds[0].title, 'Ticket 0007 erstellt · Test bug');
 				assert.match(
 					calls[3].body.embeds[0].description,
 					/erfolgreich erstellt und wird bearbeitet/
