@@ -57,11 +57,13 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 ### Seiten-Scripts (`public/js/`)
 
 - Jede Seite hat `public/js/<seite>/main.js` als Einstieg, der nur die Teile startet. Die Teile daneben tun beim Import nichts, deshalb können Tests sie direkt importieren.
-- `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`, außer vorerst die der Startseite.
+- `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`.
 - Keine Inline-Scripts und keine `on*`-Attribute. `tests/page-scripts.test.mjs` prüft das für jede umgestellte Seite, neue Seiten dort eintragen. Alle Seiten laufen mit `PAGE_CSP`, also `script-src 'self'`.
 - Dateien in `public/` dürfen nicht wie Module in `src/` heißen. `npm run check:deploy` vergleicht nur Dateinamen und hält z. B. `public/js/bug-tickets.js` für Worker-Code.
 - Umbauten im Browser gegen `main` vergleichen: derselbe Ablauf mit Mock-API auf beiden Ständen, der Branch mit der echten CSP. Dazu die String-Literale von altem und neuem Code vergleichen.
 - agent-browser klickt auf Koordinaten. Liegt das Ziel außerhalb des Sichtbereichs, geht der Klick ohne Fehlermeldung ins Leere. Vorher per `scrollIntoView()` ins Bild holen.
+- Beim Aufteilen großer Scripts Globals per `eslint-scope` umbenennen, nicht per Suchen und Ersetzen. Nur so bleiben gleichnamige lokale Variablen und Objekt-Schlüssel unberührt.
+- Lokale Variablen verdecken gleichnamige Modulwerte. Meldet ESLint einen Modulwert als ungenutzt, obwohl er verwendet wird, ist das meist die Ursache.
 - Unicode-Escapes wie `\u0300` in Regexen nach dem Schreiben per `grep` prüfen. Manche Werkzeuge schreiben stattdessen das Zeichen selbst.
 
 ### CSS (`public/css/`)
@@ -77,8 +79,9 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 - Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus.
 - Die Scripts haben absolute Pfade wie `/js/home/app.js` und laden deshalb nicht per `file://`. Lokal über einen Server mit `public/` als Wurzel öffnen, z. B. `python3 -m http.server -d public`. Ohne erreichbare API zeigt die Seite die Zugangsprüfung.
-- Die Scripts in `public/js/home/` sind noch klassische Scripts mit gemeinsamen Globals. `enhancements.js` ersetzt Funktionen aus `app.js` zur Laufzeit. Die Reihenfolge der `<script>`-Tags nicht ändern. Welche Globals eine Datei von anderen nutzt, steht in `/* global */` und `/* exported */` am Dateianfang.
-- Buttons haben `data-action` statt `onclick`. `public/js/home/actions.js` bindet sie.
+- Die Seite lädt nur `public/js/home/main.js`. Es startet die Module in fester Reihenfolge und verbindet sie. Zustand, den mehrere Module teilen, liegt in `state.js`, nicht in Globals.
+- Die Module importieren sich nicht im Kreis. Wo ein Modul ein anderes aufrufen müsste, das es selbst importiert, übergibt `main.js` die Funktion: Bearbeiten und Löschen per `setSetupActions()`, die Fahrzeugauswahl per `initCatalog({ onSelectVehicle })`, die Schritte nach der Zugangsprüfung per `onAuthorized`.
+- Buttons haben `data-action` statt `onclick`. `main.js` übergibt die Handler an `initActions()`.
 - Admin-Panel und Request-Formular gibt es nur noch als eigene Seiten (`/admin`, `/request`). Die Startseite hatte beide früher eingebaut, aber immer versteckt.
 - `tests/home-scripts.test.mjs` prüft, dass die Startseite keine Inline-Scripts hat, dass jedes geladene Script parsebar ist und dass jeder Button seinen früheren Aufruf macht. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
 
