@@ -3,7 +3,7 @@ import test from 'node:test';
 import { uploadSetupFamily } from '../public/js/home/setup-names.js';
 import { compareSetupVersions, cleanSetupFileName } from '../src/setup-version.js';
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
-import production from '../src/production-worker.js';
+import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 const client = { uploadSetupFamily };
 
@@ -140,7 +140,7 @@ test('same-name outdate uploads new bytes separately and marks exactly the origi
 			'previousSetups',
 			JSON.stringify({ action: 'outdate', targets: [{ name: fileName, sha: oldSha }] })
 		);
-		const response = await production.fetch(
+		const response = await storeUploadedSetups(
 			new Request('https://example.test/api/setups/upload', {
 				method: 'POST',
 				headers: { Cookie: 'lmu_session=' + payload + '.' + signature },
@@ -228,7 +228,7 @@ test('verified duplicate does not lower the stored version', async () => {
 				},
 			},
 		};
-		const r = await production.fetch(
+		const r = await storeUploadedSetups(
 			new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
 			env
 		);
@@ -327,7 +327,7 @@ test('explicit existing-file choices work for identical bytes and equal or missi
 					body: form,
 				});
 			};
-			const response = await production.fetch(request(), env);
+			const response = await storeUploadedSetups(request(), env);
 			assert.equal(response.status, 200, action + ' ' + version);
 			const data = await response.json();
 			if (action === 'replace') {
@@ -342,7 +342,7 @@ test('explicit existing-file choices work for identical bytes and equal or missi
 				assert.equal(marks.length, action === 'outdate' ? 1 : 0);
 				if (marks.length) assert.deepEqual(marks[0], ['Hypercar', 'Alpine', fileName, sha]);
 			}
-			const retry = await production.fetch(request(), env);
+			const retry = await storeUploadedSetups(request(), env);
 			assert.equal(retry.status, 200);
 			assert.equal(puts, action === 'replace' ? 0 : 1, 'retry never writes another ZIP');
 		}

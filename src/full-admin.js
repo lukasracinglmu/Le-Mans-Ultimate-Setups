@@ -16,8 +16,8 @@ async function ensure(env) {
 		await env.ACCESS_DB.prepare('ALTER TABLE full_admin_access ADD COLUMN username TEXT').run();
 	} catch {}
 }
-async function ownerOnly(request, env, ctx, productionWorker) {
-	const r = await productionWorker.fetch(
+async function ownerOnly(request, env, ctx, legacyWorker) {
+	const r = await legacyWorker.fetch(
 		new Request(new URL('/api/me', request.url), { headers: request.headers }),
 		env,
 		ctx
@@ -66,9 +66,9 @@ export async function maintenanceState(env) {
 		return { enabled: false, message: '' };
 	}
 }
-export async function fullAdminApi(request, env, ctx, productionWorker) {
+export async function fullAdminApi(request, env, ctx, legacyWorker) {
 	const path = new URL(request.url).pathname;
-	const auth = await ownerOnly(request, env, ctx, productionWorker);
+	const auth = await ownerOnly(request, env, ctx, legacyWorker);
 	if (auth.error) return auth.error;
 	if (path === '/api/admin/maintenance' && String(auth.user?.id) !== ownerUserId(env))
 		return json({ success: false, error: 'Nur der Owner darf den Wartungsmodus verwalten.' }, 403);

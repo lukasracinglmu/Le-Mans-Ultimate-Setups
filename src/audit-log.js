@@ -1,7 +1,6 @@
 import { githubBranch } from './config.js';
+import { DISCORD_API } from './lib/discord.js';
 import { githubRequest } from './lib/github.js';
-
-const DISCORD_API = 'https://discord.com/api/v10';
 
 function clean(value) {
 	const v = String(value ?? '').trim();

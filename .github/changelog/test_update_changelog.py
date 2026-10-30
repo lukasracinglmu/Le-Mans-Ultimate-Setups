@@ -221,6 +221,8 @@ class TextTest(unittest.TestCase):
             self.assertEqual(app.area(path), app.area("src/runtime-worker.js"))
         self.assertEqual(app.area("src/features/pages.js"), app.area("src/worker.js"))
         self.assertEqual(app.area("src/features/access.js"), app.area("src/access-worker.js"))
+        for path in ["src/features/requests.js", "src/features/discord-interactions.js"]:
+            self.assertEqual(app.area(path), app.area("src/production-worker.js"))
 
     def test_same_day_insertion_preserves_existing_categories(self):
         original = "# Changelog\n\n## 2026-10-22 – Nachtrag\n\n### Geändert\n\n- Alter Eintrag.\n\n### Behoben\n\n- Alte Korrektur.\n\n## 2026-10-20\n\nAlt.\n"

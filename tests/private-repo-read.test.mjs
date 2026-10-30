@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { readRepoFile, readSiteFile } from '../src/repo-read.js';
-import production from '../src/production-worker.js';
+import { manufacturerImage } from '../src/features/manufacturer-images.js';
+import { homePage } from '../src/features/pages.js';
 import runtime from '../src/index.js';
 import worker from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
@@ -86,7 +87,7 @@ test('pages come from the canonical asset root and never from GitHub', async () 
 			return new Response(home);
 		},
 		async () => {
-			const r = await production.fetch(request('/'), env, {});
+			const r = await homePage(request('/'), env);
 			assert.equal(r.status, 200);
 			assert.equal(r.headers.get('location'), null);
 			assert.equal(await r.text(), deployedHome);
@@ -194,7 +195,7 @@ test('manufacturer image reads private content and supplies image MIME type', as
 			return new Response(new Uint8Array([1, 2, 3]));
 		},
 		async () => {
-			const r = await production.fetch(request('/assets/manufacturers/bealien.webp'), envBase, {});
+			const r = await manufacturerImage(request('/assets/manufacturers/bealien.webp'), envBase);
 			assert.equal(r.status, 200);
 			assert.equal(r.headers.get('content-type'), 'image/webp');
 			assert.deepEqual(new Uint8Array(await r.arrayBuffer()), new Uint8Array([1, 2, 3]));

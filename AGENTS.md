@@ -50,13 +50,15 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 ### Worker-Routing
 
 - Einstieg ist `src/index.js`. Jede Route steht genau einmal in `src/routes.js`, und die erste passende antwortet. Vorher läuft die Middleware: Origin-Prüfung, dann Wartungsmodus.
-- Routen ohne Eintrag gehen noch durch die alten Schichten: `src/legacy.js` → `production-worker.js` → `worker.js`. Neue Routen nur in `routes.js` anlegen (#10).
+- Routen ohne Eintrag gehen über `src/legacy.js` noch an `worker.js`. Neue Routen nur in `routes.js` anlegen (#10).
 - Querschnitt einer Route als Hülle um den Handler: `withAccessSchema()` legt die Rechte-Tabellen an (bis #8), `withPermissionAudit()` protokolliert Rechteänderungen. Die Reihenfolge der Hüllen ist die Reihenfolge der Prüfungen.
 - Handler liegen nach Aufgabe in `src/features/`, Querschnittsaufgaben in `src/middleware/`.
 - Umbauten am Routing mit der Routen-Matrix prüfen. `node tools/route-matrix.mjs <checkout> <datei>` auf `main` und auf dem Branch laufen lassen, dann `node tools/compare-route-matrix.mjs` mit beiden Dateien. Jede Abweichung ist eine Verhaltensänderung.
 - Eine Route in einer inneren Schicht kann toter Code sein, wenn eine äußere Schicht sie zuerst beantwortet. Vor dem Umzug prüfen, welche Variante wirklich greift.
 - Auch interne Weiterleitungen zählen: Eine Schicht kann eine Anfrage per `new Request(...)` an eine tiefere Route schicken. Vor dem Löschen einer Route danach suchen.
 - Die Routen-Matrix erreicht keine signierten Discord-Interaktionen. Die prüft `tests/discord-interactions.test.mjs` mit eigenem Schlüsselpaar.
+- Ein `try` fängt nur, was darin mit `await` läuft. `return handler()` ohne `await` lässt den Fehler durch. Beim Umzug nur die Routen in `catchErrors()` hüllen, deren Fehler die alte Schicht wirklich gefangen hat.
+- Tests ersetzen `worker.fetch` am Objekt. Deshalb `legacyWorker.fetch(...)` aufrufen und nie destrukturieren.
 
 ### Gemeinsame Hilfen (`src/lib/`)
 

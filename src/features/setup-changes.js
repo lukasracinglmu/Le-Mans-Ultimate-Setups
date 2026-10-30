@@ -3,7 +3,7 @@ import { writeSetupAuditEvent } from '../audit-log.js';
 import { githubBranch } from '../config.js';
 import legacyWorker from '../legacy.js';
 import { githubRequest } from '../lib/github.js';
-import { json, safeJson } from '../lib/http.js';
+import { catchErrors, json, safeJson } from '../lib/http.js';
 import {
 	readDisplayName,
 	displayNameStatement,
@@ -11,6 +11,9 @@ import {
 } from '../setup-display-name.js';
 import { storeSetupVersion } from '../setup-version.js';
 import { readProfile } from './auth.js';
+import { storeUploadedSetups } from './setup-upload.js';
+
+const storeUpload = catchErrors(storeUploadedSetups);
 
 async function requireUploadDeleteAccess(request, env, ctx) {
 	const me = await readProfile(request, env, ctx, true);
@@ -33,12 +36,11 @@ async function requireUploadDeleteAccess(request, env, ctx) {
 	return { user: me.user };
 }
 
-// The upload itself happens in the older layers; this checks the permission first and
-// records every stored and replaced setup afterwards.
+// Checks the permission first and records every stored and replaced setup afterwards.
 export async function uploadSetups(request, env, ctx) {
 	const permission = await requireUploadDeleteAccess(request, env, ctx);
 	if (permission.error) return permission.error;
-	const response = await legacyWorker.fetch(request, env, ctx);
+	const response = await storeUpload(request, env, ctx);
 	if (response.ok) {
 		const data = await safeJson(response.clone());
 		if (data?.success) {
@@ -222,7 +224,7 @@ export async function updateSetupVersion(request, env, ctx) {
 	});
 }
 
-// The deletion itself happens in the older layers; this checks the permission first and
+// The deletion itself happens in the older worker; this checks the permission first and
 // records the deleted setup afterwards.
 export async function deleteSetup(request, env, ctx) {
 	const permission = await requireUploadDeleteAccess(request, env, ctx);

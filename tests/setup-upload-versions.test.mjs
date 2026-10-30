@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import worker from '../src/production-worker.js';
+import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import baseWorker from '../src/worker.js';
 import { readSetupVersion, enrichSetupVersions } from '../src/setup-version.js';
 
@@ -70,7 +70,7 @@ test('separate uploads store their own versions, including an empty replacement'
 			form.set('category', 'Hypercar');
 			form.set('vehicle', 'Test Car');
 			form.set('files', new File(['PK\x03\x04'], name));
-			const response = await worker.fetch(
+			const response = await storeUploadedSetups(
 				new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
 				env
 			);
@@ -95,7 +95,7 @@ test('separate uploads store their own versions, including an empty replacement'
 			[null, 'v2', 'v3']
 		);
 		const invalid = formWithVersion('v'.repeat(41));
-		const response = await worker.fetch(
+		const response = await storeUploadedSetups(
 			new Request('https://example.test/api/setups/upload', { method: 'POST', body: invalid }),
 			env
 		);

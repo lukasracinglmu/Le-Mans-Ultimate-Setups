@@ -9,7 +9,8 @@ import {
 	canConfirmSetupRequest,
 } from '../discord-presence/request-manufacturers.js';
 import { matchingRequestSetups } from '../discord-presence/request-tracks.js';
-import production from '../src/production-worker.js';
+import { discordInteraction } from '../src/features/discord-interactions.js';
+import { createWebsiteRequest } from '../src/features/requests.js';
 import base from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 const owner = '1033453785416208564';
@@ -99,7 +100,7 @@ async function website(files, manufacturer) {
 		return Response.json({ id: 'message' });
 	};
 	try {
-		const response = await production.fetch(
+		const response = await createWebsiteRequest(
 			new Request('https://example.test/api/request', {
 				method: 'POST',
 				headers: { Origin: 'https://example.test', 'Content-Type': 'application/json' },
@@ -187,7 +188,7 @@ test('Signierte HTTP-Buttons bestätigen nur berechtigte Nutzer und aktualisiere
 				body,
 			});
 			const result = await (
-				await production.fetch(req, env, { waitUntil: (p) => tasks.push(p) })
+				await discordInteraction(req, env, { waitUntil: (p) => tasks.push(p) })
 			).json();
 			assert.equal(result.type, expected);
 			if (expected === 7) {
