@@ -2,9 +2,9 @@
 import { json } from '../lib/http.js';
 import { hasSiteAccess, readMe } from './auth.js';
 
-export async function favoritesApi(request, env, ctx) {
+export async function favoritesApi(request, env) {
 	try {
-		const me = await readMe(request, env, ctx);
+		const me = await readMe(request, env);
 		if (!hasSiteAccess(me))
 			return json(
 				{ success: false, error: 'Nicht angemeldet oder keine Datenbankberechtigung.' },

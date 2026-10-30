@@ -2,7 +2,7 @@
 import { mapProfiles } from '../discord-profile.js';
 import { json } from '../lib/http.js';
 import { setFullAdminAccess } from '../managed-grants.js';
-import { readProfile } from './auth.js';
+import { readMe } from './auth.js';
 
 // The grant tables are still created at runtime; issue #8 moves them into migrations.
 async function ensureAccessSchema(env) {
@@ -35,8 +35,8 @@ export function withAccessSchema(handler) {
 	};
 }
 
-async function requireOwner(request, env, ctx, capability = 'canManageDatabaseAccess') {
-	const me = await readProfile(request, env, ctx, true);
+async function requireOwner(request, env, capability = 'canManageDatabaseAccess') {
+	const me = await readMe(request, env, { refresh: true });
 	if (!me?.loggedIn) return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
 	if (!me.user?.[capability])
 		return {
@@ -81,8 +81,8 @@ async function readUserId(request) {
 	}
 }
 
-export async function listAdminPanelAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+export async function listAdminPanelAccess(request, env) {
+	const auth = await requireOwner(request, env);
 	if (auth.error) return auth.error;
 	const result = await env.ACCESS_DB.prepare(
 		'SELECT user_id, granted_by, created_at FROM admin_panel_access ORDER BY created_at DESC'
@@ -90,8 +90,8 @@ export async function listAdminPanelAccess(request, env, ctx) {
 	return json({ success: true, grants: result.results || [] });
 }
 
-export async function changeFullAdminAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx, 'canManageAdminAccess');
+export async function changeFullAdminAccess(request, env) {
+	const auth = await requireOwner(request, env, 'canManageAdminAccess');
 	if (auth.error) return auth.error;
 	const userId = await readUserId(request);
 	if (!userId) return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
@@ -104,8 +104,8 @@ export async function changeFullAdminAccess(request, env, ctx) {
 	return json({ success: true, userId, fullAdmin: request.method === 'POST' });
 }
 
-export async function changeAdminPanelAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx, 'canManageAdminAccess');
+export async function changeAdminPanelAccess(request, env) {
+	const auth = await requireOwner(request, env, 'canManageAdminAccess');
 	if (auth.error) return auth.error;
 	const userId = await readUserId(request);
 	if (!userId) return json({ success: false, error: 'Ungültige Discord User ID.' }, 400);
@@ -121,8 +121,8 @@ export async function changeAdminPanelAccess(request, env, ctx) {
 	return json({ success: true, userId, adminPanel: false });
 }
 
-export async function listDatabaseAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+export async function listDatabaseAccess(request, env) {
+	const auth = await requireOwner(request, env);
 	if (auth.error) return auth.error;
 	if (!env.ACCESS_DB)
 		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
@@ -132,8 +132,8 @@ export async function listDatabaseAccess(request, env, ctx) {
 	return json({ success: true, grants: result.results || [] });
 }
 
-export async function grantDatabaseAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+export async function grantDatabaseAccess(request, env) {
+	const auth = await requireOwner(request, env);
 	if (auth.error) return auth.error;
 	if (!env.ACCESS_DB)
 		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
@@ -147,8 +147,8 @@ export async function grantDatabaseAccess(request, env, ctx) {
 	return json({ success: true, userId });
 }
 
-export async function revokeDatabaseAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+export async function revokeDatabaseAccess(request, env) {
+	const auth = await requireOwner(request, env);
 	if (auth.error) return auth.error;
 	if (!env.ACCESS_DB)
 		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
@@ -166,8 +166,8 @@ export async function revokeDatabaseAccess(request, env, ctx) {
 	return json({ success: true, userId });
 }
 
-export async function changeManagedAccess(request, env, ctx, all) {
-	const auth = await requireOwner(request, env, ctx, 'canManageUploadAccess');
+export async function changeManagedAccess(request, env, all) {
+	const auth = await requireOwner(request, env, 'canManageUploadAccess');
 	if (auth.error) return auth.error;
 	if (!env.ACCESS_DB)
 		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);
@@ -194,8 +194,8 @@ export async function changeManagedAccess(request, env, ctx, all) {
 	}
 }
 
-export async function listCombinedAccess(request, env, ctx) {
-	const auth = await requireOwner(request, env, ctx);
+export async function listCombinedAccess(request, env) {
+	const auth = await requireOwner(request, env);
 	if (auth.error) return auth.error;
 	if (!env.ACCESS_DB)
 		return json({ success: false, error: 'Rechte-Datenbank nicht konfiguriert.' }, 503);

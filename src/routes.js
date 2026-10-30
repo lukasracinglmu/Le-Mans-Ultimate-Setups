@@ -1,6 +1,7 @@
 /* @file-notes: Routing-Tabelle des Workers. Jede Route steht hier genau einmal. */
 import { backupCompletionApi } from './automatic-backup.js';
 import { ticketApi } from './bug-tickets.js';
+import { currentUser, discordCallback, discordLogin, logout } from './features/auth.js';
 import { catalogFile } from './features/catalog.js';
 import { favoritesApi } from './features/favorites.js';
 import {
@@ -32,15 +33,24 @@ import { listSetups } from './features/setup-list.js';
 import { fullAdminApi } from './full-admin.js';
 import legacyWorker from './legacy.js';
 import { catchErrors } from './lib/http.js';
+import { requireHttps } from './middleware/https.js';
 import { maintenanceGate } from './middleware/maintenance.js';
 import { enforceSameOriginForStateChange } from './middleware/origin.js';
 
 // Runs before every route, in this order.
 export const middleware = [enforceSameOriginForStateChange, maintenanceGate];
 
+// The methods the former base worker accepted. It answers every other method with 405.
+const BASE_METHODS = ['GET', 'HEAD', 'POST', 'DELETE'];
+
 // The first matching route answers.
 export const routes = [
 	{ method: '*', path: '/api/internal/backups/complete', handler: backupCompletionApi },
+	// Login and logout answer synchronously, so the base worker caught their errors.
+	{ method: BASE_METHODS, path: '/auth/discord', handler: requireHttps(catchErrors(discordLogin)) },
+	{ method: BASE_METHODS, path: '/auth/discord/callback', handler: requireHttps(discordCallback) },
+	{ method: BASE_METHODS, path: '/auth/logout', handler: requireHttps(catchErrors(logout)) },
+	{ method: 'GET', path: '/api/me', handler: requireHttps(currentUser) },
 	{
 		method: '*',
 		path: ['/strategy', '/strategy.html', '/strategy.js'],
@@ -58,14 +68,14 @@ export const routes = [
 			'/api/admin/backup',
 			'/api/admin/backups',
 		],
-		handler: (request, env, ctx) => fullAdminApi(request, env, ctx, legacyWorker),
+		handler: fullAdminApi,
 	},
 	{ method: ['GET', 'POST', 'DELETE'], path: '/api/favorites', handler: favoritesApi },
 	{ method: '*', path: '/api/bug-reports', handler: bugReportsApi },
 	{
 		method: '*',
 		path: '/api/admin/bug-tickets*',
-		handler: (request, env, ctx) => ticketApi(request, env, ctx, legacyWorker),
+		handler: ticketApi,
 	},
 	{ method: 'GET', path: '/setups.json', handler: catalogFile },
 	{ method: 'GET', path: '/', handler: homePage },
@@ -111,12 +121,12 @@ export const routes = [
 	{
 		method: ['POST', 'DELETE'],
 		path: '/api/admin/upload-access',
-		handler: grantChange((request, env, ctx) => changeManagedAccess(request, env, ctx, false)),
+		handler: grantChange((request, env) => changeManagedAccess(request, env, false)),
 	},
 	{
 		method: ['POST', 'DELETE'],
 		path: '/api/admin/all-access',
-		handler: grantChange((request, env, ctx) => changeManagedAccess(request, env, ctx, true)),
+		handler: grantChange((request, env) => changeManagedAccess(request, env, true)),
 	},
 	{ method: 'GET', path: '/api/setups', handler: catchErrors(listSetups) },
 	{ method: 'POST', path: '/api/setups/upload', handler: uploadSetups },

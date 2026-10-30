@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import app from '../src/index.js';
 import worker from '../src/worker.js';
+import { sessionCookie } from './helpers/session.mjs';
 
-const uploader = { loggedIn: true, user: { id: '123456789012345678', canUpload: true } };
+// The uploader is the owner, so no Discord role lookup is needed.
+const env = { DISCORD_OWNER_USER_ID: '123456789012345678', SESSION_SECRET: 'route-test' };
 
-// The older worker answers the profile and fails on everything else.
+// The older worker stores and lists the setups and fails on every request.
 async function withBrokenWorker(t, run) {
 	const original = worker.fetch;
 	const errors = t.mock.method(console, 'error', () => {});
-	worker.fetch = async (request) => {
-		if (new URL(request.url).pathname === '/api/me') return Response.json(uploader);
+	worker.fetch = async () => {
 		throw Error('storage unavailable');
 	};
 	try {
@@ -41,9 +42,14 @@ test('setup upload answers unexpected storage errors with a generic 500', async 
 	form.set('version', 'v1');
 	form.set('files', new File(['PK\x03\x04'], 'GO_Test_Spa.zip'));
 	const logs = await withBrokenWorker(t, async () => {
+		const cookie = await sessionCookie(env.DISCORD_OWNER_USER_ID, env.SESSION_SECRET);
 		const response = await app.fetch(
-			new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
-			{},
+			new Request('https://example.test/api/setups/upload', {
+				method: 'POST',
+				headers: { Cookie: cookie },
+				body: form,
+			}),
+			env,
 			{}
 		);
 		assert.equal(response.status, 500);

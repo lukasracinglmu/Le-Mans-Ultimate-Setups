@@ -10,7 +10,7 @@ export function withPermissionAudit(handler) {
 async function auditPermissionChange(handler, request, env, ctx) {
 	const url = new URL(request.url);
 	const bodyRequest = request.clone(),
-		actor = await readMe(request, env, ctx);
+		actor = await readMe(request, env);
 	let targetUserId = null;
 	try {
 		targetUserId = String((await bodyRequest.json())?.userId || '').trim() || null;

@@ -9,7 +9,7 @@ import { json } from '../lib/http.js';
 const OPEN_PATHS = new Set(['/api/me', '/interactions/discord', '/api/internal/backups/complete']);
 const OPEN_PREFIXES = ['/auth/', '/assets/', '/css/', '/js/', '/api/admin'];
 
-export async function maintenanceGate(request, env, ctx) {
+export async function maintenanceGate(request, env) {
 	const url = new URL(request.url);
 	if (
 		OPEN_PATHS.has(url.pathname) ||
@@ -20,7 +20,7 @@ export async function maintenanceGate(request, env, ctx) {
 	if (!(await isMaintenanceActive(env))) {
 		return null;
 	}
-	const me = await readMe(request, env, ctx);
+	const me = await readMe(request, env);
 	if (String(me?.user?.id) === ownerUserId(env)) {
 		return null;
 	}

@@ -111,14 +111,6 @@ async function request(path, method = 'GET', body, id = OWNER, origin = 'https:/
 		...(body ? { body: JSON.stringify(body) } : {}),
 	});
 }
-const ownerWorker = {
-	async fetch() {
-		return Response.json({
-			loggedIn: true,
-			user: { id: OWNER, canViewTickets: true, fullAdmin: true, isOwner: true },
-		});
-	},
-};
 async function withNetwork(run, roles = []) {
 	const previous = globalThis.fetch,
 		calls = [];
@@ -228,12 +220,7 @@ for (const path of ['/api/admin/full-admin', '/api/admin/full-admin-access'])
 		await withNetwork(async () => {
 			const result = path.endsWith('-access')
 				? await runtime.fetch(await request(path, 'DELETE', { userId: TARGET }), env, {})
-				: await fullAdminApi(
-						await request(path, 'DELETE', { userId: TARGET }),
-						env,
-						{},
-						ownerWorker
-					);
+				: await fullAdminApi(await request(path, 'DELETE', { userId: TARGET }), env, {});
 			assert.equal(result.status, 200);
 		});
 		for (const table of [
@@ -328,9 +315,7 @@ test('Only closed tickets delete; no DM; IDs remain consumed even after deleting
 			(
 				await ticketApi(
 					await request('/api/admin/bug-tickets/' + open.id + '/delete', 'DELETE'),
-					env,
-					{},
-					ownerWorker
+					env
 				)
 			).status,
 			409
@@ -339,9 +324,7 @@ test('Only closed tickets delete; no DM; IDs remain consumed even after deleting
 			(
 				await ticketApi(
 					await request('/api/admin/bug-tickets/' + closed.id + '/delete', 'DELETE'),
-					env,
-					{},
-					ownerWorker
+					env
 				)
 			).status,
 			200
@@ -350,9 +333,7 @@ test('Only closed tickets delete; no DM; IDs remain consumed even after deleting
 			(
 				await ticketApi(
 					await request('/api/admin/bug-tickets/' + closed.id + '/delete', 'DELETE'),
-					env,
-					{},
-					ownerWorker
+					env
 				)
 			).status,
 			200
@@ -383,9 +364,7 @@ for (const failure of ['blocked', 'network', 'missing-token'])
 				await request('/api/admin/bug-tickets/' + item.id + '/close', 'POST', {
 					resolution: 'Fixed',
 				}),
-				env,
-				{},
-				ownerWorker
+				env
 			);
 			assert.equal(result.status, 200);
 			assert.equal((await result.json()).notificationDelivered, false);
@@ -411,10 +390,7 @@ test('Concurrent close actions send at most one complete closing DM', async () =
 	try {
 		const req = () =>
 			request('/api/admin/bug-tickets/' + item.id + '/close', 'POST', { resolution: 'Fixed' });
-		await Promise.all([
-			req().then((r) => ticketApi(r, env, {}, ownerWorker)),
-			req().then((r) => ticketApi(r, env, {}, ownerWorker)),
-		]);
+		await Promise.all([req().then((r) => ticketApi(r, env)), req().then((r) => ticketApi(r, env))]);
 		assert.equal(sent.length, 1);
 		assert.equal(sent[0].embeds[0].fields[0].value, 'Fixed');
 		assert.equal(sent[0].embeds[0].color, 0x3498db);
@@ -430,12 +406,10 @@ test('Ticket summary counts beyond the old 250-row listing limit', async () => {
 		"INSERT INTO bug_tickets(report_id,reporter_id,reporter_name,title,priority,description,status)VALUES(?,?,?,?,?,?,'open')"
 	);
 	for (let i = 0; i < 260; i++) stmt.run('report-' + i, USER, 'User', 'Bug', 'Low', 'Text');
-	const result = await ticketApi(
-		await request('/api/admin/bug-tickets?summary=1'),
-		{ ...config, ACCESS_DB: db },
-		{},
-		ownerWorker
-	);
+	const result = await ticketApi(await request('/api/admin/bug-tickets?summary=1'), {
+		...config,
+		ACCESS_DB: db,
+	});
 	assert.equal((await result.json()).counts.open, 261);
 	assert.equal(item.id, 1);
 	db.sqlite.close();

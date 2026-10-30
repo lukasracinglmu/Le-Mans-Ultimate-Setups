@@ -1,6 +1,5 @@
 /* @file-notes: Liefert die HTML-Seiten mit Zugriffsprüfung und Sicherheits-Headern aus. */
 import { isTicketOwner } from '../bug-tickets.js';
-import legacyWorker from '../legacy.js';
 import { readPage } from '../repo-read.js';
 import { hasSiteAccess, readMe } from './auth.js';
 
@@ -29,25 +28,25 @@ async function sitePage(request, env, file, privatePage) {
 	return new Response(source.body, { status: source.status, headers });
 }
 
-export async function bugReportPage(request, env, ctx) {
-	const me = await readMe(request, env, ctx);
+export async function bugReportPage(request, env) {
+	const me = await readMe(request, env);
 	if (!hasSiteAccess(me)) return notFound();
 	return sitePage(request, env, 'bug-report.html', true);
 }
 
-export async function requestPage(request, env, ctx) {
-	const me = await readMe(request, env, ctx);
+export async function requestPage(request, env) {
+	const me = await readMe(request, env);
 	if (!hasSiteAccess(me)) return notFound();
 	return sitePage(request, env, 'request.html', true);
 }
 
-export async function ticketsPage(request, env, ctx) {
-	if (!(await isTicketOwner(request, env, ctx, legacyWorker))) return notFound();
+export async function ticketsPage(request, env) {
+	if (!(await isTicketOwner(request, env))) return notFound();
 	return sitePage(request, env, 'bug-tickets.html', true);
 }
 
-export async function adminPage(request, env, ctx) {
-	const me = await readMe(request, env, ctx);
+export async function adminPage(request, env) {
+	const me = await readMe(request, env);
 	if (!me?.loggedIn || !me.user?.canViewAdminPanel) return notFound();
 	return sitePage(request, env, 'admin.html', true);
 }

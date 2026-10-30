@@ -11,6 +11,7 @@ import {
 } from '../src/automatic-backup.js';
 import { fullAdminApi } from '../src/full-admin.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 
 function database() {
 	const db = new DatabaseSync(':memory:');
@@ -272,31 +273,59 @@ test('MD-Index allein wird ausdrücklich abgelehnt und erzeugt keine Erfolgsmeld
 	);
 });
 test('Full Admin, Server-Owner-Rolle und normale Nutzer erhalten keine Backup-Freigabe', async () => {
-	for (const user of [
-		{ id: '222222222222222222', fullAdmin: true },
-		{ id: '222222222222222222', isOwner: true },
-		{ id: '222222222222222222' },
+	const fullAdmin = '222222222222222222',
+		ownerRole = '333333333333333333',
+		member = '444444444444444444';
+	const config = {
+		...env(),
+		SESSION_SECRET: 'backup-test',
+		DISCORD_OWNER_ROLE_ID: '555555555555555555',
+	};
+	await config.ACCESS_DB.prepare('CREATE TABLE full_admin_access (user_id TEXT PRIMARY KEY)').run();
+	await config.ACCESS_DB.prepare('INSERT INTO full_admin_access(user_id) VALUES(?)')
+		.bind(fullAdmin)
+		.run();
+	// The role snapshot a fresh login stores, so the roles need no Discord lookup.
+	const memberSnapshot = {
+		userId: ownerRole,
+		configuration: [
+			config.DISCORD_GUILD_ID,
+			config.DISCORD_DATABASE_ROLE_ID,
+			config.DISCORD_UPLOAD_ROLE_ID,
+			config.DISCORD_OWNER_ROLE_ID,
+		]
+			.map((id) => id || '')
+			.join(':'),
+		roles: [config.DISCORD_OWNER_ROLE_ID],
+		checkedAt: Date.now(),
+	};
+	for (const cookie of [
+		await sessionCookie(fullAdmin, config.SESSION_SECRET),
+		await sessionCookie(ownerRole, config.SESSION_SECRET, { memberSnapshot }),
+		await sessionCookie(member, config.SESSION_SECRET),
 	]) {
-		const worker = { fetch: async () => Response.json({ loggedIn: true, user }) };
 		for (const [method, path] of [
 			['GET', '/api/admin/backups'],
 			['POST', '/api/admin/backup'],
 		]) {
 			const result = await fullAdminApi(
-				new Request('https://example.test' + path, { method }),
-				env(),
-				{},
-				worker
+				new Request('https://example.test' + path, { method, headers: { Cookie: cookie } }),
+				config,
+				{}
 			);
 			assert.equal(result.status, 403);
 		}
 	}
-	const worker = {
-		fetch: async () => Response.json({ loggedIn: true, user: { id: '1033453785416208564' } }),
-	};
+	const ownerConfig = { ...env(), SESSION_SECRET: 'backup-test' };
+	const owner = await sessionCookie('1033453785416208564', ownerConfig.SESSION_SECRET);
 	assert.equal(
-		(await fullAdminApi(new Request('https://example.test/api/admin/backups'), env(), {}, worker))
-			.status,
+		(
+			await fullAdminApi(
+				new Request('https://example.test/api/admin/backups', { headers: { Cookie: owner } }),
+				ownerConfig,
+				{}
+			)
+		).status,
 		200
 	);
 });

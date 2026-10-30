@@ -17,9 +17,9 @@ import {
 	setupRequestPayload,
 	isAnyRequestManufacturer,
 } from '../discord-presence/request-manufacturers.js';
-import base from '../src/worker.js';
 import * as requestPage from '../public/js/request/tracks.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 
 // The request page searches the list it loads from /api/request/tracks.
 const browser = {
@@ -123,15 +123,8 @@ test('Paul Ricard Default ist separat von allen vier benannten Layouts', () => {
 });
 
 test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord ab', async () => {
-	const oldBase = base.fetch,
-		oldFetch = globalThis.fetch,
+	const oldFetch = globalThis.fetch,
 		sends = [];
-	base.fetch = async () =>
-		Response.json({
-			loggedIn: true,
-			databaseAccess: true,
-			user: { id: '1033453785416208564', username: 'Lukas' },
-		});
 	globalThis.fetch = async (url, options = {}) => {
 		if (String(url).includes('api.github.com'))
 			return Response.json({ Hypercar: [{ name: 'Toyota GR010' }] });
@@ -142,10 +135,16 @@ test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
 		...repositoryEnv,
 		DISCORD_BOT_TOKEN: 'fake',
 		DISCORD_CHANNEL_ID: '1511795330176520193',
+		DISCORD_OWNER_USER_ID: '1033453785416208564',
+		SESSION_SECRET: 'request-test',
 	};
-	const request = (track) =>
+	const cookie = await sessionCookie('1033453785416208564', env.SESSION_SECRET, {
+		username: 'Lukas',
+	});
+	const request = (track, headers = { Cookie: cookie }) =>
 		new Request('https://example.test/api/request', {
 			method: 'POST',
+			headers,
 			body: JSON.stringify({ vehicle: 'Toyota GR010', track, manufacturer: 'HYMO' }),
 		});
 	try {
@@ -157,11 +156,9 @@ test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
 		);
 		assert.equal((await createWebsiteRequest(request('Nürburgring'), env)).status, 400);
 		assert.equal(sends.length, 1);
-		base.fetch = async () => Response.json({ loggedIn: false });
-		assert.equal((await createWebsiteRequest(request('Spa'), env)).status, 401);
+		assert.equal((await createWebsiteRequest(request('Spa', {}), env)).status, 401);
 		assert.equal(sends.length, 1);
 	} finally {
-		base.fetch = oldBase;
 		globalThis.fetch = oldFetch;
 	}
 });

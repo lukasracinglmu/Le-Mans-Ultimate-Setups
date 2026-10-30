@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rolePermissions, resolvePermissions } from '../src/discord-permissions.js';
 import app from '../src/index.js';
-import worker from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const envBase = {
@@ -146,23 +145,21 @@ async function harness(roles, run, { id = userId, grants = {}, discordStatus = 2
 	}
 }
 
-test('both worker layers expose the same Team/Supply/Owner capabilities', async () => {
+test('/api/me exposes the Team/Supply/Owner capabilities', async () => {
 	for (const roles of [
 		[envBase.DISCORD_DATABASE_ROLE_ID],
 		[envBase.DISCORD_UPLOAD_ROLE_ID],
 		[envBase.DISCORD_OWNER_ROLE_ID],
 	]) {
 		await harness(roles, async ({ env, request, ctx }) => {
-			const a = await (await app.fetch(await request('/api/me'), env, ctx)).json();
-			const b = await (await worker.fetch(await request('/api/me'), env, ctx)).json();
-			assert.equal(a.databaseAccess, b.databaseAccess);
-			assert.equal(a.user.canUpload, b.user.canUpload);
-			assert.equal(a.user.canManageDatabaseAccess, b.user.canManageDatabaseAccess);
+			const me = await (await app.fetch(await request('/api/me'), env, ctx)).json();
+			assert.equal(me.databaseAccess, true);
 			assert.equal(
-				a.user.canUpload,
+				me.user.canUpload,
 				roles.includes(envBase.DISCORD_UPLOAD_ROLE_ID) ||
 					roles.includes(envBase.DISCORD_OWNER_ROLE_ID)
 			);
+			assert.equal(me.user.canManageDatabaseAccess, roles.includes(envBase.DISCORD_OWNER_ROLE_ID));
 		});
 	}
 });

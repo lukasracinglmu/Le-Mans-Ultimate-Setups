@@ -1,4 +1,5 @@
 import { ownerUserId } from './config.js';
+import { readMe } from './features/auth.js';
 import { DISCORD_API } from './lib/discord.js';
 import { json } from './lib/http.js';
 
@@ -29,21 +30,16 @@ async function ensureSchema(env) {
 		} catch {}
 	}
 }
-async function owner(request, env, ctx, legacyWorker) {
-	const meResponse = await legacyWorker.fetch(
-		new Request(new URL('/api/me', request.url), { headers: request.headers }),
-		env,
-		ctx
-	);
-	const me = await meResponse.json().catch(() => null);
+async function owner(request, env) {
+	const me = await readMe(request, env);
 	if (!me?.loggedIn || !me.user?.id)
 		return { error: json({ success: false, error: 'Nicht angemeldet.' }, 401) };
 	if (String(me.user.id) !== ownerUserId(env) || !me.user?.canViewTickets)
 		return { error: json({ success: false, error: 'Kein Zugriff.' }, 403) };
 	return { user: me.user };
 }
-export async function isTicketOwner(request, env, ctx, legacyWorker) {
-	const auth = await owner(request, env, ctx, legacyWorker);
+export async function isTicketOwner(request, env) {
+	const auth = await owner(request, env);
 	return !auth.error;
 }
 async function discord(path, env, options) {
@@ -90,8 +86,8 @@ export async function createTicket({ reportId, user, title, priority, descriptio
 		throw error;
 	}
 }
-export async function ticketApi(request, env, ctx, legacyWorker) {
-	const auth = await owner(request, env, ctx, legacyWorker);
+export async function ticketApi(request, env) {
+	const auth = await owner(request, env);
 	if (auth.error) return auth.error;
 	try {
 		await ensureSchema(env);

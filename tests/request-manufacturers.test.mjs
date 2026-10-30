@@ -11,8 +11,8 @@ import {
 import { matchingRequestSetups } from '../discord-presence/request-tracks.js';
 import { discordInteraction } from '../src/features/discord-interactions.js';
 import { createWebsiteRequest } from '../src/features/requests.js';
-import base from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
+import { sessionCookie } from './helpers/session.mjs';
 const owner = '1033453785416208564';
 const env = {
 	...repositoryEnv,
@@ -87,10 +87,9 @@ test('Beide Request-Wege erzeugen Embed mit Hersteller, Personen-Tag und sichtba
 });
 async function website(files, manufacturer) {
 	const old = fetch,
-		oldBase = base.fetch,
 		sends = [];
-	base.fetch = async () =>
-		Response.json({ loggedIn: true, databaseAccess: true, user: { id: owner, username: 'Lukas' } });
+	const ownerEnv = { ...env, DISCORD_OWNER_USER_ID: owner, SESSION_SECRET: 'request-test' };
+	const cookie = await sessionCookie(owner, ownerEnv.SESSION_SECRET, { username: 'Lukas' });
 	globalThis.fetch = async (url, options) => {
 		if (String(url).includes('/contents/public/setups.json'))
 			return Response.json({ Hypercar: [{ name: 'Toyota GR010' }] });
@@ -103,15 +102,18 @@ async function website(files, manufacturer) {
 		const response = await createWebsiteRequest(
 			new Request('https://example.test/api/request', {
 				method: 'POST',
-				headers: { Origin: 'https://example.test', 'Content-Type': 'application/json' },
+				headers: {
+					Origin: 'https://example.test',
+					'Content-Type': 'application/json',
+					Cookie: cookie,
+				},
 				body: JSON.stringify({ ...data, manufacturer }),
 			}),
-			env
+			ownerEnv
 		);
 		return { status: response.status, body: await response.json(), sends };
 	} finally {
 		globalThis.fetch = old;
-		base.fetch = oldBase;
 	}
 }
 test('Website sendet GO-Request trotz vorhandenem HYMO-Setup und blockiert nur denselben Hersteller', async () => {

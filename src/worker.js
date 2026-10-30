@@ -6,16 +6,14 @@ import { githubBranch, ownerUserId } from './config.js';
 import { DISCORD_API } from './lib/discord.js';
 import { githubRequest } from './lib/github.js';
 import { json, securityHeaders, withSecurityHeaders } from './lib/http.js';
+import { readSession } from './lib/session.js';
+import { isHttpsRequest } from './middleware/https.js';
 import { enforceSameOriginForStateChange } from './middleware/origin.js';
 import { resolvePermissions, rolePermissions } from './discord-permissions.js';
 import { readPreviousSetups, deleteGithubSetup } from './setup-lifecycle.js';
 import { readRepoFile } from './repo-read.js';
 import { persistSetupFile, readUploadForm } from './upload-storage.js';
 
-const DISCORD_OAUTH = 'https://discord.com/oauth2';
-const SESSION_COOKIE = 'lmu_session';
-const STATE_COOKIE = 'lmu_oauth_state';
-const SESSION_TTL = 604800;
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
 const MAX_REQUEST_BODY_BYTES = 26 * 1024 * 1024;
@@ -39,11 +37,6 @@ export default {
 			if (m !== 'GET' && m !== 'HEAD' && m !== 'POST' && m !== 'DELETE')
 				return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 
-			if (p === '/auth/discord') return discordLogin(env);
-			if (p === '/auth/discord/callback') return discordCallback(request, env);
-			if (p === '/auth/logout') return logout();
-
-			if (p === '/api/me' && m === 'GET') return currentUser(request, env);
 			if (p === '/api/admin/discord/role-status' && m === 'GET')
 				return discordRoleStatus(request, env);
 			if (p === '/api/setups/summary' && m === 'GET') return setupSummary(request, env);
@@ -67,12 +60,6 @@ export default {
 	},
 };
 
-function isHttpsRequest(request) {
-	const url = new URL(request.url);
-	if (url.protocol === 'https:') return true;
-	return request.headers.get('X-Forwarded-Proto') === 'https';
-}
-
 function validateRequestSize(request, max = MAX_REQUEST_BODY_BYTES) {
 	const len = Number(request.headers.get('Content-Length') || 0);
 	return Number.isFinite(len) && len > max
@@ -83,84 +70,6 @@ function safeError(error) {
 	if (!error) return 'unknown';
 	return error instanceof Error ? error.name || 'Error' : 'unknown';
 }
-function redirectUri(env) {
-	return `${env.SITE_URL}/auth/discord/callback`;
-}
-function discordLogin(env) {
-	if (!env.DISCORD_CLIENT_ID || !env.SITE_URL)
-		return json({ success: false, error: 'Discord Login nicht verfügbar.' }, 500);
-	const state = crypto.randomUUID();
-	const p = new URLSearchParams({
-		client_id: env.DISCORD_CLIENT_ID,
-		response_type: 'code',
-		redirect_uri: redirectUri(env),
-		scope: 'identify guilds.members.read',
-		state,
-	});
-	const h = securityHeaders(new Headers({ Location: `${DISCORD_OAUTH}/authorize?${p}` }));
-	h.append('Set-Cookie', cookie(STATE_COOKIE, state, 600));
-	return new Response(null, { status: 302, headers: h });
-}
-
-async function discordCallback(request, env) {
-	const url = new URL(request.url);
-	const code = url.searchParams.get('code');
-	const retState = url.searchParams.get('state');
-	if (url.searchParams.get('error'))
-		return new Response('Discord-Anmeldung abgebrochen.', {
-			status: 400,
-			headers: securityHeaders(),
-		});
-	const cookies = parseCookies(request.headers.get('Cookie') || '');
-	if (!code || !retState || cookies[STATE_COOKIE] !== retState)
-		return new Response('Ungültige Anmeldung.', { status: 400, headers: securityHeaders() });
-	if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.SESSION_SECRET)
-		return new Response('Nicht konfiguriert.', { status: 500, headers: securityHeaders() });
-	const tr = await df('/oauth2/token', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: new URLSearchParams({
-			client_id: env.DISCORD_CLIENT_ID,
-			client_secret: env.DISCORD_CLIENT_SECRET,
-			grant_type: 'authorization_code',
-			code,
-			redirect_uri: redirectUri(env),
-		}),
-	});
-	if (!tr.ok)
-		return new Response('Discord-Anmeldung fehlgeschlagen.', {
-			status: 502,
-			headers: securityHeaders(),
-		});
-	const td = await tr.json();
-	const ur = await df('/users/@me', { headers: { Authorization: `Bearer ${td.access_token}` } });
-	if (!ur.ok)
-		return new Response('Discord-Anmeldung fehlgeschlagen.', {
-			status: 502,
-			headers: securityHeaders(),
-		});
-	const user = await ur.json();
-	const sess = await createSession(
-		{
-			id: user.id,
-			username: user.global_name || user.username,
-			avatar: user.avatar || null,
-			accessToken: td.access_token,
-			exp: Math.floor(Date.now() / 1000) + SESSION_TTL,
-		},
-		env.SESSION_SECRET
-	);
-	const appUrl = new URL('/', env.SITE_URL).toString();
-	const h = securityHeaders(
-		new Headers({ 'Content-Type': 'text/html; charset=UTF-8', 'Cache-Control': 'no-store' })
-	);
-	h.append('Set-Cookie', cookie(SESSION_COOKIE, sess, SESSION_TTL));
-	h.append('Set-Cookie', cookie(STATE_COOKIE, '', 0));
-	const target = JSON.stringify(appUrl);
-	const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Anmeldung abgeschlossen</title></head><body><script>window.location.replace(${target});</script><noscript><meta http-equiv="refresh" content="0;url=${appUrl}"></noscript></body></html>`;
-	return new Response(html, { status: 200, headers: h });
-}
-
 async function fetchGuildMember(userId, env) {
 	if (!userId || !env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID)
 		return { ok: false, status: 503, member: null };
@@ -193,49 +102,6 @@ async function requireDatabaseAccess(request, env) {
 			),
 		};
 	return { session };
-}
-
-async function currentUser(request, env) {
-	const session = await readSession(request, env.SESSION_SECRET);
-	if (!session) return json({ loggedIn: false, databaseAccess: false });
-	const forceRefresh = new URL(request.url).searchParams.get('refresh') === '1';
-	const permission = await resolvePermissions(
-		session.id,
-		env,
-		session.accessToken,
-		forceRefresh ? null : session.memberSnapshot
-	);
-	const avatar = session.avatar
-		? `https://cdn.discordapp.com/avatars/${session.id}/${session.avatar}.png?size=64`
-		: `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(session.id) % 6n)}.png`;
-	const {
-		databaseAccess,
-		rolesAvailable,
-		memberSnapshot,
-		roleSource,
-		roleCheckError,
-		reauthorize,
-		retryAfterMs,
-		...userPermissions
-	} = permission;
-	const response = json({
-		loggedIn: true,
-		databaseAccess,
-		rolesAvailable,
-		roleSource,
-		roleCheckError,
-		reauthorize,
-		retryAfterMs,
-		user: { id: session.id, username: session.username, avatar, ...userPermissions },
-	});
-	if (memberSnapshot && memberSnapshot !== session.memberSnapshot) {
-		const signed = await createSession({ ...session, memberSnapshot }, env.SESSION_SECRET);
-		response.headers.append(
-			'Set-Cookie',
-			cookie(SESSION_COOKIE, signed, Math.max(1, session.exp - Math.floor(Date.now() / 1000)))
-		);
-	}
-	return response;
 }
 
 async function requireOwner(request, env) {
@@ -769,81 +635,4 @@ async function registerRequestCommand(request, env) {
 }
 async function df(path, opts = {}) {
 	return fetch(`${DISCORD_API}${path}`, opts);
-}
-function parseCookies(h) {
-	return Object.fromEntries(
-		h
-			.split(';')
-			.map((x) => x.trim())
-			.filter(Boolean)
-			.map((x) => {
-				const i = x.indexOf('=');
-				return i < 0 ? [x, ''] : [x.slice(0, i), decodeURIComponent(x.slice(i + 1))];
-			})
-	);
-}
-function cookie(n, v, age) {
-	return `${n}=${encodeURIComponent(v)}; Max-Age=${age}; Path=/; HttpOnly; Secure; SameSite=Lax`;
-}
-async function createSession(p, secret) {
-	const data = btoa(unescape(encodeURIComponent(JSON.stringify(p))))
-		.replace(/=/g, '')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_');
-	const key = await crypto.subtle.importKey(
-		'raw',
-		new TextEncoder().encode(secret),
-		{ name: 'HMAC', hash: 'SHA-256' },
-		false,
-		['sign']
-	);
-	const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)));
-	return `${data}.${bytesToBase64(sig).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
-}
-async function readSession(req, secret) {
-	if (!secret) return null;
-	const raw = parseCookies(req.headers.get('Cookie') || '')[SESSION_COOKIE];
-	if (!raw) return null;
-	const [d, s] = raw.split('.');
-	if (!d || !s) return null;
-	const key = await crypto.subtle.importKey(
-		'raw',
-		new TextEncoder().encode(secret),
-		{ name: 'HMAC', hash: 'SHA-256' },
-		false,
-		['verify']
-	);
-	const sig = base64ToBytes(
-		s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (s.length % 4)) % 4)
-	);
-	if (!(await crypto.subtle.verify('HMAC', key, sig, new TextEncoder().encode(d)))) return null;
-	let p;
-	try {
-		p = JSON.parse(
-			decodeURIComponent(
-				escape(atob(d.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (d.length % 4)) % 4)))
-			)
-		);
-	} catch {
-		return null;
-	}
-	if (!p.exp || p.exp < Math.floor(Date.now() / 1000)) return null;
-	return p;
-}
-function bytesToBase64(bytes) {
-	let b = '';
-	for (let i = 0; i < bytes.length; i += 0x8000)
-		b += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-	return btoa(b);
-}
-function base64ToBytes(b) {
-	const s = atob(b),
-		a = new Uint8Array(s.length);
-	for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
-	return a;
-}
-function logout() {
-	const h = securityHeaders(new Headers({ Location: '/' }));
-	h.append('Set-Cookie', cookie(SESSION_COOKIE, '', 0));
-	return new Response(null, { status: 302, headers: h });
 }

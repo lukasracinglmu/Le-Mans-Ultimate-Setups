@@ -10,11 +10,11 @@ import {
 	matchingRequestSetups,
 } from '../../discord-presence/request-tracks.js';
 import { githubBranch, setupRequestRoleId } from '../config.js';
-import legacyWorker from '../legacy.js';
 import { DISCORD_API } from '../lib/discord.js';
 import { githubRequest } from '../lib/github.js';
-import { json, safeJson } from '../lib/http.js';
+import { json } from '../lib/http.js';
 import { readSiteFile } from '../repo-read.js';
+import { readMe } from './auth.js';
 
 // The tracks the request form suggests.
 export function requestTracks() {
@@ -128,11 +128,7 @@ export async function createWebsiteRequest(request, env) {
 	const origin = request.headers.get('Origin');
 	if (origin && origin !== new URL(request.url).origin)
 		return json({ success: false, error: 'Origin nicht erlaubt.' }, 403);
-	const meResponse = await legacyWorker.fetch(
-		new Request(new URL('/api/me', request.url), { headers: request.headers }),
-		env
-	);
-	const me = await safeJson(meResponse);
+	const me = await readMe(request, env);
 	if (!me?.loggedIn || !me?.databaseAccess || !me?.user?.id)
 		return json(
 			{ success: false, error: 'Nicht angemeldet oder keine Datenbankberechtigung.' },
