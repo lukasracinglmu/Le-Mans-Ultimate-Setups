@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readDisplayName, enrichDisplayNames } from '../src/setup-display-name.js';
-import accessWorker from '../src/access-worker.js';
+import app from '../src/index.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 const sha = 'a'.repeat(40),
 	userId = '1033453785416208564';
@@ -128,11 +128,7 @@ async function harness(run) {
 }
 test('editor saves display name and version as metadata while preserving the actual filename', async () => {
 	await harness(async ({ env, req, ctx, calls, writes }) => {
-		const r = await accessWorker.fetch(
-			await req({ version: 'v2', displayName: 'Fuji Quali' }),
-			env,
-			ctx
-		);
+		const r = await app.fetch(await req({ version: 'v2', displayName: 'Fuji Quali' }), env, ctx);
 		assert.equal(r.status, 200);
 		const data = await r.json();
 		assert.equal(data.name, 'Fuji GO.zip');
@@ -147,7 +143,7 @@ test('editor saves display name and version as metadata while preserving the act
 test('name-only edit and reset work without requiring a version', async () => {
 	for (const displayName of ['Fuji Rennen', ''])
 		await harness(async ({ env, req, ctx, writes }) => {
-			const r = await accessWorker.fetch(await req({ displayName }), env, ctx);
+			const r = await app.fetch(await req({ displayName }), env, ctx);
 			assert.equal(r.status, 200);
 			assert.equal((await r.json()).displayName, displayName || null);
 			assert.equal(writes.length, 1);
@@ -157,11 +153,11 @@ test('name-only edit and reset work without requiring a version', async () => {
 test('unauthorized or invalid edits cannot change metadata', async () => {
 	await harness(async ({ env, req, ctx, writes }) => {
 		assert.equal(
-			(await accessWorker.fetch(await req({ displayName: 'Fuji' }, false), env, ctx)).status,
+			(await app.fetch(await req({ displayName: 'Fuji' }, false), env, ctx)).status,
 			401
 		);
 		assert.equal(
-			(await accessWorker.fetch(await req({ displayName: 'x'.repeat(161) }), env, ctx)).status,
+			(await app.fetch(await req({ displayName: 'x'.repeat(161) }), env, ctx)).status,
 			400
 		);
 		assert.equal(writes.length, 0);
