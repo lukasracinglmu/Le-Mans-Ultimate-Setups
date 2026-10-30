@@ -23,6 +23,13 @@ export const REQUIRED_VARS = Object.freeze([
 
 export const ownerUserId = (env) => read(env, 'DISCORD_OWNER_USER_ID');
 
+// Discord users with fixed Full Admin rights, comma-separated. Empty means nobody.
+export const fullAdminUserIds = (env) =>
+	(read(env, 'DISCORD_FULL_ADMIN_USER_IDS') ?? '')
+		.split(',')
+		.map((id) => id.trim())
+		.filter(Boolean);
+
 function repository(owner, repo) {
 	return owner && repo ? `${owner}/${repo}` : null;
 }

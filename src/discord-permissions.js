@@ -1,5 +1,5 @@
 /* @file-notes: Ermittelt Discord-Rollen, persönliche Freigaben und daraus abgeleitete Website-Berechtigungen. */
-import { ownerUserId } from './config.js';
+import { fullAdminUserIds, ownerUserId } from './config.js';
 
 const ROLE_SNAPSHOT_TTL = 60_000;
 
@@ -11,7 +11,9 @@ export function rolePermissions(userId, roles, env, grants = {}) {
 	const hasTeamRole = hasRole(env.DISCORD_DATABASE_ROLE_ID || env.DISCORD_ROLE_ID);
 
 	// Nur der konfigurierte Owner besitzt Wartungsmodus, Backups und Tickets.
-	const fullAdmin = isOwner || Boolean(grants.fullAdmin);
+	// Full Admin comes from the owner ID, the fixed list in wrangler.jsonc or a grant.
+	const isConfiguredFullAdmin = fullAdminUserIds(env).includes(String(userId));
+	const fullAdmin = isOwner || isConfiguredFullAdmin || Boolean(grants.fullAdmin);
 	const canManageDatabaseAccess = fullAdmin || hasOwnerRole || Boolean(grants.adminPanel);
 	const canManageUploadAccess = canManageDatabaseAccess;
 	const canUpload = fullAdmin || hasOwnerRole || hasSetupSupplyRole || Boolean(grants.upload);
