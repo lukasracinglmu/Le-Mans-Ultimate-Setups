@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-30T17:47:30.576Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Corvette Interlagos HYMO.zip",
+  "vehicle": "Chevrolet Corvette Z06 LMGT3.R",
+  "track": "Corvette Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
