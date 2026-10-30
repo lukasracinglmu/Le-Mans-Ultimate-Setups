@@ -10,13 +10,13 @@ const source = await readFile(new URL('../public/js/home/app.js', import.meta.ur
 const client = vm.runInNewContext(
 	source.slice(source.indexOf('function displaySetupFileName('), source.indexOf('function esc(')) +
 		source.slice(
-			source.indexOf('function compareUploadVersions('),
+			source.indexOf('function uploadSetupFamily('),
 			source.indexOf('async function uploadFileIdentity(')
 		) +
-		';({compareUploadVersions,uploadSetupFamily})'
+		';({uploadSetupFamily})'
 );
 
-test('client and server compare numeric versions consistently and leave unknown formats undecided', () => {
+test('the server compares numeric versions and leaves unknown formats undecided', () => {
 	for (const [a, b, expected] of [
 		['v2', '1', 1],
 		['1.10', '1.9', 1],
@@ -29,7 +29,6 @@ test('client and server compare numeric versions consistently and leave unknown 
 		['1.2-rc', '1.2', null],
 	]) {
 		assert.equal(compareSetupVersions(a, b), expected);
-		assert.equal(client.compareUploadVersions(a, b), expected);
 	}
 });
 test('matching retains track, layout, vendor, wet/dry, series and EVO while ignoring explicit version suffixes', () => {

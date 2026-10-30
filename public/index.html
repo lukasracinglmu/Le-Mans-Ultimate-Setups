@@ -454,77 +454,6 @@
 				color: var(--muted);
 				padding: 24px 0;
 			}
-			.request-section {
-				margin-top: 52px;
-				padding-top: 32px;
-				border-top: 1px solid var(--border);
-			}
-			.request-section h2 {
-				margin: 0 0 6px;
-			}
-			.request-form {
-				max-width: 680px;
-			}
-			.request-grid {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 14px;
-			}
-			.request-form label {
-				display: block;
-				margin: 16px 0 7px;
-				font-size: 13px;
-				font-weight: 700;
-			}
-			.request-form input,
-			.request-form textarea {
-				width: 100%;
-				border: 1px solid var(--border);
-				border-radius: 8px;
-				padding: 11px 12px;
-				background: var(--surface);
-				color: var(--text);
-				outline: none;
-			}
-			.request-form textarea {
-				min-height: 104px;
-				resize: vertical;
-			}
-			.request-message {
-				margin-top: 10px;
-				font-size: 13px;
-			}
-			.login-required {
-				background: var(--surface);
-				border: 1px solid var(--border);
-				border-radius: 10px;
-				padding: 22px;
-				color: var(--muted);
-			}
-			.admin-panel {
-				margin-top: 32px;
-				padding: 18px;
-				border: 1px solid var(--border);
-				border-radius: 10px;
-				background: var(--surface);
-			}
-			.admin-panel h3 {
-				margin: 0 0 12px;
-			}
-			.admin-row {
-				display: flex;
-				gap: 8px;
-				flex-wrap: wrap;
-			}
-			.admin-row input {
-				flex: 1;
-				min-width: 220px;
-				border: 1px solid var(--border);
-				background: var(--bg);
-				color: var(--text);
-				border-radius: 8px;
-				padding: 10px;
-			}
 			.upcoming {
 				margin: 0 0 28px;
 				border: 1px solid var(--border);
@@ -635,9 +564,6 @@
 				.hero:after {
 					width: 190px;
 					right: -45px;
-				}
-				.request-grid {
-					grid-template-columns: 1fr;
 				}
 				.setup {
 					align-items: flex-start;
@@ -880,64 +806,6 @@
 				border-radius: 5px;
 				font-size: 12px;
 				font-weight: 800;
-			}
-			.request-vehicle-options {
-				border: 1px solid var(--border);
-				border-radius: 8px;
-				max-height: 240px;
-				overflow: auto;
-				background: var(--surface);
-				margin-top: 4px;
-			}
-			.request-vehicle-options button {
-				display: block;
-				width: 100%;
-				text-align: left;
-				border: 0;
-				border-radius: 0;
-				padding: 11px;
-			}
-			.request-vehicle-options button:hover,
-			.request-vehicle-options button[aria-selected='true'] {
-				background: var(--surface2);
-			}
-			.request-vehicle-options p {
-				padding: 10px;
-				margin: 0;
-				color: var(--muted);
-			}
-			#reqClass[readonly] {
-				color: var(--muted);
-			}
-
-			.page-utilities {
-				display: flex;
-				justify-content: flex-end;
-				padding: 10px 26px 0;
-			}
-			.page-utilities a {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				min-height: 46px;
-				color: #fff;
-				text-decoration: none;
-				font-size: 16px;
-				font-weight: 700;
-				padding: 12px 22px;
-				border: 2px solid #b91c1c;
-				border-radius: 8px;
-				background: #b91c1c;
-				box-shadow: 0 3px 12px rgba(185, 28, 28, 0.25);
-			}
-			.page-utilities a:hover {
-				color: #fff;
-				background: #991b1b;
-				border-color: #991b1b;
-			}
-			.page-utilities a:focus-visible {
-				outline: 3px solid var(--text);
-				outline-offset: 3px;
 			}
 			.favorite-toggle {
 				position: absolute;
@@ -1192,18 +1060,6 @@
 			.manufacturer-name {
 				display: none !important;
 			}
-			.manufacturer-nav {
-				width: 30px;
-				height: 30px;
-				padding: 0;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				border-radius: 50%;
-				font-size: 19px;
-				line-height: 1;
-				background: var(--surface);
-			}
 			@media (max-width: 800px) {
 				.layout {
 					display: block;
@@ -1457,7 +1313,6 @@
 			html:not([data-db-access='authorized']) #homePage > .hero,
 			html:not([data-db-access='authorized']) #search,
 			html:not([data-db-access='authorized']) #categories,
-			html:not([data-db-access='authorized']) .request-section,
 			html:not([data-db-access='authorized']) #carPage {
 				display: none !important;
 			}
@@ -1681,9 +1536,6 @@
 				<button data-action="toggle-theme" id="themeButton">Light Mode</button>
 			</div>
 		</header>
-		<nav class="page-utilities login-only-control hidden" aria-label="Hilfe">
-			<a id="bugReportLink" href="/bug-report">Bug melden</a>
-		</nav>
 		<div class="layout">
 			<main>
 				<section id="homePage" class="page active">
@@ -1693,14 +1545,6 @@
 						<p>Setup Database für Three Peaks Racing</p>
 						<div class="manufacturer-strip manufacturer-carousel" aria-label="Setup Hersteller">
 							<span class="manufacturer-label">Setup Hersteller</span>
-							<button
-								type="button"
-								id="manufacturerPrev"
-								class="manufacturer-nav"
-								aria-label="Vorheriger Hersteller"
-							>
-								‹
-							</button>
 							<div class="manufacturer-visual">
 								<img
 									id="manufacturerImage"
@@ -1708,14 +1552,6 @@
 									alt="GO Setups"
 								/><span id="manufacturerName" class="manufacturer-name" aria-hidden="true">GO</span>
 							</div>
-							<button
-								type="button"
-								id="manufacturerNext"
-								class="manufacturer-nav"
-								aria-label="Nächster Hersteller"
-							>
-								›
-							</button>
 						</div>
 					</div>
 					<div class="filter-toolbar login-only-control hidden">
@@ -1742,70 +1578,6 @@
 					</div>
 					<input id="search" class="search" placeholder="Fahrzeug suchen..." />
 					<div id="categories"></div>
-					<div class="request-section">
-						<h2>Setup Request</h2>
-						<div id="requestLoginRequired" class="login-required">
-							Melde dich mit Discord an, um einen Setup Request zu senden.
-						</div>
-						<form id="requestForm" class="request-form hidden">
-							<div class="request-grid">
-								<div>
-									<label for="reqVehicle">Fahrzeug</label
-									><input
-										id="reqVehicle"
-										required
-										autocomplete="off"
-										role="combobox"
-										aria-autocomplete="list"
-										aria-expanded="false"
-										aria-controls="requestVehicleOptions"
-										placeholder="Mindestens 3 Buchstaben eingeben"
-									/>
-									<div
-										id="requestVehicleOptions"
-										class="request-vehicle-options hidden"
-										role="listbox"
-										aria-label="Fahrzeuge"
-									></div>
-								</div>
-								<div>
-									<label for="reqClass">Klasse</label
-									><input id="reqClass" readonly placeholder="Wird automatisch ausgewählt" />
-								</div>
-								<div><label for="reqTrack">Strecke</label><input id="reqTrack" required /></div>
-							</div>
-							<label for="reqMsg">Weitere Informationen</label><textarea id="reqMsg"></textarea>
-							<button type="submit" class="discord-button">Request senden</button>
-							<div id="requestResult" class="request-message"></div>
-						</form>
-						<div id="adminPanel" class="admin-panel hidden">
-							<h3>Admin</h3>
-							<p>Freigaben für die eingegebene Person. Discord-Rollen gelten weiterhin.</p>
-							<div class="admin-row">
-								<input id="adminUserId" placeholder="Discord User ID" /><button
-									type="button"
-									data-upload-admin
-									data-action="grant-all"
-								>
-									Alles freigeben</button
-								><button type="button" data-upload-admin data-action="revoke-all">
-									Alles entfernen</button
-								><button type="button" data-full-admin data-action="grant-full-admin">
-									Full Admin freigeben</button
-								><button type="button" data-full-admin data-action="revoke-full-admin">
-									Full Admin entfernen</button
-								><button type="button" data-action="grant-database">Database freigeben</button
-								><button type="button" data-action="revoke-database">Database entfernen</button
-								><button type="button" data-upload-admin data-action="grant-upload">
-									Upload/Delete freigeben</button
-								><button type="button" data-upload-admin data-action="revoke-upload">
-									Upload/Delete entfernen
-								</button>
-							</div>
-							<div id="adminResult" class="request-message"></div>
-							<div id="adminAccessList" style="margin-top: 16px; display: grid; gap: 10px"></div>
-						</div>
-					</div>
 				</section>
 				<section id="carPage" class="page">
 					<button class="back" data-action="show-home">← Zurück</button>
@@ -1870,9 +1642,9 @@
 			</div>
 		</div>
 		<script src="/js/home/app.js"></script>
-		<script src="/js/home/manufacturer-carousel.js"></script>
+
 		<script src="/js/home/enhancements.js"></script>
-		<script src="/js/home/admin-access.js"></script>
+
 		<script src="/js/home/brand-link.js"></script>
 		<script src="/js/home/header-actions.js"></script>
 		<script src="/js/home/database-access.js"></script>

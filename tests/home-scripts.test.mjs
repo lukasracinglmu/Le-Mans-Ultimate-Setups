@@ -45,14 +45,6 @@ test('every script of the served home page exists and parses', async () => {
 const FORMER_ONCLICK = {
 	logout: 'logout()',
 	'toggle-theme': 'toggleTheme()',
-	'grant-all': 'adminSetAllFromInput(true)',
-	'revoke-all': 'adminSetAllFromInput(false)',
-	'grant-full-admin': 'adminSetFullAdminFromInput(true)',
-	'revoke-full-admin': 'adminSetFullAdminFromInput(false)',
-	'grant-database': 'grantDatabaseAccess()',
-	'revoke-database': 'revokeDatabaseAccess()',
-	'grant-upload': 'grantUploadAccess()',
-	'revoke-upload': 'revokeUploadAccess()',
 	'show-home': 'showHome()',
 };
 

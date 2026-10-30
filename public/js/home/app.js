@@ -2,7 +2,7 @@
 // sets refreshVehicleCounts on window and calls loadData, actions.js calls the
 // button handlers.
 /* global refreshVehicleCounts */
-/* exported grantUploadAccess, loadData, logout, revokeUploadAccess, showHome, toggleTheme */
+/* exported loadData, logout, showHome, toggleTheme */
 const $ = (id) => document.getElementById(id);
 let setupData = {},
 	favoriteVehicles = new Set(),
@@ -59,55 +59,6 @@ function toggleTheme() {
 	document.documentElement.dataset.theme = t;
 	localStorage.setItem('tpr-theme', t);
 	updateThemeButton(t);
-}
-function initManufacturer() {
-	const names = ['GO', 'HYMO', 'beAlien'];
-	let i = 0;
-	setInterval(() => {
-		const el = $('manufacturerName');
-		el.style.opacity = '0';
-		setTimeout(() => {
-			i = (i + 1) % names.length;
-			el.textContent = names[i];
-			el.style.opacity = '1';
-		}, 180);
-	}, 3500);
-}
-function setLoginOnlyControls(visible) {
-	document
-		.querySelectorAll('.login-only-control')
-		.forEach((el) => el.classList.toggle('hidden', !visible));
-}
-async function checkLogin() {
-	setLoginOnlyControls(false);
-	try {
-		const r = await fetch('/api/me', { cache: 'no-store', credentials: 'same-origin' });
-		const d = await r.json();
-		if (d.loggedIn) {
-			currentUser = d.user;
-			setLoginOnlyControls(true);
-			$('loginButton').classList.add('hidden');
-			$('account').style.display = 'flex';
-			$('accountName').textContent = d.user.username;
-			if (d.user.avatar) {
-				$('accountAvatar').src = d.user.avatar;
-				$('accountAvatar').style.display = 'block';
-			}
-			$('requestLoginRequired').classList.add('hidden');
-			$('requestForm').classList.remove('hidden');
-			if (d.user.isAdmin) $('adminPanel').classList.remove('hidden');
-		} else {
-			currentUser = null;
-			setLoginOnlyControls(false);
-			$('loginButton').classList.remove('hidden');
-			$('account').style.display = 'none';
-			$('requestLoginRequired').classList.remove('hidden');
-			$('requestForm').classList.add('hidden');
-		}
-	} catch (e) {
-		setLoginOnlyControls(false);
-		console.error(e);
-	}
 }
 function logout() {
 	location.href = '/auth/logout';
@@ -285,9 +236,6 @@ function invalidateSetupCache(category, vehicle) {
 	setupRevisions.set(key, (setupRevisions.get(key) || 0) + 1);
 	setupCache.delete(key);
 	setupPending.delete(key);
-}
-function invalidateCurrentSetupCache() {
-	invalidateSetupCache(currentCar.category, currentCar.vehicle);
 }
 async function getCarSetups(category, vehicle) {
 	const key = setupCacheKey(category, vehicle),
@@ -739,21 +687,6 @@ function chooseUploadVersions(files, sharedVersion) {
 		if (files.length === 1) dialog.querySelector('#uploadVersionYes').click();
 	});
 }
-function compareUploadVersions(a, b) {
-	const parse = (value) => {
-		const match = /^v?(\d+(?:[.,_-]\d+)*)$/i.exec(String(value || '').trim());
-		return match ? match[1].split(/[.,_-]/).map((part) => BigInt(part)) : null;
-	};
-	const left = parse(a),
-		right = parse(b);
-	if (!left || !right) return null;
-	for (let index = 0; index < Math.max(left.length, right.length); index++) {
-		const x = left[index] || 0n,
-			y = right[index] || 0n;
-		if (x !== y) return x > y ? 1 : -1;
-	}
-	return 0;
-}
 function uploadSetupFamily(name, version) {
 	let key = displaySetupFileName(name).replace(/\.zip$/i, '');
 	key = key.replace(/\bv\d+(?:[._-]\d+)*\b/gi, ' ');
@@ -1104,180 +1037,6 @@ document.querySelectorAll('#mfrFilter .mfr-btn').forEach((btn) =>
 		if ($('carPage').classList.contains('active')) renderSetups(currentCarSetups);
 	})
 );
-let selectedRequestVehicle = null,
-	requestVehicleIndex = -1;
-function requestVehicleMatches() {
-	const q = $('reqVehicle').value.trim().toLocaleLowerCase();
-	return q.length < 3
-		? []
-		: Object.entries(setupData)
-				.flatMap(([category, vehicles]) =>
-					vehicles.map((vehicle) => ({ name: vehicle.name, category }))
-				)
-				.filter((vehicle) => vehicle.name.toLocaleLowerCase().includes(q));
-}
-function selectRequestVehicle(vehicle) {
-	selectedRequestVehicle = vehicle;
-	$('reqVehicle').value = vehicle.name;
-	$('reqClass').value = vehicle.category;
-	$('reqVehicle').setCustomValidity('');
-	$('requestVehicleOptions').classList.add('hidden');
-	$('reqVehicle').setAttribute('aria-expanded', 'false');
-	$('reqVehicle').removeAttribute('aria-activedescendant');
-}
-function renderRequestVehicleOptions() {
-	const input = $('reqVehicle'),
-		list = $('requestVehicleOptions'),
-		matches = requestVehicleMatches();
-	selectedRequestVehicle = null;
-	$('reqClass').value = '';
-	input.setCustomValidity('');
-	input.removeAttribute('aria-activedescendant');
-	requestVehicleIndex = -1;
-	list.replaceChildren();
-	const exact = matches.find(
-		(vehicle) => vehicle.name.toLocaleLowerCase() === input.value.trim().toLocaleLowerCase()
-	);
-	if (exact) {
-		selectRequestVehicle(exact);
-		return;
-	}
-	if (!matches.length) {
-		if (input.value.trim().length >= 3) {
-			const text = document.createElement('p');
-			text.textContent = 'Kein Fahrzeug gefunden.';
-			list.append(text);
-		} else {
-			list.classList.add('hidden');
-			input.setAttribute('aria-expanded', 'false');
-			return;
-		}
-	}
-	matches.forEach((vehicle, index) => {
-		const option = document.createElement('button');
-		option.type = 'button';
-		option.role = 'option';
-		option.id = 'requestVehicleOption' + index;
-		option.textContent = vehicle.name + ' · ' + vehicle.category;
-		option.setAttribute('aria-selected', 'false');
-		option.addEventListener('mousedown', (event) => event.preventDefault());
-		option.addEventListener('click', () => {
-			selectRequestVehicle(vehicle);
-			input.focus();
-		});
-		list.append(option);
-	});
-	list.classList.remove('hidden');
-	input.setAttribute('aria-expanded', 'true');
-}
-$('reqVehicle').addEventListener('input', renderRequestVehicleOptions);
-$('reqVehicle').addEventListener('keydown', (event) => {
-	const list = $('requestVehicleOptions'),
-		options = [...list.querySelectorAll('button')];
-	if (event.key === 'Escape') {
-		list.classList.add('hidden');
-		event.currentTarget.setAttribute('aria-expanded', 'false');
-		return;
-	}
-	if (list.classList.contains('hidden') || !options.length) return;
-	if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-		event.preventDefault();
-		requestVehicleIndex =
-			(requestVehicleIndex + (event.key === 'ArrowDown' ? 1 : -1) + options.length) %
-			options.length;
-		options.forEach((option, index) =>
-			option.setAttribute('aria-selected', String(index === requestVehicleIndex))
-		);
-		event.currentTarget.setAttribute('aria-activedescendant', options[requestVehicleIndex].id);
-	}
-	if (event.key === 'Enter' && requestVehicleIndex >= 0) {
-		event.preventDefault();
-		options[requestVehicleIndex].click();
-	}
-});
-$('reqVehicle').addEventListener('blur', () => {
-	setTimeout(() => {
-		$('requestVehicleOptions').classList.add('hidden');
-		$('reqVehicle').setAttribute('aria-expanded', 'false');
-	}, 150);
-});
-$('requestForm').addEventListener('submit', async (e) => {
-	e.preventDefault();
-	const out = $('requestResult');
-	if (!selectedRequestVehicle || selectedRequestVehicle.name !== $('reqVehicle').value.trim()) {
-		out.textContent = 'Bitte ein Fahrzeug aus den Vorschlägen auswählen.';
-		$('reqVehicle').focus();
-		return;
-	}
-	out.textContent = 'Wird gesendet...';
-	try {
-		const r = await fetch('/api/request', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				vehicle: $('reqVehicle').value.trim(),
-				carClass: $('reqClass').value.trim(),
-				track: $('reqTrack').value.trim(),
-				message: $('reqMsg').value.trim(),
-			}),
-		});
-		const d = await r.json();
-		out.textContent = d.success
-			? 'Setup Request wurde gesendet.'
-			: d.error || 'Request fehlgeschlagen.';
-		if (d.success) {
-			e.target.reset();
-			selectedRequestVehicle = null;
-			$('requestVehicleOptions').classList.add('hidden');
-		}
-	} catch {
-		out.textContent = 'Request fehlgeschlagen.';
-	}
-});
-async function grantUploadAccess() {
-	await adminAccess('POST');
-}
-async function revokeUploadAccess() {
-	await adminAccess('DELETE');
-}
-async function adminAccess(method) {
-	const id = $('adminUserId').value.trim(),
-		out = $('adminResult');
-	if (!id) {
-		out.textContent = 'Discord User ID fehlt.';
-		return;
-	}
-	try {
-		const r = await fetch('/api/admin/upload-access', {
-			method,
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ userId: id }),
-		});
-		const d = await r.json();
-		out.textContent = d.success
-			? method === 'POST'
-				? 'Upload freigegeben.'
-				: 'Freigabe entfernt.'
-			: d.error || 'Fehler.';
-	} catch {
-		out.textContent = 'Fehler.';
-	}
-}
-async function registerRequestCommand() {
-	const out = $('adminResult');
-	out.textContent = 'Wird registriert...';
-	try {
-		const r = await fetch('/api/admin/discord/register-request', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: '{}',
-		});
-		const d = await r.json();
-		out.textContent = d.success ? '/request registriert.' : d.error || 'Fehler.';
-	} catch {
-		out.textContent = 'Fehler.';
-	}
-}
 async function openSetupFromQuery() {
 	const params = new URLSearchParams(location.search);
 	const category = params.get('category');
