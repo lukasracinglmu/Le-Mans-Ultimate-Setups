@@ -263,6 +263,9 @@ main {
 	position: relative;
 	z-index: 1;
 	font-weight: 700;
+	/* Reserve the favorite button's space, including its hover/focus outline. */
+	padding-inline-end: 40px;
+	overflow-wrap: anywhere;
 }
 .vehicle-class {
 	position: relative;
@@ -608,6 +611,66 @@ main {
 	border-color: var(--accent);
 	color: #fff;
 }
+
+/* Shared class colors for category headings, vehicle labels and class filters. */
+.category[data-class='Hypercar'],
+#classFilter [data-class='Hypercar'] {
+	--class-color: #ff7b86;
+	--class-fill: #b52c3b;
+}
+.category[data-class='LMP2'],
+#classFilter [data-class='LMP2'] {
+	--class-color: #7ab8ff;
+	--class-fill: #1f5ebc;
+}
+.category[data-class='LMP3'],
+#classFilter [data-class='LMP3'] {
+	--class-color: #c4a1ff;
+	--class-fill: #7841b5;
+}
+.category[data-class='LMGT3'],
+#classFilter [data-class='LMGT3'] {
+	--class-color: #66d697;
+	--class-fill: #177244;
+}
+[data-theme='light'] .category[data-class='Hypercar'],
+[data-theme='light'] #classFilter [data-class='Hypercar'] {
+	--class-color: #b42332;
+}
+[data-theme='light'] .category[data-class='LMP2'],
+[data-theme='light'] #classFilter [data-class='LMP2'] {
+	--class-color: #175cbb;
+}
+[data-theme='light'] .category[data-class='LMP3'],
+[data-theme='light'] #classFilter [data-class='LMP3'] {
+	--class-color: #7841b5;
+}
+[data-theme='light'] .category[data-class='LMGT3'],
+[data-theme='light'] #classFilter [data-class='LMGT3'] {
+	--class-color: #157342;
+}
+.category[data-class] > h2,
+.category[data-class] .vehicle-class {
+	color: var(--class-color);
+}
+.category[data-class] .vehicle-class {
+	font-weight: 700;
+}
+#classFilter .mfr-btn[data-class]:not([data-class='']) {
+	color: var(--class-color);
+	border-color: color-mix(in srgb, var(--class-color) 45%, var(--border));
+	background: color-mix(in srgb, var(--class-color) 9%, var(--surface));
+}
+#classFilter .mfr-btn[data-class]:not([data-class='']):hover {
+	border-color: var(--class-color);
+	background: color-mix(in srgb, var(--class-color) 17%, var(--surface));
+}
+#classFilter .mfr-btn[data-class]:not([data-class='']).active {
+	color: #fff;
+	background: var(--class-fill);
+	border-color: var(--class-fill);
+}
+
 .track-search {
 	margin-bottom: 18px;
 }

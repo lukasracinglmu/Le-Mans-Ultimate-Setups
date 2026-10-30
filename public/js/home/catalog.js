@@ -74,6 +74,7 @@ export function renderCategories(filter = '') {
 		if (!list.length) return;
 		const sec = document.createElement('section');
 		sec.className = 'category';
+		sec.setAttribute('data-class', cat);
 		const h = document.createElement('h2');
 		h.textContent = cat;
 		sec.appendChild(h);
