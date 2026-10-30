@@ -90,6 +90,9 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Styles per `element.style` setzen bleibt erlaubt, das erfasst die CSP nicht.
 - Inline-Styles schlagen jede Regel, eine Klasse nicht. Beim Umzug prüfen, welche Regeln dieselben Eigenschaften setzen, und dann ID-Selektoren nehmen.
 - Fenster aus `window.open` erben die CSP der Seite. Was darin angezeigt wird, lädt seine Styles als Datei.
+- In `home.css` stehen manche Grundregeln hinter den Media Queries, z. B. `.mfr-btn` und `.favorite-toggle`. Eine Regel für schmale Bildschirme gehört hinter ihre Grundregel, sonst greift sie nicht.
+- Die Startseite mobil mit Mock-API prüfen, angemeldet mit allen Rechten und langem Namen. Erst dann sind alle Schnellzugriffe im Header, und Überlappungen fallen auf. Breiten: 360, 390 und 844 px (Querformat).
+- Labels von Icon-Buttons nur visuell verstecken, nicht per `display: none`. Sonst hat der Link keinen zugänglichen Namen mehr.
 - Umzüge per Vergleich der berechneten Styles prüfen: `getComputedStyle` für jedes Element samt `::before` und `::after`, auf beiden Ständen und in mehreren Zuständen der Seite. Animationen vorher anhalten. Die Eigenschaften vor dem Vergleich sortieren, denn die Reihenfolge der CSS-Variablen folgt der Reihenfolge der Stylesheets. Die Origin aus aufgelösten URLs herausrechnen, falls beide Stände auf verschiedenen Ports laufen.
 
 ### `public/index.html`

@@ -525,10 +525,7 @@ main {
 	header {
 		padding: 0 13px;
 	}
-	.brand-title {
-		font-size: 13px;
-	}
-	.brand-sub,
+	.brand-copy,
 	.account-name {
 		display: none;
 	}
@@ -539,11 +536,18 @@ main {
 		gap: 6px;
 	}
 	.header-actions button {
+		min-height: 40px;
 		padding: 8px 9px;
 		font-size: 12px;
 	}
 	main {
 		padding: 28px 14px 60px;
+	}
+	.search {
+		margin-bottom: 24px;
+	}
+	.category {
+		margin-bottom: 32px;
 	}
 	.hero {
 		padding: 26px 20px;
@@ -564,7 +568,10 @@ main {
 	}
 	.download {
 		flex: 1;
-		text-align: center;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 40px;
 	}
 	.delete-btn {
 		display: flex !important;
@@ -581,7 +588,12 @@ main {
 	.vehicle-grid {
 		grid-template-columns: 1fr;
 	}
-	.hero h1 {
+	/* One card per row: the cards no longer need equal heights. */
+	.vehicle {
+		min-height: 0;
+	}
+	.hero h1,
+	.car-title {
 		font-size: 28px;
 	}
 }
@@ -892,6 +904,15 @@ main {
 	outline-offset: 2px;
 	border-radius: 50%;
 }
+@media (max-width: 650px) {
+	.favorite-toggle {
+		top: 7px;
+		right: 7px;
+		width: 40px;
+		height: 40px;
+		line-height: 40px;
+	}
+}
 
 /* Feste Farben pro Recht; unabhängig von Anzahl und Reihenfolge der Tags. */
 .badge {
@@ -1129,8 +1150,9 @@ main {
 	.manufacturer-strip.manufacturer-carousel {
 		flex-wrap: wrap;
 	}
-	.manufacturer-label {
-		width: 100%;
+	/* Logos differ in shape. Left-aligned they start right after the label. */
+	.manufacturer-visual img {
+		object-position: left center;
 	}
 }
 
@@ -1410,12 +1432,20 @@ html:not([data-db-access='authorized']) #carPage {
 @media (max-width: 700px) {
 	.filter-toolbar {
 		align-items: stretch;
+		row-gap: 0;
+	}
+	.filter-toolbar .mfr-filter {
+		margin-bottom: 10px;
 	}
 	.filter-toolbar > #favoriteFilter {
 		margin-left: 0;
 	}
 	.filter-toolbar > #favoriteFilter .mfr-btn {
 		width: 100%;
+	}
+	.mfr-btn {
+		min-height: 40px;
+		padding-inline: 12px;
 	}
 }
 
@@ -1497,20 +1527,51 @@ html:not([data-db-access='authorized']) #carPage {
 		filter: brightness(1.22);
 	}
 }
+/* Below 950px the quick actions get their own row instead of overlapping brand and
+   account. Two rows would cover too much of a small screen, so the header scrolls away. */
 @media (max-width: 950px) {
+	header {
+		position: relative;
+		height: auto;
+		min-height: 68px;
+		flex-wrap: wrap;
+		row-gap: 10px;
+		padding-block: 10px;
+	}
+	#themeButton {
+		white-space: nowrap;
+	}
+	.account-name {
+		max-width: 120px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 	#roleHeaderActions {
 		position: static;
 		transform: none;
+		display: grid;
+		grid-auto-columns: 1fr;
+		grid-auto-flow: column;
 		gap: 5px;
+		width: 100%;
 	}
 	#roleHeaderActions a {
+		justify-content: center;
+		min-height: 40px;
 		padding: 8px 9px;
 		font-size: 12px;
 	}
 }
 @media (max-width: 700px) {
+	/* Hidden visually only. The label stays the link's accessible name. */
 	#roleHeaderActions .action-label {
-		display: none;
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 	#roleHeaderActions a {
 		gap: 3px;
@@ -1546,6 +1607,17 @@ body.no-database-access #classFilter {
 	min-height: 42px;
 	padding: 10px 12px;
 	white-space: nowrap;
+}
+/* Three buttons in a row push "Abbrechen" out of narrow screens. The outdated toggle
+   gets its own row, cancel and save stay side by side below it. */
+@media (max-width: 520px) {
+	#versionEditModal .version-edit-actions {
+		grid-template-columns: 1fr 1fr;
+	}
+	#versionEditModal #outdatedToggle {
+		grid-row: 1;
+		grid-column: 1 / -1;
+	}
 }
 #retryRoleCheck {
 	margin-top: 16px;
