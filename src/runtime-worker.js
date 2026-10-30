@@ -9,6 +9,11 @@ import { readPage, readSiteFile } from './repo-read.js';
 import { writeSetupAuditEvent } from './audit-log.js';
 import { createScheduledBackup, backupCompletionApi } from './automatic-backup.js';
 
+// CSP of the home page and the protected pages. Their scripts all come from
+// public/js, so the policy allows no inline scripts.
+const PAGE_CSP =
+	"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'";
+
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
@@ -187,6 +192,7 @@ export default {
 			headers.set('X-Frame-Options', 'DENY');
 			headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 			headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+			headers.set('Content-Security-Policy', PAGE_CSP);
 			return new Response(response.body, { status: response.status, headers });
 		}
 		return response;
@@ -299,10 +305,7 @@ async function sitePage(request, env, file, privatePage) {
 	headers.set('X-Frame-Options', 'DENY');
 	headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-	headers.set(
-		'Content-Security-Policy',
-		"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
-	);
+	headers.set('Content-Security-Policy', PAGE_CSP);
 	return new Response(source.body, { status: source.status, headers });
 }
 function isPermissionChange(method, path) {
