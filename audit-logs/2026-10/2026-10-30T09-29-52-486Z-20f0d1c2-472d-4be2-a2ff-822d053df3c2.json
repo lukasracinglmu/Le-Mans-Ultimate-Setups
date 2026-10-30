@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-30T09:29:52.486Z",
+  "action": "SETUP_DELETE",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "GO V1.4.3 992GT3 LMGT3 BAR.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "GO V1.4.3 992GT3 LMGT3 BAR",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
