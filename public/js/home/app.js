@@ -1,7 +1,8 @@
-// Classic script. enhancements.js sets refreshVehicleCounts on window and
-// calls loadData, until the home page scripts become modules.
+// Classic script until the home page scripts become modules. enhancements.js
+// sets refreshVehicleCounts on window and calls loadData, actions.js calls the
+// button handlers.
 /* global refreshVehicleCounts */
-/* exported loadData */
+/* exported grantUploadAccess, loadData, logout, revokeUploadAccess, showHome, toggleTheme */
 const $ = (id) => document.getElementById(id);
 let setupData = {},
 	favoriteVehicles = new Set(),

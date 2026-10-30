@@ -35,7 +35,7 @@
 						(u) =>
 							'<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:8px;padding:12px"><img src="' +
 							escAdmin(u.avatar) +
-							'" alt="" width="40" height="40" style="border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.src=\'https://cdn.discordapp.com/embed/avatars/0.png\'"><div style="min-width:0"><div style="font-weight:700">' +
+							'" alt="" width="40" height="40" style="border-radius:50%;object-fit:cover;flex-shrink:0"><div style="min-width:0"><div style="font-weight:700">' +
 							escAdmin(u.username) +
 							'</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' +
 							escAdmin(u.userId) +
@@ -56,6 +56,12 @@
 							'</div></div></div>'
 					)
 					.join('') || '<div class="empty">Noch keine individuellen Freigaben.</div>';
+			// Missing or broken avatars fall back to the default Discord avatar.
+			list.querySelectorAll('img').forEach((img) =>
+				img.addEventListener('error', () => {
+					img.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+				})
+			);
 		} catch (e) {
 			list.textContent = e.message || 'Freigaben konnten nicht geladen werden.';
 		}
