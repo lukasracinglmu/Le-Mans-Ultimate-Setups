@@ -104,6 +104,10 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 - Buttons haben `data-action` statt `onclick`. `main.js` übergibt die Handler an `initActions()`.
 - Admin-Panel und Request-Formular gibt es nur noch als eigene Seiten (`/admin`, `/request`). Die Startseite hatte beide früher eingebaut, aber immer versteckt.
 - `tests/home-scripts.test.mjs` prüft, dass die Startseite keine Inline-Scripts hat, dass jedes geladene Script parsebar ist und dass jeder Button seinen früheren Aufruf macht. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
+- `refreshVehicleCounts()` liest den Fahrzeugnamen per `textContent` aus `.vehicle-name`. Nichts in dieses Element hängen, sonst brechen die Setup-Zähler.
+- Marken-Logos liegen in `public/assets/brands/`, die Zuordnung Name → Datei in `public/js/home/vehicle-brands.js`. Die Herkunft jeder Datei steht dort als Kommentar.
+- Die Logos werden per CSS-`mask` eingefärbt, nur ihre Transparenz zählt. Helle Flächen und dunkle Füllungen vorher entfernen, sonst wird aus dem Logo ein voller Block.
+- `tests/vehicle-brands.test.mjs` verlangt für jedes Fahrzeug aus `setups.json` ein Logo. Neue Marke: Datei ablegen und in `BRANDS` eintragen.
 
 ### Übergänge
 
