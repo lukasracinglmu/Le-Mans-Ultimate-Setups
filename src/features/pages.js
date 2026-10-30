@@ -67,17 +67,20 @@ export function retiredStrategyPage() {
 	});
 }
 
-// The home page comes from the older layers; the router adds the page headers.
-export async function homePage(request, env, ctx) {
-	const response = await legacyWorker.fetch(request, env, ctx);
-	if (!response.headers.get('content-type')?.includes('text/html')) return response;
-	const headers = new Headers(response.headers);
-	headers.delete('Content-Length');
-	headers.set('Cache-Control', 'private, no-store');
-	headers.set('X-Content-Type-Options', 'nosniff');
-	headers.set('X-Frame-Options', 'DENY');
-	headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-	headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-	headers.set('Content-Security-Policy', PAGE_CSP);
-	return new Response(response.body, { status: response.status, headers });
+// Unlike the other pages, the home page drops the headers of the asset and keeps the
+// plain answer when the site is unavailable.
+export async function homePage(request, env) {
+	const response = await readPage(request, env, 'index.html');
+	if (!response.ok) return response;
+	return new Response(response.body, {
+		headers: {
+			'Content-Type': 'text/html; charset=utf-8',
+			'Cache-Control': 'private, no-store',
+			'X-Content-Type-Options': 'nosniff',
+			'X-Frame-Options': 'DENY',
+			'Referrer-Policy': 'strict-origin-when-cross-origin',
+			'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+			'Content-Security-Policy': PAGE_CSP,
+		},
+	});
 }

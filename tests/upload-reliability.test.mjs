@@ -9,7 +9,7 @@ import {
 	readUploadForm,
 } from '../src/upload-storage.js';
 import worker from '../src/worker.js';
-import productionWorker from '../src/production-worker.js';
+import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3, 4, 255]);
@@ -298,10 +298,10 @@ test('full upload handler recovers ZIP after D1 fails without re-uploading its b
 		});
 	};
 	try {
-		const failed = await productionWorker.fetch(request(), env);
+		const failed = await storeUploadedSetups(request(), env);
 		assert.equal(failed.status, 503);
 		assert.equal((await failed.json()).retryable, true);
-		const resumed = await productionWorker.fetch(request(), env);
+		const resumed = await storeUploadedSetups(request(), env);
 		assert.equal(resumed.status, 200);
 		const data = await resumed.json();
 		assert.equal(data.uploaded[0].version, 'v2');

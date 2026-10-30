@@ -8,7 +8,7 @@ import {
 	resolveRequestTrack,
 	matchingRequestSetups,
 } from '../discord-presence/request-tracks.js';
-import production from '../src/production-worker.js';
+import { createWebsiteRequest, requestTracks } from '../src/features/requests.js';
 import {
 	DEFAULT_SETUP_SUPPLY_ROLE_ID,
 	REQUEST_MANUFACTURERS,
@@ -149,16 +149,16 @@ test('Website sendet kanonischen Namen und weist unbekannte Strecken vor Discord
 			body: JSON.stringify({ vehicle: 'Toyota GR010', track, manufacturer: 'HYMO' }),
 		});
 	try {
-		const ok = await production.fetch(request('Spa'), env);
+		const ok = await createWebsiteRequest(request('Spa'), env);
 		assert.equal(ok.status, 200);
 		assert.equal(
 			sends[0].embeds[0].fields.find((field) => field.name === 'Strecke').value,
 			'Spa-Francorchamps'
 		);
-		assert.equal((await production.fetch(request('Nürburgring'), env)).status, 400);
+		assert.equal((await createWebsiteRequest(request('Nürburgring'), env)).status, 400);
 		assert.equal(sends.length, 1);
 		base.fetch = async () => Response.json({ loggedIn: false });
-		assert.equal((await production.fetch(request('Spa'), env)).status, 401);
+		assert.equal((await createWebsiteRequest(request('Spa'), env)).status, 401);
 		assert.equal(sends.length, 1);
 	} finally {
 		base.fetch = oldBase;
@@ -172,10 +172,7 @@ test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf', async 
 		throw Error('unexpected network request');
 	};
 	try {
-		const response = await production.fetch(
-			new Request('https://example.test/api/request/tracks'),
-			{}
-		);
+		const response = requestTracks();
 		assert.equal(response.status, 200);
 		assert.match(response.headers.get('content-type'), /^application\/json/);
 		const body = await response.json();

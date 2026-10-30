@@ -48,3 +48,16 @@ export async function safeJson(response) {
 		return null;
 	}
 }
+
+// Unexpected errors of the wrapped handler end in a generic 500 answer; the log keeps
+// only the message.
+export function catchErrors(handler) {
+	return async (request, env, ctx) => {
+		try {
+			return await handler(request, env, ctx);
+		} catch (error) {
+			console.error('Route failed', error instanceof Error ? error.message : 'unknown');
+			return json({ success: false, error: 'Interner Serverfehler.' }, 500);
+		}
+	};
+}

@@ -8,7 +8,8 @@ import {
 	enrichSetupLifecycle,
 } from '../src/setup-lifecycle.js';
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
-import production from '../src/production-worker.js';
+import { createWebsiteRequest } from '../src/features/requests.js';
+import { storeUploadedSetups } from '../src/features/setup-upload.js';
 import base from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 const oldSha = 'a'.repeat(40),
@@ -271,11 +272,11 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 			DISCORD_BOT_TOKEN: 'test',
 			DISCORD_CHANNEL_ID: '1557002876906377258',
 		};
-		assert.equal((await production.fetch(req('BMW M4 LMGT3'), env)).status, 200);
+		assert.equal((await createWebsiteRequest(req('BMW M4 LMGT3'), env)).status, 200);
 		assert.equal(sends[0].embeds[0].fields.find((field) => field.name === 'Klasse').value, 'LMGT3');
 		assert.match(sends[0].content, /<@&1538601074074849330>/);
 		assert.deepEqual(sends[0].allowed_mentions, { parse: [], roles: [], users: [] });
-		assert.equal((await production.fetch(req('BMW'), env)).status, 400);
+		assert.equal((await createWebsiteRequest(req('BMW'), env)).status, 400);
 		assert.equal(sends.length, 1);
 	} finally {
 		base.fetch = originalBase;
@@ -299,7 +300,7 @@ test('failed ZIP upload never applies its selected cleanup plan', async () => {
 		form.set('category', 'Hypercar');
 		form.set('vehicle', 'Alpine A424');
 		form.set('version', 'v2');
-		const response = await production.fetch(
+		const response = await storeUploadedSetups(
 			new Request('https://example.test/api/setups/upload', { method: 'POST', body: form }),
 			{
 				ACCESS_DB: {

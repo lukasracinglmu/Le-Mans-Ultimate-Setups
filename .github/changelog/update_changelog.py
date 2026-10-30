@@ -123,6 +123,8 @@ def area(path: str) -> str:
         "router.js": "Runtime-Routing",
         "routes.js": "Runtime-Routing",
         "production-worker.js": "Website-Integrationen",
+        "features/requests.js": "Website-Integrationen",
+        "features/discord-interactions.js": "Website-Integrationen",
         "ui-hotfix.js": "Ergänzungen der Website-Oberfläche",
         "access-worker.js": "Zugriffsverwaltung",
         "features/access.js": "Zugriffsverwaltung",

@@ -2,7 +2,7 @@
 import legacyWorker from '../legacy.js';
 import { safeJson } from '../lib/http.js';
 
-// The profile comes from /api/me of the older layers until that route moves (#10).
+// The profile comes from /api/me of the older worker until that route moves (#10).
 export async function readMe(request, env, ctx) {
 	const r = await legacyWorker.fetch(
 		new Request(new URL('/api/me', request.url), { headers: request.headers }),

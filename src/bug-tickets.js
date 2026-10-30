@@ -29,8 +29,8 @@ async function ensureSchema(env) {
 		} catch {}
 	}
 }
-async function owner(request, env, ctx, productionWorker) {
-	const meResponse = await productionWorker.fetch(
+async function owner(request, env, ctx, legacyWorker) {
+	const meResponse = await legacyWorker.fetch(
 		new Request(new URL('/api/me', request.url), { headers: request.headers }),
 		env,
 		ctx
@@ -42,8 +42,8 @@ async function owner(request, env, ctx, productionWorker) {
 		return { error: json({ success: false, error: 'Kein Zugriff.' }, 403) };
 	return { user: me.user };
 }
-export async function isTicketOwner(request, env, ctx, productionWorker) {
-	const auth = await owner(request, env, ctx, productionWorker);
+export async function isTicketOwner(request, env, ctx, legacyWorker) {
+	const auth = await owner(request, env, ctx, legacyWorker);
 	return !auth.error;
 }
 async function discord(path, env, options) {
@@ -90,8 +90,8 @@ export async function createTicket({ reportId, user, title, priority, descriptio
 		throw error;
 	}
 }
-export async function ticketApi(request, env, ctx, productionWorker) {
-	const auth = await owner(request, env, ctx, productionWorker);
+export async function ticketApi(request, env, ctx, legacyWorker) {
+	const auth = await owner(request, env, ctx, legacyWorker);
 	if (auth.error) return auth.error;
 	try {
 		await ensureSchema(env);

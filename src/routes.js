@@ -22,11 +22,16 @@ import {
 	revokeDatabaseAccess,
 	withAccessSchema,
 } from './features/access.js';
+import { discordInteraction } from './features/discord-interactions.js';
+import { manufacturerImage } from './features/manufacturer-images.js';
 import { withPermissionAudit } from './features/permission-audit.js';
 import { bugReportsApi } from './features/reports.js';
+import { createWebsiteRequest, requestTracks } from './features/requests.js';
 import { deleteSetup, updateSetupVersion, uploadSetups } from './features/setup-changes.js';
+import { listSetups } from './features/setup-list.js';
 import { fullAdminApi } from './full-admin.js';
 import legacyWorker from './legacy.js';
+import { catchErrors } from './lib/http.js';
 import { maintenanceGate } from './middleware/maintenance.js';
 import { enforceSameOriginForStateChange } from './middleware/origin.js';
 
@@ -66,6 +71,18 @@ export const routes = [
 	{ method: 'GET', path: '/', handler: homePage },
 	{
 		method: 'GET',
+		path: [
+			'/assets/manufacturers/go-setups.webp',
+			'/assets/manufacturers/hymo-setups.webp',
+			'/assets/manufacturers/bealien.webp',
+		],
+		handler: manufacturerImage,
+	},
+	{ method: 'GET', path: '/api/request/tracks', handler: requestTracks },
+	{ method: 'POST', path: '/api/request', handler: createWebsiteRequest },
+	{ method: 'POST', path: '/interactions/discord', handler: discordInteraction },
+	{
+		method: 'GET',
 		path: '/api/admin/admin-panel-access',
 		handler: withAccessSchema(listAdminPanelAccess),
 	},
@@ -101,6 +118,7 @@ export const routes = [
 		path: '/api/admin/all-access',
 		handler: grantChange((request, env, ctx) => changeManagedAccess(request, env, ctx, true)),
 	},
+	{ method: 'GET', path: '/api/setups', handler: catchErrors(listSetups) },
 	{ method: 'POST', path: '/api/setups/upload', handler: uploadSetups },
 	{ method: 'POST', path: '/api/setups/version', handler: updateSetupVersion },
 	{ method: 'POST', path: '/api/setups/delete', handler: deleteSetup },
@@ -111,8 +129,8 @@ function grantChange(handler) {
 	return withPermissionAudit(withAccessSchema(handler));
 }
 
-// Routes without an entry still pass the older worker layers (#10). Their admin APIs also
-// need the grant tables.
+// Routes without an entry still pass the older worker (#10). Its admin APIs also need the
+// grant tables.
 const legacyAdmin = withAccessSchema((request, env, ctx) => legacyWorker.fetch(request, env, ctx));
 export const fallback = (request, env, ctx) =>
 	new URL(request.url).pathname.startsWith('/api/admin/')
