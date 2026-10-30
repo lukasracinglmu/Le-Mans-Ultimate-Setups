@@ -16,7 +16,8 @@ const extractFunction = (code, name) => {
 	throw new Error(name + ' not found');
 };
 const access = vm.runInNewContext(
-	extractFunction(read('src/access-worker.js'), 'classifyManufacturer') + ';classifyManufacturer'
+	extractFunction(read('src/features/setup-changes.js'), 'classifyManufacturer') +
+		';classifyManufacturer'
 );
 const audit = vm.runInNewContext(
 	read('src/audit-log.js').match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +

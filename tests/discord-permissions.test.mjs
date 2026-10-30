@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rolePermissions, resolvePermissions } from '../src/discord-permissions.js';
-import accessWorker from '../src/access-worker.js';
+import app from '../src/index.js';
 import worker from '../src/worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 
@@ -153,7 +153,7 @@ test('both worker layers expose the same Team/Supply/Owner capabilities', async 
 		[envBase.DISCORD_OWNER_ROLE_ID],
 	]) {
 		await harness(roles, async ({ env, request, ctx }) => {
-			const a = await (await accessWorker.fetch(await request('/api/me'), env, ctx)).json();
+			const a = await (await app.fetch(await request('/api/me'), env, ctx)).json();
 			const b = await (await worker.fetch(await request('/api/me'), env, ctx)).json();
 			assert.equal(a.databaseAccess, b.databaseAccess);
 			assert.equal(a.user.canUpload, b.user.canUpload);
@@ -171,7 +171,7 @@ test('Owner role can grant database, upload and combined access', async () => {
 	await harness([envBase.DISCORD_OWNER_ROLE_ID], async ({ env, request, ctx, writes }) => {
 		assert.equal(
 			(
-				await accessWorker.fetch(
+				await app.fetch(
 					await request('/api/admin/database-access', 'POST', { userId: targetId }),
 					env,
 					ctx
@@ -190,7 +190,7 @@ test('Owner role can grant database, upload and combined access', async () => {
 		const count = writes.length;
 		assert.equal(
 			(
-				await accessWorker.fetch(
+				await app.fetch(
 					await request('/api/admin/upload-access', 'POST', { userId: targetId }),
 					env,
 					ctx
@@ -201,7 +201,7 @@ test('Owner role can grant database, upload and combined access', async () => {
 		assert.equal(writes.length, count + 2);
 		assert.equal(
 			(
-				await accessWorker.fetch(
+				await app.fetch(
 					await request('/api/admin/all-access', 'DELETE', { userId: targetId }),
 					env,
 					ctx
@@ -213,7 +213,7 @@ test('Owner role can grant database, upload and combined access', async () => {
 		assert.ok(writes.some((w) => w.sql.includes('DELETE FROM database_access')));
 		assert.equal(
 			(
-				await accessWorker.fetch(
+				await app.fetch(
 					await request('/api/admin/all-access', 'POST', { userId: targetId }),
 					env,
 					ctx
@@ -229,7 +229,7 @@ test('Team and Setup Supply cannot manage external access', async () => {
 		await harness([role], async ({ env, request, ctx, writes }) => {
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/admin/database-access', 'POST', { userId: targetId }),
 						env,
 						ctx
@@ -239,7 +239,7 @@ test('Team and Setup Supply cannot manage external access', async () => {
 			);
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/admin/all-access', 'POST', { userId: targetId }),
 						env,
 						ctx
@@ -249,7 +249,7 @@ test('Team and Setup Supply cannot manage external access', async () => {
 			);
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/admin/all-access', 'DELETE', { userId: targetId }),
 						env,
 						ctx
@@ -267,7 +267,7 @@ for (const role of [envBase.DISCORD_UPLOAD_ROLE_ID, envBase.DISCORD_OWNER_ROLE_I
 		'Supply/Owner role ' + role + ' can delete through both guards using the correct GitHub path',
 		async () => {
 			await harness([role], async ({ env, request, ctx, github }) => {
-				const r = await accessWorker.fetch(
+				const r = await app.fetch(
 					await request('/api/setups/delete', 'POST', {
 						category: 'Hypercar',
 						vehicle: 'Test Car',
@@ -292,7 +292,7 @@ test('Team and Request ping alone cannot change or delete setups', async () => {
 			for (const path of ['/api/setups/delete', '/api/setups/version', '/api/setups/upload']) {
 				assert.equal(
 					(
-						await accessWorker.fetch(
+						await app.fetch(
 							await request(path, 'POST', {
 								category: 'Hypercar',
 								vehicle: 'Test Car',
@@ -316,12 +316,12 @@ test('external database grants allow reading only, without a Discord server role
 	await harness(
 		[],
 		async ({ env, request, ctx }) => {
-			const me = await (await accessWorker.fetch(await request('/api/me'), env, ctx)).json();
+			const me = await (await app.fetch(await request('/api/me'), env, ctx)).json();
 			assert.equal(me.databaseAccess, true);
 			assert.equal(me.user.canUpload, false);
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/setups?category=Hypercar&vehicle=Test%20Car'),
 						env,
 						ctx
@@ -340,7 +340,7 @@ test('Discord outages fail closed with a temporary status instead of granting ac
 		async ({ env, request, ctx }) => {
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/setups/delete', 'POST', { name: 'test.zip' }),
 						env,
 						ctx
@@ -362,7 +362,7 @@ for (const role of [envBase.DISCORD_UPLOAD_ROLE_ID, envBase.DISCORD_OWNER_ROLE_I
 		'Supply/Owner role ' + role + ' can change setup versions without the Team or ping role',
 		async () => {
 			await harness([role], async ({ env, request, ctx, writes }) => {
-				const r = await accessWorker.fetch(
+				const r = await app.fetch(
 					await request('/api/setups/version', 'POST', {
 						category: 'Hypercar',
 						vehicle: 'Test Car',
@@ -387,7 +387,7 @@ test('personal owner can still grant individual upload access', async () => {
 		async ({ env, request, ctx, writes }) => {
 			assert.equal(
 				(
-					await accessWorker.fetch(
+					await app.fetch(
 						await request('/api/admin/upload-access', 'POST', { userId: targetId }),
 						env,
 						ctx

@@ -125,6 +125,7 @@ def area(path: str) -> str:
         "production-worker.js": "Website-Integrationen",
         "ui-hotfix.js": "Ergänzungen der Website-Oberfläche",
         "access-worker.js": "Zugriffsverwaltung",
+        "features/access.js": "Zugriffsverwaltung",
         "audit-log.js": "Audit-Protokollierung",
         "setup-version.js": "Setup-Versionen",
         "schema.sql": "Datenbankstruktur",

@@ -1,18 +1,13 @@
 /* @file-notes: Schreibt erfolgreiche Rechteänderungen ins Audit-Log. */
 import { writeSetupAuditEvent } from '../audit-log.js';
-import legacyWorker from '../legacy.js';
 import { readMe } from './auth.js';
 
-export const PERMISSION_PATHS = [
-	'/api/admin/database-access',
-	'/api/admin/upload-access',
-	'/api/admin/all-access',
-	'/api/admin/admin-panel-access',
-	'/api/admin/full-admin-access',
-];
+// Wraps a grant or revoke handler and records the change once it succeeded.
+export function withPermissionAudit(handler) {
+	return (request, env, ctx) => auditPermissionChange(handler, request, env, ctx);
+}
 
-// The change itself happens in the older layers; this only records it.
-export async function auditPermissionChange(request, env, ctx) {
+async function auditPermissionChange(handler, request, env, ctx) {
 	const url = new URL(request.url);
 	const bodyRequest = request.clone(),
 		actor = await readMe(request, env, ctx);
@@ -20,7 +15,7 @@ export async function auditPermissionChange(request, env, ctx) {
 	try {
 		targetUserId = String((await bodyRequest.json())?.userId || '').trim() || null;
 	} catch {}
-	const response = await legacyWorker.fetch(request, env, ctx);
+	const response = await handler(request, env, ctx);
 	if (response.ok && actor?.loggedIn && actor?.user?.id && targetUserId) {
 		let result = null;
 		try {
