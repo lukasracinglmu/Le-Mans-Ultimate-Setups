@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-30T17:47:04.671Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage Interlagos HYMO.zip",
+  "vehicle": "Aston Martin Vantage AMR LMGT3",
+  "track": "Vantage Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
