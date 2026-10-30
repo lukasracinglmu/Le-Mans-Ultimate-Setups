@@ -1,6 +1,7 @@
 import { $ } from '../shared/dom.js';
 import { renderSetups } from './setup-list.js';
 import { state } from './state.js';
+import { vehicleBrand } from './vehicle-brands.js';
 
 let setupData = {};
 let favoriteVehicles = new Set();
@@ -30,6 +31,22 @@ export async function loadData() {
 		out.textContent = error.message || 'Fahrzeuge konnten nicht geladen werden.';
 		$('categories').replaceChildren(out);
 	}
+}
+
+// Decorative, the name next to it says the same. A sibling of .vehicle-name, so
+// refreshVehicleCounts() still reads the plain vehicle name.
+function buildBrandBadge(vehicle) {
+	const brand = vehicleBrand(vehicle);
+	const badge = document.createElement('span');
+	badge.className = 'vehicle-brand';
+	badge.setAttribute('aria-hidden', 'true');
+	if (brand.logo) {
+		const logo = document.createElement('span');
+		logo.className = 'vehicle-brand-logo';
+		logo.style.setProperty('--brand-logo', "url('" + brand.logo + "')");
+		badge.appendChild(logo);
+	} else badge.textContent = brand.mark;
+	return badge;
 }
 
 async function toggleFavorite(category, vehicle, button) {
@@ -101,7 +118,7 @@ export function renderCategories(filter = '') {
 			const c = document.createElement('div');
 			c.className = 'vehicle-class';
 			c.textContent = cat;
-			card.append(star, n, c);
+			card.append(star, buildBrandBadge(v.name), n, c);
 			card.addEventListener('click', () => selectVehicle(cat, v.name));
 			grid.appendChild(card);
 		});
