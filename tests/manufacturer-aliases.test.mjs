@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
+import { classifyVendor as frontend } from '../public/js/home/setup-names.js';
 import { setupManufacturer, readPreviousSetups } from '../src/setup-lifecycle.js';
 
 const read = (path) => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
@@ -14,8 +15,6 @@ const extractFunction = (code, name) => {
 	}
 	throw new Error(name + ' not found');
 };
-const source = read('public/js/home/app.js');
-const frontend = vm.runInNewContext(extractFunction(source, 'classifyVendor') + ';classifyVendor');
 const access = vm.runInNewContext(
 	extractFunction(read('src/access-worker.js'), 'classifyManufacturer') + ';classifyManufacturer'
 );
@@ -23,17 +22,9 @@ const audit = vm.runInNewContext(
 	read('src/audit-log.js').match(/function classifyManufacturer\(name\) \{[\s\S]*?\n\}/)[0] +
 		';classifyManufacturer'
 );
-// The former ui-hotfix.js script with its fallback classifier.
-const enhancements = read('public/js/home/enhancements.js');
-const fallbackSource = enhancements.slice(
-	enhancements.search(/\bconst classify\s*=/),
-	enhancements.search(/\n\s*const currentMfr\s*=/)
-);
-const fallback = vm.runInNewContext(fallbackSource + ';classify');
 const classifiers = [
 	['server lifecycle', setupManufacturer],
 	['website', frontend],
-	['injected fallback', fallback],
 	['access audit', access],
 	['audit fallback', audit],
 ];

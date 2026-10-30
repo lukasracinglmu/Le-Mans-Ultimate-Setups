@@ -51,10 +51,7 @@ test('the home page is served exactly as stored in index.html', async () => {
 	assert.deepEqual(served.headers, HOME_HEADERS);
 });
 
-test('the home page loads the former runtime patches', () => {
-	const scripts = [...index.matchAll(/<script src="([^"]+)"><\/script>/g)]
-		.map((match) => readFileSync(new URL('../public' + match[1], import.meta.url), 'utf8'))
-		.join('\n');
+test('the home page loads its module and keeps the manufacturer carousel', () => {
+	assert.ok(index.includes('<script type="module" src="/js/home/main.js"></script>'));
 	assert.ok(index.includes('id="manufacturerImage"'), 'manufacturer carousel missing');
-	assert.match(scripts, /const setLoginControls\s*=/, 'login controls script missing');
 });

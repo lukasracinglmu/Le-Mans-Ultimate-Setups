@@ -1,21 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-// The former ui-hotfix.js script with the access check.
-const script = readFileSync(new URL('../public/js/home/enhancements.js', import.meta.url), 'utf8');
-const access = script.slice(
-	script.search(/\n\s*const accessBox\s*=/),
-	script.search(/\n\s*const syncCarFilter\s*=/)
-);
-const auth = script.slice(
-	script.search(/\n\s*const authorize\s*=/),
-	script.search(/\n\s*const init\s*=/)
-);
+import { createAccessCheck } from '../public/js/home/access.js';
+import { state } from '../public/js/home/state.js';
+
+// Runs the access check of the home page against a fake DOM and a fake /api/me.
 async function run(data, { ok = true, invalid = false, network = false } = {}) {
 	const nodes = new Map();
-	let loads = 0,
-		routes = 0,
+	let authorized = 0,
 		requests = 0;
 	const node = () => ({
 		innerHTML: '',
@@ -34,47 +25,49 @@ async function run(data, { ok = true, invalid = false, network = false } = {}) {
 				nodes.set(el.id, el);
 			},
 		};
-	const c = vm.createContext({
-		document: {
-			documentElement: root,
-			getElementById: (id) => nodes.get(id) || null,
-			querySelector: () => main,
-			querySelectorAll: () => [],
-			createElement: node,
-		},
-		fetch: async () => {
-			requests++;
-			if (network) throw Error('offline');
-			return {
-				ok,
-				json: async () => {
-					if (invalid) throw Error('bad json');
-					return data;
-				},
-			};
-		},
-		setTimeout: (fn) => {
-			fn();
-			return 0;
-		},
-		Promise,
-		loadData: async () => {
-			loads++;
-		},
-		openSetupFromQuery: async () => {
-			routes++;
-		},
-		syncCarFilter() {},
-		initVersionEditor() {},
-		refreshVehicleCounts() {},
-	});
-	vm.runInContext('let currentUser=null;' + access + auth + ';globalThis.authorize=authorize;', c);
-	await c.authorize();
+	const original = {
+		document: globalThis.document,
+		fetch: globalThis.fetch,
+		setTimeout: globalThis.setTimeout,
+	};
+	globalThis.document = {
+		documentElement: root,
+		getElementById: (id) => nodes.get(id) || null,
+		querySelector: () => main,
+		querySelectorAll: () => [],
+		createElement: node,
+	};
+	globalThis.fetch = async () => {
+		requests++;
+		if (network) throw Error('offline');
+		return {
+			ok,
+			json: async () => {
+				if (invalid) throw Error('bad json');
+				return data;
+			},
+		};
+	};
+	// Retries wait without delay in the test.
+	globalThis.setTimeout = (fn) => {
+		fn();
+		return 0;
+	};
+	state.currentUser = null;
+	try {
+		const authorize = createAccessCheck({
+			async onAuthorized() {
+				authorized++;
+			},
+		});
+		await authorize();
+	} finally {
+		Object.assign(globalThis, original);
+	}
 	return {
 		mode: root.dataset.dbAccess,
 		html: nodes.get('databaseAccessState')?.innerHTML || '',
-		loads,
-		routes,
+		authorized,
 		requests,
 	};
 }
@@ -106,7 +99,7 @@ test('actual role denial stays distinct from an unavailable service', async () =
 	assert.equal(s.mode, 'forbidden');
 	assert.equal(s.requests, 1);
 });
-test('authorized Team accounts load the catalog and preserve route restoration', async () => {
+test('authorized Team accounts continue to the database', async () => {
 	const s = await run({
 		loggedIn: true,
 		databaseAccess: true,
@@ -114,8 +107,8 @@ test('authorized Team accounts load the catalog and preserve route restoration',
 		user: { username: 'Team', canUpload: false },
 	});
 	assert.equal(s.mode, 'authorized');
-	assert.equal(s.loads, 1);
-	assert.equal(s.routes, 1);
+	// main.js loads the catalog and restores the route in onAuthorized.
+	assert.equal(s.authorized, 1);
 });
 test('anonymous user still sees normal Discord login', async () => {
 	const s = await run({ loggedIn: false, databaseAccess: false });

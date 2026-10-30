@@ -3,11 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const index = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-// The former ui-hotfix.js script that toggles the login-only controls.
-const hotfix = await readFile(
-	new URL('../public/js/home/enhancements.js', import.meta.url),
-	'utf8'
-);
+// The access check of the home page toggles the login-only controls.
+const access = await readFile(new URL('../public/js/home/access.js', import.meta.url), 'utf8');
 const css = await readFile(new URL('../public/css/home.css', import.meta.url), 'utf8');
 
 // True when the element itself or one of its ancestors starts hidden as a login-only control.
@@ -32,13 +29,13 @@ test('login-only controls are hidden in the initial HTML', () => {
 
 test('authentication controls all login-only elements', () => {
 	assert.match(
-		hotfix,
+		access,
 		/const setLoginControls\s*=\s*\(visible\)\s*=>\s*document\s*\.querySelectorAll\('\.login-only-control'\)/
 	);
-	assert.match(hotfix, /currentUser\s*=\s*d\.user\s*\|\|\s*null;\s*setLoginControls\(true\);/);
+	assert.match(access, /currentUser\s*=\s*d\.user\s*\|\|\s*null;\s*setLoginControls\(true\);/);
 	assert.match(
-		hotfix,
-		/if\s*\(!d\??\.loggedIn\)\s*\{\s*currentUser\s*=\s*null;\s*setLoginControls\(false\);/
+		access,
+		/if\s*\(!d\??\.loggedIn\)\s*\{\s*state\.currentUser\s*=\s*null;\s*setLoginControls\(false\);/
 	);
 	assert.doesNotMatch(css, /html:not\(\[data-db-access=['"]authorized['"]\]\)\s+#mfrFilter/);
 });
