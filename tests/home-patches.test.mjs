@@ -6,9 +6,12 @@ import { repositoryEnv } from './helpers/repository-env.mjs';
 
 const index = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 
-// Headers of GET / in production before the runtime patches moved into index.html.
+// Headers of GET / in production before the runtime patches moved into index.html,
+// plus the page CSP since the home page has no inline scripts.
 const HOME_HEADERS = {
 	'cache-control': 'private, no-store',
+	'content-security-policy':
+		"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'",
 	'content-type': 'text/html; charset=utf-8',
 	'referrer-policy': 'strict-origin-when-cross-origin',
 	'strict-transport-security': 'max-age=31536000; includeSubDomains',
@@ -48,8 +51,11 @@ test('the home page is served exactly as stored in index.html', async () => {
 	assert.deepEqual(served.headers, HOME_HEADERS);
 });
 
-test('index.html contains the former runtime patches itself', () => {
+test('the home page loads the former runtime patches', () => {
+	const scripts = [...index.matchAll(/<script src="([^"]+)"><\/script>/g)]
+		.map((match) => readFileSync(new URL('../public' + match[1], import.meta.url), 'utf8'))
+		.join('\n');
 	assert.ok(index.includes('id="manufacturerImage"'), 'manufacturer carousel missing');
-	assert.ok(index.includes('const setLoginControls='), 'login controls script missing');
-	assert.ok(index.includes('loadAdminAccessList'), 'admin access list script missing');
+	assert.match(scripts, /const setLoginControls\s*=/, 'login controls script missing');
+	assert.ok(scripts.includes('loadAdminAccessList'), 'admin access list script missing');
 });

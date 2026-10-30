@@ -6,7 +6,7 @@ import { compareSetupVersions, cleanSetupFileName } from '../src/setup-version.j
 import { persistSetupFile, gitBlobSha } from '../src/upload-storage.js';
 import production from '../src/production-worker.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
-const source = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+const source = await readFile(new URL('../public/js/home/app.js', import.meta.url), 'utf8');
 const client = vm.runInNewContext(
 	source.slice(source.indexOf('function displaySetupFileName('), source.indexOf('function esc(')) +
 		source.slice(

@@ -28,7 +28,6 @@ Hinweise für KI-Agenten und Automatisierungen, die in diesem Repository arbeite
 - JS und HTML: Tabs mit Breite 2, einfache Quotes, Semikolons, Trailing Commas nach ES5, 100 Zeichen pro Zeile.
 - Die Einrückung steht in `.editorconfig`, der Rest in `.prettierrc.json`. Andere Dateitypen behalten Leerzeichen, Python 4.
 - `npm run format` formatiert, `npm run format:check` prüft. Beides deckt `js`, `mjs` und `html` ab.
-- `public/index.html` ist von Prettier ausgenommen, bis ihre Inline-Scripts in Module umgezogen sind (#16).
 
 ## Learnings
 
@@ -36,6 +35,7 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 ### Deploy und Laufzeit
 
+- Header in Produktion mit GET prüfen (`curl -s -D - -o /dev/null`), nicht mit `curl -I`. HEAD fällt bei `/` auf die Assets durch und bekommt andere Header.
 - Ein Merge auf `main` deployt den Worker automatisch (Cloudflare Workers Builds). Jeder PR bekommt eine Vorschau-URL im Check „Workers Builds“. Dort Änderungen vor dem Merge live prüfen.
 - Seiten, ihre Scripts und der Worker gehen mit demselben Deploy live. Nur Daten aus `readSiteFile` sind schon mit dem Merge live, weil der Worker sie aus `main` liest. Die PR-Vorschau zeigt deshalb die Seiten des PRs, aber die Daten aus `main`.
 - Der Bot läuft getrennt auf eigenem Host mit eigener `.env`, die hier nicht einsehbar ist. Änderungen am Bot dürfen keine neuen Variablen voraussetzen.
@@ -51,25 +51,26 @@ Nach jedem abgeschlossenen Issue ergänzen. Kurz halten.
 
 - JSON-Antworten nur über `json()` aus `src/lib/http.js`. Es setzt Security-Header und `no-store`. Abweichendes `Cache-Control` oder `Retry-After` als dritten Parameter übergeben.
 - GitHub-Anfragen über `githubRequest()` aus `src/lib/github.js`. `Accept`, Timeout und Redirect-Verhalten gibt der Aufrufer mit, weil sie sich bewusst unterscheiden. ZIP-Uploads haben z. B. kein Timeout.
-- Die CSPs der HTML-Seiten (Wartungsseite, geschützte Seiten, Rest) unterscheiden sich bewusst. Nicht vereinheitlichen.
+- Die CSPs unterscheiden sich bewusst: Wartungsseite, Seiten (`PAGE_CSP` in `src/runtime-worker.js`) und der Rest (`securityHeaders()`). Nicht vereinheitlichen.
 - Verhaltensgleichheit bei Refactorings per Routen-Schnappschuss prüfen: dieselben Anfragen durch die Worker-Kette auf `main` und auf dem Branch schicken, Status und Body vergleichen.
 
 ### Seiten-Scripts (`public/js/`)
 
 - Jede Seite hat `public/js/<seite>/main.js` als Einstieg, der nur die Teile startet. Die Teile daneben tun beim Import nichts, deshalb können Tests sie direkt importieren.
-- `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`.
-- Keine Inline-Scripts und keine `on*`-Attribute. `tests/page-scripts.test.mjs` prüft das für jede umgestellte Seite, neue Seiten dort eintragen. Die geschützten Seiten laufen mit `script-src 'self'`.
+- `shared/theme.js` ist ein klassisches Script im `<head>`, damit kein falsches Theme aufblitzt. Alle anderen Scripts sind `type="module"`, außer vorerst die der Startseite.
+- Keine Inline-Scripts und keine `on*`-Attribute. `tests/page-scripts.test.mjs` prüft das für jede umgestellte Seite, neue Seiten dort eintragen. Alle Seiten laufen mit `PAGE_CSP`, also `script-src 'self'`.
 - Dateien in `public/` dürfen nicht wie Module in `src/` heißen. `npm run check:deploy` vergleicht nur Dateinamen und hält z. B. `public/js/bug-tickets.js` für Worker-Code.
 - Umbauten im Browser gegen `main` vergleichen: derselbe Ablauf mit Mock-API auf beiden Ständen, der Branch mit der echten CSP. Dazu die String-Literale von altem und neuem Code vergleichen.
 - agent-browser klickt auf Koordinaten. Liegt das Ziel außerhalb des Sichtbereichs, geht der Klick ohne Fehlermeldung ins Leere. Vorher per `scrollIntoView()` ins Bild holen.
-- Unicode-Escapes wie `̀` in Regexen nach dem Schreiben per `grep` prüfen. Manche Werkzeuge schreiben stattdessen das Zeichen selbst.
+- Unicode-Escapes wie `\u0300` in Regexen nach dem Schreiben per `grep` prüfen. Manche Werkzeuge schreiben stattdessen das Zeichen selbst.
 
 ### `public/index.html`
 
-- Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus. Lokal geöffnet sieht sie aus wie in Produktion. Ohne erreichbare API zeigt sie daher die Zugangsprüfung.
-- Die Markierung `<meta name="lmu-runtime-patches" content="inline">` hat keine Funktion mehr und kann mit #16 entfallen.
-- Änderungen über den Worker **und** direkt im Browser ohne Worker prüfen. Beides muss funktionieren.
-- `tests/home-scripts.test.mjs` prüft, dass jedes Inline-Script parsebar ist. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
+- Die Datei ist die komplette Startseite. Kein Worker verändert HTML zur Laufzeit, `GET /` liefert sie unverändert aus.
+- Die Scripts haben absolute Pfade wie `/js/home/app.js` und laden deshalb nicht per `file://`. Lokal über einen Server mit `public/` als Wurzel öffnen, z. B. `python3 -m http.server -d public`. Ohne erreichbare API zeigt die Seite die Zugangsprüfung.
+- Die Scripts in `public/js/home/` sind noch klassische Scripts mit gemeinsamen Globals. `enhancements.js` ersetzt Funktionen aus `app.js` zur Laufzeit. Die Reihenfolge der `<script>`-Tags nicht ändern. Welche Globals eine Datei von anderen nutzt, steht in `/* global */` und `/* exported */` am Dateianfang.
+- Buttons haben `data-action` statt `onclick`. `public/js/home/actions.js` bindet sie und schlägt die Funktion erst beim Klick nach.
+- `tests/home-scripts.test.mjs` prüft, dass die Startseite keine Inline-Scripts hat, dass jedes geladene Script parsebar ist und dass jeder Button seinen früheren Aufruf macht. Ein Syntaxfehler legt sonst unbemerkt das ganze Script still.
 
 ### Übergänge
 

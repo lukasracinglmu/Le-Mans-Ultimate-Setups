@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-// The former ui-hotfix.js script with the access check now lives in index.html.
-const script = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+// The former ui-hotfix.js script with the access check.
+const script = readFileSync(new URL('../public/js/home/enhancements.js', import.meta.url), 'utf8');
 const access = script.slice(
-	script.indexOf('  const accessBox='),
-	script.indexOf('  const syncCarFilter=')
+	script.search(/\n\s*const accessBox\s*=/),
+	script.search(/\n\s*const syncCarFilter\s*=/)
 );
-const auth = script.slice(script.indexOf('  const authorize='), script.indexOf('  const init='));
+const auth = script.slice(
+	script.search(/\n\s*const authorize\s*=/),
+	script.search(/\n\s*const init\s*=/)
+);
 async function run(data, { ok = true, invalid = false, network = false } = {}) {
 	const nodes = new Map();
 	let loads = 0,
