@@ -67,7 +67,7 @@
 			</section>
 			<section id="backupCard" class="card hidden">
 				<h2>Backup</h2>
-				<div class="row" style="margin-top: 12px">
+				<div class="row backup-actions">
 					<button id="manualBackup">Backup jetzt erstellen</button
 					><a id="latestBackupLink" class="button-link hidden" target="_blank" rel="noopener"
 						>Zum letzten Backup</a
@@ -78,7 +78,7 @@
 			</section>
 			<section id="maintenanceCard" class="card">
 				<h2>Wartungsmodus</h2>
-				<p style="margin: 0">
+				<p class="card-intro">
 					Während der Wartung sehen normale Besucher nur die Wartungsnachricht. Full-Admins behalten
 					Zugriff.
 				</p>
@@ -100,8 +100,8 @@
 				<div id="maintenanceStatus" class="status" role="status"></div>
 			</section>
 			<section class="card">
-				<div class="row" style="justify-content: space-between; align-items: center">
-					<h2 style="margin: 0">Freigegebene User</h2>
+				<div class="row list-header">
+					<h2>Freigegebene User</h2>
 					<button id="refresh">Aktualisieren</button>
 				</div>
 				<div class="grant-list-controls">

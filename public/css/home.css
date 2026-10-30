@@ -1458,3 +1458,15 @@ body.no-database-access #mfrFilter,
 body.no-database-access #classFilter {
 	display: none !important;
 }
+
+/* Formerly style attributes in index.html. The scripts show the upload area and
+   the track search through element.style, which still wins over these rules. */
+#loginButton {
+	text-decoration: none;
+}
+#uploadArea {
+	display: none;
+}
+#trackSearch {
+	display: none;
+}

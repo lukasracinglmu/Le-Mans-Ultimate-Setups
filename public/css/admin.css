@@ -440,3 +440,18 @@ button.full {
 		width: 100%;
 	}
 }
+
+/* Formerly style attributes in admin.html. */
+.backup-actions {
+	margin-top: 12px;
+}
+.card-intro {
+	margin: 0;
+}
+.list-header {
+	justify-content: space-between;
+	align-items: center;
+}
+.list-header h2 {
+	margin: 0;
+}
