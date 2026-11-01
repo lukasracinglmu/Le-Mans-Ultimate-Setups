@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-01T17:17:43.703Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "lukas",
+  "discordUserId": "1033453785416208564",
+  "setup": "Benz Barcelona GO.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Barcelona GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
