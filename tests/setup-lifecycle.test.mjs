@@ -283,10 +283,11 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 
 test('failed ZIP upload never applies its selected cleanup plan', async () => {
 	const originalFetch = globalThis.fetch;
+	const incomingName = 'Alpine Spa HYMO.zip';
 	let cleanups = 0;
 	// GitHub cannot store the new ZIP; any other request would touch the old setup.
 	globalThis.fetch = async (url) => {
-		if (decodeURIComponent(String(url)).includes(newName))
+		if (decodeURIComponent(String(url)).includes(incomingName))
 			return Response.json({ message: 'unavailable' }, { status: 503 });
 		cleanups++;
 		throw Error('must not clean up');
@@ -294,7 +295,7 @@ test('failed ZIP upload never applies its selected cleanup plan', async () => {
 	try {
 		const owner = '1033453785416208564';
 		const form = planForm('replace', [{ name, sha: oldSha }]);
-		form.set('files', new File(['PK\x03\x04'], newName));
+		form.set('files', new File(['PK\x03\x04'], incomingName));
 		form.set('category', 'Hypercar');
 		form.set('vehicle', 'Alpine A424');
 		form.set('version', 'v2');

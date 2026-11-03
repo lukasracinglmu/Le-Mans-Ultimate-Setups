@@ -9,6 +9,10 @@ import { readPreviousSetups, deleteGithubSetup } from '../setup-lifecycle.js';
 import { buildSetupSummary } from '../setup-summary.js';
 import { cleanSetupFileName } from '../setup-version.js';
 import { persistSetupFile } from '../upload-storage.js';
+import vehicleCatalog from '../../public/setups.json' with { type: 'json' };
+import { REQUEST_TRACKS } from '../../discord-presence/request-tracks.js';
+import { flattenUploadCatalog } from '../../public/js/home/upload-targets.js';
+import { parseUploadFilename } from '../../public/js/shared/upload-filename.js';
 
 const MAX_FILES = 50;
 const MAX_SETUP_BYTES = 25 * 1024 * 1024;
@@ -163,6 +167,34 @@ export async function storeSetupFiles(request, env, form) {
 		files = form.getAll('files');
 	if (!category || !vehicle || !files.length || files.length > MAX_FILES)
 		return json({ success: false, error: 'Ungültiger Upload.', retryable: false }, 400);
+	// Check every original client filename before any GitHub/D1 write, hashing,
+	// normalization or duplicate substitution. Never trust the browser's preview.
+	const uploadCatalog = flattenUploadCatalog(vehicleCatalog);
+	const filenameErrors = files
+		.map((file) => ({
+			file,
+			result: parseUploadFilename(file?.name, uploadCatalog, REQUEST_TRACKS, { category, vehicle }),
+		}))
+		.filter(({ result }) => result.error);
+	if (filenameErrors.length) {
+		return json(
+			{
+				success: false,
+				error: 'Dateiname nicht erlaubt. ' + filenameErrors[0].result.error,
+				code: 'INVALID_SETUP_FILENAME',
+				retryable: false,
+				uploaded: [],
+				errors: filenameErrors.map(({ file, result }) => ({
+					name: String(file?.name || ''),
+					originalName: String(file?.name || ''),
+					error: result.error,
+					code: 'INVALID_SETUP_FILENAME',
+					retryable: false,
+				})),
+			},
+			400
+		);
+	}
 	const previous = readPreviousSetups(
 		form,
 		files.map((file) => normalizeName(file?.name))

@@ -288,8 +288,8 @@ test('full upload handler recovers ZIP after D1 fails without re-uploading its b
 	const request = () => {
 		const form = new FormData();
 		form.set('category', 'Hypercar');
-		form.set('vehicle', 'Test Car');
-		form.set('files', file);
+		form.set('vehicle', 'Alpine A424');
+		form.set('files', new File([bytes], 'Alpine Spa GO.zip'));
 		form.set('version', 'v2');
 		return new Request('https://example.test/api/setups/upload', {
 			method: 'POST',

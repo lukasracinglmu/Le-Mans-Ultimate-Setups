@@ -41,9 +41,9 @@ test('setup list answers unexpected errors with a generic 500', async (t) => {
 test('setup upload answers unexpected storage errors with a generic 500', async (t) => {
 	const form = new FormData();
 	form.set('category', 'Hypercar');
-	form.set('vehicle', 'Test');
+	form.set('vehicle', 'BMW M Hybrid V8');
 	form.set('version', 'v1');
-	form.set('files', new File(['PK\x03\x04'], 'GO_Test_Spa.zip'));
+	form.set('files', new File(['PK\x03\x04'], 'BMW V8 Spa GO.zip'));
 	const logs = await withBrokenStorage(t, async (cookie) => {
 		t.mock.method(crypto.subtle, 'digest', async () => {
 			throw Error('storage unavailable');

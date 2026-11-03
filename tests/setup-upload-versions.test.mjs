@@ -25,7 +25,7 @@ test('upload versions are optional and still validate supplied values', () => {
 
 test('separate uploads store their own versions, including an empty replacement', async () => {
 	const originalFetch = globalThis.fetch;
-	const rows = new Map([['first.zip', 'old-version']]);
+	const rows = new Map([['Alpine Spa GO.zip', 'old-version']]);
 	const stored = [];
 	const clearedLifecycle = [];
 	const owner = '1033453785416208564';
@@ -65,13 +65,13 @@ test('separate uploads store their own versions, including an empty replacement'
 	const cookie = await sessionCookie(owner, env.SESSION_SECRET);
 	try {
 		for (const [name, version] of [
-			['first.zip', ''],
-			['second.zip', 'v2'],
-			['third.zip', 'v3'],
+			['Alpine Spa GO.zip', ''],
+			['Alpine Monza GO.zip', 'v2'],
+			['Alpine Le Mans GO.zip', 'v3'],
 		]) {
 			const form = formWithVersion(version);
 			form.set('category', 'Hypercar');
-			form.set('vehicle', 'Test Car');
+			form.set('vehicle', 'Alpine A424');
 			form.set('files', new File(['PK\x03\x04'], name));
 			const response = await storeUploadedSetups(
 				new Request('https://example.test/api/setups/upload', {
@@ -86,15 +86,19 @@ test('separate uploads store their own versions, including an empty replacement'
 			assert.equal(rows.get(name), version);
 		}
 		assert.deepEqual(stored, [
-			'Hypercar/Test Car/first.zip',
-			'Hypercar/Test Car/second.zip',
-			'Hypercar/Test Car/third.zip',
+			'Hypercar/Alpine A424/Alpine Spa GO.zip',
+			'Hypercar/Alpine A424/Alpine Monza GO.zip',
+			'Hypercar/Alpine A424/Alpine Le Mans GO.zip',
 		]);
-		assert.deepEqual(clearedLifecycle, ['first.zip', 'second.zip', 'third.zip']);
+		assert.deepEqual(clearedLifecycle, [
+			'Alpine Spa GO.zip',
+			'Alpine Monza GO.zip',
+			'Alpine Le Mans GO.zip',
+		]);
 		const setups = await enrichSetupVersions(
 			[...rows.keys()].map((name) => ({ name })),
 			'Hypercar',
-			'Test Car',
+			'Alpine A424',
 			env
 		);
 		assert.deepEqual(

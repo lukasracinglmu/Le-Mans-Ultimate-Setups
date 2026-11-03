@@ -5,6 +5,7 @@ import { renderSetups } from './setup-list.js';
 import { classifyVendor, displaySetupFileName, uploadSetupFamily } from './setup-names.js';
 import { state } from './state.js';
 import { uploadJobKey, uploadTargetKey } from './upload-targets.js';
+import { checkUploadNames } from './upload-name-check.js';
 
 let uploadQueueRunning = false;
 let uploadPreparing = false;
@@ -599,6 +600,10 @@ export function initUpload() {
 		const target = { ...state.currentCar };
 		setUploadPreparing(true);
 		try {
+			await checkUploadNames(
+				files,
+				files.map(() => target)
+			);
 			const versions = await chooseUploadVersions(files, sharedVersion);
 			if (!versions) return;
 			const error = versions.map(uploadVersionError).find(Boolean);

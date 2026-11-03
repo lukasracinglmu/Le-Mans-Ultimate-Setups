@@ -75,7 +75,7 @@ test('same-name preserve stores a deterministic separate ZIP and retries do not 
 
 test('same-name outdate uploads new bytes separately and marks exactly the original SHA', async () => {
 	const original = globalThis.fetch,
-		fileName = 'Spa HYMO.zip',
+		fileName = 'Alpine Spa HYMO.zip',
 		oldSha = 'a'.repeat(40),
 		file = new File([new Uint8Array([80, 75, 3, 4, 44])], fileName),
 		newSha = await gitBlobSha(new Uint8Array(await file.arrayBuffer()));
@@ -134,7 +134,7 @@ test('same-name outdate uploads new bytes separately and marks exactly the origi
 	try {
 		const form = new FormData();
 		form.set('category', 'Hypercar');
-		form.set('vehicle', 'Alpine');
+		form.set('vehicle', 'Alpine A424');
 		form.set('version', 'v2');
 		form.set('files', file);
 		form.set(
@@ -158,7 +158,7 @@ test('same-name outdate uploads new bytes separately and marks exactly the origi
 		assert.equal(versions.get(data.uploaded[0].name), 'v2');
 		assert.equal(files.get(fileName), oldSha);
 		assert.equal(marks.length, 1);
-		assert.deepEqual(marks[0], ['Hypercar', 'Alpine', fileName, oldSha]);
+		assert.deepEqual(marks[0], ['Hypercar', 'Alpine A424', fileName, oldSha]);
 	} finally {
 		globalThis.fetch = original;
 	}
@@ -190,22 +190,22 @@ test('verified duplicate does not lower the stored version', async () => {
 	// GitHub already holds the same bytes under the name of the duplicate.
 	globalThis.fetch = async (url, options = {}) => {
 		assert.notEqual(options.method, 'PUT');
-		assert.match(decodeURIComponent(String(url)), /\/Spa HYMO\.zip\?/);
+		assert.match(decodeURIComponent(String(url)), /\/Alpine Spa HYMO\.zip\?/);
 		return Response.json({ sha });
 	};
 	let writes = 0;
 	try {
 		const form = new FormData();
 		form.set('category', 'Hypercar');
-		form.set('vehicle', 'Alpine');
+		form.set('vehicle', 'Alpine A424');
 		form.set('version', 'v1');
-		form.set('files', new File(['PK\x03\x04'], 'Spa v1 HYMO.zip'));
+		form.set('files', new File(['PK\x03\x04'], 'A424 Spa HYMO.zip'));
 		form.set(
 			'previousSetups',
 			JSON.stringify({
 				action: 'keep',
 				targets: [],
-				duplicateOf: { name: 'Spa HYMO.zip', sha },
+				duplicateOf: { name: 'Alpine Spa HYMO.zip', sha },
 			})
 		);
 		const env = {
@@ -244,7 +244,7 @@ test('verified duplicate does not lower the stored version', async () => {
 
 test('explicit existing-file choices work for identical bytes and equal or missing versions', async () => {
 	const original = globalThis.fetch,
-		fileName = 'Spa HYMO.zip',
+		fileName = 'Alpine Spa HYMO.zip',
 		file = new File([new Uint8Array([80, 75, 3, 4, 44])], fileName),
 		sha = await gitBlobSha(new Uint8Array(await file.arrayBuffer()));
 	try {
@@ -320,7 +320,7 @@ test('explicit existing-file choices work for identical bytes and equal or missi
 			const request = () => {
 				const form = new FormData();
 				form.set('category', 'Hypercar');
-				form.set('vehicle', 'Alpine');
+				form.set('vehicle', 'Alpine A424');
 				form.set('version', version);
 				form.set('files', file);
 				form.set('previousSetups', JSON.stringify({ action, targets: [{ name: fileName, sha }] }));
@@ -343,7 +343,7 @@ test('explicit existing-file choices work for identical bytes and equal or missi
 				assert.equal(files.has(fileName), action === 'outdate');
 				assert.equal(deletes, action === 'delete' ? 1 : 0);
 				assert.equal(marks.length, action === 'outdate' ? 1 : 0);
-				if (marks.length) assert.deepEqual(marks[0], ['Hypercar', 'Alpine', fileName, sha]);
+				if (marks.length) assert.deepEqual(marks[0], ['Hypercar', 'Alpine A424', fileName, sha]);
 			}
 			const retry = await storeUploadedSetups(request(), env);
 			assert.equal(retry.status, 200);

@@ -10,6 +10,7 @@ import {
 	validateUploadFiles,
 } from './upload.js';
 import { detectUploadTarget, validateUploadTargets } from './upload-targets.js';
+import { checkUploadNames } from './upload-name-check.js';
 
 let lastBulkJobs = [];
 
@@ -122,8 +123,10 @@ export function initBulkUpload() {
 		}
 		setUploadPreparing(true);
 		try {
+			await checkUploadNames(files);
 			const selection = await chooseTargets(files, getUploadCatalog());
 			if (!selection) return;
+			await checkUploadNames(selection.files, selection.targets);
 			const versions = await chooseUploadVersions(selection.files, '');
 			if (!versions) return;
 			status.textContent = 'Vorhandene Setups und Ersetzungen werden geprüft …';

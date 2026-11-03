@@ -6,17 +6,18 @@ Der normale Upload innerhalb eines Fahrzeugs bleibt erhalten.
 ## Ablauf
 
 1. Bis zu 50 einzelne Setup-ZIP-Dateien auswählen, jeweils maximal 25 MiB. Eine äußere Sammel-ZIP wird nicht entpackt.
-2. Die Vorschau schlägt das Fahrzeug anhand des Dateinamens vor. Klasse und Fahrzeug stammen aus demselben aktuellen Katalog wie die Übersicht.
-3. Jede Zuordnung prüfen. Sie lässt sich ändern; unbekannte oder mehrdeutige Dateien müssen zugeordnet oder übersprungen werden. Ohne gültige Auswahl startet kein Upload.
-4. Eine gemeinsame Version oder unterschiedliche Versionen je Datei angeben. Versionsfelder bleiben wie bisher optional (maximal 40 Zeichen).
-5. Bei passenden vorhandenen Setups desselben Anbieters den bisherigen Umgang wählen: behalten, ersetzen, alte Datei nach erfolgreichem Speichern löschen oder als veraltet markieren.
-6. Die ZIPs werden nacheinander über denselben geschützten Upload wie bisher gespeichert. Fortschritt und Ergebnis jeder Datei erscheinen in der Übersicht. Währenddessen die Seite geöffnet lassen.
+2. Jede Datei muss **Auto Strecke Hersteller.zip** heißen, z. B. **BMW V8 Spa GO.zip**, **Huracan Monza HYMO.zip** oder **Oreca 07 ELMS Le Mans bA1.zip**. Fahrzeug und Strecke müssen aus dem aktuellen Katalog erkennbar sein. Als Hersteller sind GO, HYMO und beAlien (auch bA, bA1, bA2) erlaubt. Zusätzliche Versionsangaben gehören ins Versionsfeld. Die Prüfung läuft im Browser und verbindlich auf dem Server; ein abweichendes Zielfahrzeug wird abgelehnt.
+3. Die Vorschau schlägt das Fahrzeug anhand des Dateinamens vor. Klasse und Fahrzeug stammen aus demselben aktuellen Katalog wie die Übersicht.
+4. Jede Zuordnung prüfen. Die Fahrzeugangabe im Dateinamen muss eindeutig sein und zur Auswahl passen. Falsch benannte ZIPs vor der Auswahl umbenennen. Ohne gültige Auswahl startet kein Upload.
+5. Eine gemeinsame Version oder unterschiedliche Versionen je Datei angeben. Versionsfelder bleiben wie bisher optional (maximal 40 Zeichen).
+6. Bei passenden vorhandenen Setups desselben Anbieters den bisherigen Umgang wählen: behalten, ersetzen, alte Datei nach erfolgreichem Speichern löschen oder als veraltet markieren.
+7. Die ZIPs werden nacheinander über denselben geschützten Upload wie bisher gespeichert. Fortschritt und Ergebnis jeder Datei erscheinen in der Übersicht. Währenddessen die Seite geöffnet lassen.
 
 ## Erkennung und Schutz bestehender Setups
 
 - Die Erkennung verwendet feste Fahrzeugnamen und eindeutige Kurzformen wie 499P, BMW V8, Huracan oder Ginetta; keine KI und kein externer Erkennungsdienst.
 - Peugeot 9X8 und Peugeot 9X8 Evo bleiben getrennt. Nur „Peugeot“ oder „BMW“ ist keine eindeutige Zuordnung.
-- Die Erkennung liest den ZIP-Dateinamen, nicht den Inhalt. Bei ungebräuchlichen Namen bleibt die manuelle Auswahl möglich.
+- Die Erkennung liest den ZIP-Dateinamen, nicht den Inhalt. Mehrteilige Fahrzeug- und Streckennamen sowie ELMS/WEC im LMP2-Fahrzeugteil bleiben möglich. Die Reihenfolge ist verbindlich. Bereits gespeicherte Dateien werden nicht umbenannt oder nachträglich gesperrt.
 - Versionen, identische ZIP-Inhalte und vorhandene Dateien werden über die bisherigen Prüfungen behandelt. Anbieter, Dateifamilie und Zielfahrzeug begrenzen die Auswahl alter Setups.
 - Eine alte Datei kann innerhalb eines Durchlaufs nicht mehrfach als betroffenes Ziel ausgewählt werden.
 - Es gibt keine pauschale Ersetzung aller Dateien eines Fahrzeugs. Änderungen an alten Dateien erfolgen entsprechend der ausdrücklichen Auswahl und erst nach bestätigter Speicherung der neuen ZIP.

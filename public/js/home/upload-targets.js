@@ -15,7 +15,7 @@ const ALIASES = {
 	'Porsche 963': ['963'],
 	'Toyota GR010': ['toyota', 'gr010', 'gr 010'],
 	'Vanwall Vandervell 680': ['vanwall', 'vandervell'],
-	'Oreca 07 Gibson': ['oreca', 'oreca07'],
+	'Oreca 07 Gibson': ['oreca', 'oreca07', 'oreca 07'],
 	'Adess AD25': ['adess', 'ad25'],
 	'Duqueine D09': ['duqueine', 'd09'],
 	'Ginetta G61-LT-P325': ['ginetta', 'g61'],
@@ -39,6 +39,20 @@ function words(value) {
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim();
+}
+
+// Exact component match for the required Auto Strecke Hersteller filename.
+// ELMS/WEC belongs to the LMP2 car label and remains meaningful.
+export function resolveUploadVehicleLabel(value, catalog) {
+	const query = words(value);
+	return (
+		catalog.find((target) => {
+			const label = target.category === 'LMP2' ? query.replace(/ (?:elms|wec)$/, '') : query;
+			return [target.vehicle, ...(ALIASES[target.vehicle] || [])].some(
+				(alias) => words(alias) === label
+			);
+		}) || null
+	);
 }
 
 export function uploadTargetKey(target) {
