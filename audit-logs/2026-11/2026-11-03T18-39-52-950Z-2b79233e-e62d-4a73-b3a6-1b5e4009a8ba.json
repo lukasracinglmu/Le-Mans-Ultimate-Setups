@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T18:39:52.950Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Genesis Sebring HYMO.zip",
+  "vehicle": "Genesis GMR-001",
+  "track": "Genesis Sebring HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
