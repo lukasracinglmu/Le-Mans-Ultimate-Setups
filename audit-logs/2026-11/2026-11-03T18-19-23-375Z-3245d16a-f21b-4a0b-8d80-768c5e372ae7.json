@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T18:19:23.375Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Oreca 07 ELMS Road Atlanta GO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 ELMS Road Atlanta GO",
+  "manufacturer": "GO",
+  "version": "1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
