@@ -4,33 +4,72 @@ import { getCarSetups, invalidateSetupCache } from './setup-cache.js';
 import { renderSetups } from './setup-list.js';
 import { classifyVendor, displaySetupFileName, uploadSetupFamily } from './setup-names.js';
 import { state } from './state.js';
+import { uploadJobKey, uploadTargetKey } from './upload-targets.js';
 
 let uploadQueueRunning = false;
 let uploadPreparing = false;
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
-function updateSessionUploadProgress(done, total, current) {
-	const percent = total ? Math.round((done / total) * 100) : 0;
-	$('sessionUploadProgress').classList.remove('hidden');
-	$('sessionProgressCount').textContent = `${done} / ${total} Setups verarbeitet`;
-	$('sessionProgressPercent').textContent = `${percent} %`;
-	$('sessionProgressBar').setAttribute('aria-valuenow', String(percent));
-	$('sessionProgressFill').style.width = percent + '%';
-	$('sessionProgressCurrent').textContent = current ? 'Aktuell: ' + current : '';
-	$('sessionProgressCurrent').classList.toggle('hidden', !current);
+export function uploadIsBusy() {
+	return uploadQueueRunning || uploadPreparing;
 }
 
-function uploadRow(statuses, name) {
-	return [...statuses.querySelectorAll('.file-status')].find((x) => x.dataset.name === name);
+export function setUploadPreparing(value) {
+	uploadPreparing = value;
+	for (const id of ['uploadBtn', 'retryFailedBtn', 'bulkUploadBtn', 'bulkRetryFailedBtn'])
+		$(id).disabled = uploadIsBusy();
+}
+
+export function validateUploadFiles(files) {
+	if (!files.length) return 'Bitte ZIP-Dateien auswählen.';
+	if (files.length > 50) return 'Maximal 50 ZIP-Dateien gleichzeitig.';
+	if (
+		files.some(
+			(file) => !/\.zip$/i.test(file.name) || file.size <= 0 || file.size > MAX_UPLOAD_BYTES
+		)
+	)
+		return 'Nur ZIP-Dateien mit maximal 25 MiB pro Datei sind erlaubt.';
+	return '';
+}
+
+function uploadElements(bulk) {
+	return {
+		status: $(bulk ? 'bulkUploadStatus' : 'uploadStatus'),
+		statuses: $(bulk ? 'bulkFileStatuses' : 'fileStatuses'),
+		retry: $(bulk ? 'bulkRetryFailedBtn' : 'retryFailedBtn'),
+		progress: $(bulk ? 'bulkUploadProgress' : 'sessionUploadProgress'),
+		count: $(bulk ? 'bulkProgressCount' : 'sessionProgressCount'),
+		percent: $(bulk ? 'bulkProgressPercent' : 'sessionProgressPercent'),
+		bar: $(bulk ? 'bulkProgressBar' : 'sessionProgressBar'),
+		fill: $(bulk ? 'bulkProgressFill' : 'sessionProgressFill'),
+		current: $(bulk ? 'bulkProgressCurrent' : 'sessionProgressCurrent'),
+	};
+}
+
+function updateSessionUploadProgress(done, total, current, ui) {
+	const percent = total ? Math.round((done / total) * 100) : 0;
+	ui.progress.classList.remove('hidden');
+	ui.count.textContent = done + ' / ' + total + ' Setups verarbeitet';
+	ui.percent.textContent = percent + ' %';
+	ui.bar.setAttribute('aria-valuenow', String(percent));
+	ui.fill.style.width = percent + '%';
+	ui.current.textContent = current ? 'Aktuell: ' + current : '';
+	ui.current.classList.toggle('hidden', !current);
+}
+
+function uploadRow(statuses, job) {
+	return [...statuses.querySelectorAll('.file-status')].find(
+		(x) => x.dataset.uploadKey === uploadJobKey(job)
+	);
 }
 
 function markUploadJob(statuses, job, cls, text) {
 	job.state = cls;
-	const x = uploadRow(statuses, job.file.name);
+	const x = uploadRow(statuses, job);
 	if (x) {
 		x.className = 'file-status ' + (cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : '');
-		x.textContent = job.file.name + ' — ' + text;
+		x.textContent = (job.label || job.file.name) + ' — ' + text;
 	}
 }
 
@@ -181,41 +220,37 @@ async function refreshUploadedCarState(category, vehicle) {
 		state.currentCarSetups = d.setups;
 		renderSetups(d.setups);
 	}
-	await refreshVehicleCounts(true);
 }
 
-async function runUploadJobs(jobs, { appendRows = false } = {}) {
-	if (uploadQueueRunning) return { ok: 0, failed: jobs.length, failedJobs: jobs };
+export async function runUploadJobs(jobs, { appendRows = false, bulk = false } = {}) {
+	if (!jobs.length || uploadQueueRunning) return { ok: 0, failed: jobs.length, failedJobs: jobs };
 	uploadQueueRunning = true;
-	const status = $('uploadStatus'),
-		statuses = $('fileStatuses'),
-		btn = $('uploadBtn'),
-		retryBtn = $('retryFailedBtn'),
-		uploadCategory = jobs[0].category,
-		uploadVehicle = jobs[0].vehicle;
+	const ui = uploadElements(bulk);
+	const { status, statuses, retry: retryBtn } = ui;
+	const targets = new Map(jobs.map((job) => [uploadTargetKey(job), job]));
 	if (!appendRows) statuses.innerHTML = '';
 	for (const job of jobs) {
-		let x = uploadRow(statuses, job.file.name);
+		job.label = bulk ? job.vehicle + ' · ' + job.file.name : job.file.name;
+		let x = uploadRow(statuses, job);
 		if (!x) {
 			x = document.createElement('div');
 			x.className = 'file-status';
-			x.dataset.name = job.file.name;
+			x.dataset.uploadKey = uploadJobKey(job);
 			statuses.appendChild(x);
 		}
-		x.textContent = job.file.name + ' — Wartet';
+		x.textContent = job.label + ' — Wartet';
 		x.className = 'file-status';
 		job.state = 'waiting';
 		job.error = '';
 	}
-	btn.disabled = true;
-	retryBtn.disabled = true;
+	setUploadPreparing(uploadPreparing);
 	retryBtn.classList.remove('show');
 	let done = 0,
 		ok = 0,
 		failed = 0,
 		refreshError = false;
 	const updateSummary = (current) => {
-		updateSessionUploadProgress(done, jobs.length, current);
+		updateSessionUploadProgress(done, jobs.length, current, ui);
 		status.textContent =
 			(current ? `Aktuell: ${current} · ` : '') +
 			`${done}/${jobs.length} verarbeitet · ${ok} erfolgreich · ${failed} fehlgeschlagen`;
@@ -223,7 +258,7 @@ async function runUploadJobs(jobs, { appendRows = false } = {}) {
 	updateSummary('');
 	try {
 		for (const job of jobs) {
-			updateSummary(job.file.name);
+			updateSummary(job.label);
 			const success = await uploadSingleJob(job, statuses);
 			if (success) ok++;
 			else failed++;
@@ -233,15 +268,19 @@ async function runUploadJobs(jobs, { appendRows = false } = {}) {
 		}
 		if (ok) {
 			try {
-				await refreshUploadedCarState(uploadCategory, uploadVehicle);
+				// Invalidate every affected car, but refresh the overview only once per batch.
+				for (const target of targets.values())
+					invalidateSetupCache(target.category, target.vehicle);
+				const active = targets.get(uploadTargetKey(state.currentCar));
+				if (active) await refreshUploadedCarState(active.category, active.vehicle);
+				await refreshVehicleCounts(true);
 			} catch {
 				refreshError = true;
 			}
 		}
 	} finally {
 		uploadQueueRunning = false;
-		btn.disabled = false;
-		retryBtn.disabled = false;
+		setUploadPreparing(uploadPreparing);
 		const failedJobs = jobs.filter((job) => job.state === 'err');
 		if (failedJobs.length) retryBtn.classList.add('show');
 		else retryBtn.classList.remove('show');
@@ -258,7 +297,7 @@ function uploadVersionError(version) {
 	return '';
 }
 
-function chooseUploadVersions(files, sharedVersion) {
+export function chooseUploadVersions(files, sharedVersion) {
 	return new Promise((resolve) => {
 		const dialog = document.createElement('dialog');
 		dialog.className = 'upload-version-dialog';
@@ -368,12 +407,21 @@ async function uploadFileIdentity(file) {
 		.join('');
 }
 
-async function choosePreviousSetups(files, target, versions) {
-	invalidateSetupCache(target.category, target.vehicle);
-	const data = await getCarSetups(target.category, target.vehicle),
-		incoming = new Set(files.map((file) => file.name)),
-		choices = [];
+export async function choosePreviousSetups(files, target, versions) {
+	const targets = files.map((_, index) => (Array.isArray(target) ? target[index] : target));
+	const groups = new Map();
 	for (let index = 0; index < files.length; index++) {
+		const key = uploadTargetKey(targets[index]);
+		if (!groups.has(key)) groups.set(key, { target: targets[index], incoming: new Set() });
+		groups.get(key).incoming.add(files[index].name);
+	}
+	for (const group of groups.values()) {
+		invalidateSetupCache(group.target.category, group.target.vehicle);
+		group.data = await getCarSetups(group.target.category, group.target.vehicle);
+	}
+	const choices = [];
+	for (let index = 0; index < files.length; index++) {
+		const { data, incoming } = groups.get(uploadTargetKey(targets[index]));
 		const file = files[index],
 			version = versions[index],
 			vendor = classifyVendor(file.name),
@@ -391,6 +439,7 @@ async function choosePreviousSetups(files, target, versions) {
 			duplicate = matches.find((old) => old.sha === sha);
 		const candidates = matches;
 		choices.push({
+			target: targets[index],
 			file,
 			version,
 			candidates,
@@ -433,6 +482,7 @@ async function choosePreviousSetups(files, target, versions) {
 			row.className = 'old-setup-choice';
 			const heading = document.createElement('h3');
 			heading.textContent =
+				(Array.isArray(target) ? choice.target.vehicle + ' · ' : '') +
 				displaySetupFileName(file.name) +
 				' · angegebene Version: ' +
 				(version || 'nicht angegeben') +
@@ -498,6 +548,18 @@ async function choosePreviousSetups(files, target, versions) {
 				error.textContent = 'Bitte die betroffenen alten Dateien auswählen oder „Behalten“ wählen.';
 				return;
 			}
+			const claimed = new Set();
+			for (let index = 0; index < next.length; index++) {
+				for (const old of next[index].targets) {
+					const key = uploadTargetKey(targets[index]) + old.name;
+					if (claimed.has(key)) {
+						error.textContent =
+							'Eine alte Datei wurde mehrfach ausgewählt. Bitte je alter Datei nur einen Ersatz wählen.';
+						return;
+					}
+					claimed.add(key);
+				}
+			}
 			plans = next;
 			dialog.close();
 		});
@@ -527,25 +589,15 @@ export function initUpload() {
 		const files = [...this.files],
 			status = $('uploadStatus');
 		if (!files.length) return;
-		if (files.length > 50) {
-			status.textContent = 'Maximal 50 ZIP-Dateien gleichzeitig.';
-			this.value = '';
-			return;
-		}
-		if (
-			files.some(
-				(file) => !/\.zip$/i.test(file.name) || file.size <= 0 || file.size > MAX_UPLOAD_BYTES
-			)
-		) {
-			status.textContent = 'Nur ZIP-Dateien mit maximal 25 MiB pro Datei sind erlaubt.';
+		const fileError = validateUploadFiles(files);
+		if (fileError) {
+			status.textContent = fileError;
 			this.value = '';
 			return;
 		}
 		const sharedVersion = '';
 		const target = { ...state.currentCar };
-		uploadPreparing = true;
-		$('uploadBtn').disabled = true;
-		$('retryFailedBtn').disabled = true;
+		setUploadPreparing(true);
 		try {
 			const versions = await chooseUploadVersions(files, sharedVersion);
 			if (!versions) return;
@@ -570,9 +622,7 @@ export function initUpload() {
 			status.textContent =
 				error.message || 'Vorhandene Setups konnten nicht geprüft werden. Bitte erneut versuchen.';
 		} finally {
-			uploadPreparing = false;
-			$('uploadBtn').disabled = false;
-			$('retryFailedBtn').disabled = false;
+			setUploadPreparing(false);
 			this.value = '';
 		}
 	});

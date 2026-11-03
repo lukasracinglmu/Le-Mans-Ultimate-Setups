@@ -2,12 +2,18 @@ import { $ } from '../shared/dom.js';
 import { renderSetups } from './setup-list.js';
 import { state } from './state.js';
 import { vehicleBrand } from './vehicle-brands.js';
+import { flattenUploadCatalog } from './upload-targets.js';
 
 let setupData = {};
 let favoriteVehicles = new Set();
 let favoritesOnly = false;
 let activeClass = '';
 let selectVehicle = () => {};
+
+// Reuse the live overview catalog for automatic upload suggestions.
+export function getUploadCatalog() {
+	return flattenUploadCatalog(setupData);
+}
 
 export async function loadData() {
 	try {

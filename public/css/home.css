@@ -1667,3 +1667,75 @@ body.no-database-access #classFilter {
 #retryRoleCheck {
 	margin-top: 16px;
 }
+
+/* Batch uploads share the existing upload controls and theme variables. */
+.bulk-upload-area {
+	margin: 0 0 20px;
+	padding: 18px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--surface);
+}
+.bulk-upload-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+.bulk-upload-toolbar p {
+	margin: 6px 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+.bulk-upload-toolbar button {
+	flex-shrink: 0;
+}
+.bulk-upload-area .upload-status:empty,
+.bulk-upload-area .file-statuses:empty {
+	display: none;
+}
+.bulk-upload-area .upload-status {
+	display: block;
+	margin: 12px 0;
+	overflow-wrap: anywhere;
+}
+.bulk-upload-area .file-statuses {
+	max-height: 280px;
+	overflow: auto;
+}
+.bulk-upload-dialog {
+	width: min(900px, calc(100% - 28px));
+}
+.bulk-upload-row {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.bulk-upload-row select {
+	width: 100%;
+	min-width: 0;
+	padding: 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg);
+	color: var(--text);
+}
+.bulk-upload-row.needs-target {
+	border-color: var(--danger);
+}
+.bulk-upload-note {
+	display: block;
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--muted);
+}
+.bulk-upload-row.needs-target .bulk-upload-note {
+	color: var(--danger);
+}
+@media (max-width: 520px) {
+	.bulk-upload-toolbar {
+		align-items: stretch;
+		flex-direction: column;
+	}
+	.bulk-upload-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

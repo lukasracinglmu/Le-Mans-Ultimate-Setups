@@ -1,6 +1,7 @@
 import { createAccessCheck, logout } from './access.js';
 import { initActions } from './actions.js';
 import { initBrandLink } from './brand-link.js';
+import { initBulkUpload, syncBulkUploadAccess } from './bulk-upload.js';
 import { initCarPage, openSetupFromQuery, showCar, showHome, syncCarFilter } from './car-page.js';
 import { initCatalog, loadData, observeCategories, refreshVehicleCounts } from './catalog.js';
 import { initDatabaseAccess } from './database-access.js';
@@ -16,6 +17,7 @@ import { initVersionEditor, openVersionEditor } from './version-editor.js';
 // former classic scripts.
 setSetupActions({ edit: openVersionEditor, delete: openDeleteModal });
 initUpload();
+initBulkUpload();
 initDelete();
 initCatalog({ onSelectVehicle: showCar });
 initCarPage();
@@ -38,6 +40,7 @@ observeCategories();
 const authorize = createAccessCheck({
 	async onAuthorized() {
 		await loadData();
+		syncBulkUploadAccess();
 		// The URL is the route: a plain home link must never restore a saved car.
 		await openSetupFromQuery();
 		syncCarFilter();

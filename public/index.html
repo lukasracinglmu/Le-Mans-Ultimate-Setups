@@ -83,6 +83,44 @@
 							</button>
 						</div>
 					</div>
+					<section id="bulkUploadArea" class="bulk-upload-area hidden" aria-label="Sammel-Upload">
+						<div class="bulk-upload-toolbar">
+							<div>
+								<strong>Setups für mehrere Fahrzeuge</strong>
+								<p>ZIPs gemeinsam auswählen und automatisch zuordnen lassen.</p>
+							</div>
+							<button id="bulkUploadBtn" type="button" class="upload-btn">⬆ Sammel-Upload</button>
+							<input id="bulkFileInput" type="file" accept=".zip,application/zip" multiple hidden />
+						</div>
+						<p id="bulkUploadStatus" class="upload-status" role="status"></p>
+						<div
+							id="bulkUploadProgress"
+							class="session-upload-progress hidden"
+							role="group"
+							aria-labelledby="bulkProgressTitle"
+						>
+							<div id="bulkProgressTitle" class="session-progress-title">Sammel-Upload</div>
+							<div class="session-progress-summary" aria-live="polite" aria-atomic="true">
+								<span id="bulkProgressCount"></span><span id="bulkProgressPercent"></span>
+							</div>
+							<div
+								id="bulkProgressBar"
+								class="session-progress-track"
+								role="progressbar"
+								aria-labelledby="bulkProgressTitle"
+								aria-valuemin="0"
+								aria-valuemax="100"
+								aria-valuenow="0"
+							>
+								<div id="bulkProgressFill" class="session-progress-fill"></div>
+							</div>
+							<div id="bulkProgressCurrent" class="session-progress-current hidden"></div>
+						</div>
+						<div id="bulkFileStatuses" class="file-statuses"></div>
+						<button id="bulkRetryFailedBtn" type="button" class="retry-upload-btn">
+							Fehlgeschlagene erneut hochladen
+						</button>
+					</section>
 					<input id="search" class="search" placeholder="Fahrzeug suchen..." />
 					<div id="categories"></div>
 				</section>
