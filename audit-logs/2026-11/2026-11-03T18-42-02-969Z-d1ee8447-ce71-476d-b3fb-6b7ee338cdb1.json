@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T18:42:02.969Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Isotta Road Atlanta HYMO.zip",
+  "vehicle": "Isotta Fraschini Tipo6-C",
+  "track": "Isotta Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
