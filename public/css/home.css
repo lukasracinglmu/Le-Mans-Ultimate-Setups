@@ -1690,6 +1690,10 @@ body.no-database-access #classFilter {
 .bulk-upload-toolbar button {
 	flex-shrink: 0;
 }
+.bulk-upload-toolbar .upload-btn:hover {
+	background: var(--text);
+	color: var(--bg);
+}
 .bulk-upload-area .upload-status:empty,
 .bulk-upload-area .file-statuses:empty {
 	display: none;
