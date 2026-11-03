@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T21:48:22.105Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Django",
+  "discordUserId": "227520343013720067",
+  "setup": "Benz Imola GO.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Imola GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
