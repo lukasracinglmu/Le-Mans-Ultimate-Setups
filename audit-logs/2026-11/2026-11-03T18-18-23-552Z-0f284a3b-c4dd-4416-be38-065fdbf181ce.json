@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T18:18:23.552Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Daytona GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Daytona GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
