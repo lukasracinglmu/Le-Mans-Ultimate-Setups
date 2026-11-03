@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-03T18:42:29.034Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Ligier Bahrain HYMO.zip",
+  "vehicle": "Ligier JS P325",
+  "track": "Ligier Bahrain HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
