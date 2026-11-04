@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-04T09:05:33.245Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "296 Bahrain GO.zip",
+  "vehicle": "Ferrari 296 LMGT3",
+  "track": "296 Bahrain GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
