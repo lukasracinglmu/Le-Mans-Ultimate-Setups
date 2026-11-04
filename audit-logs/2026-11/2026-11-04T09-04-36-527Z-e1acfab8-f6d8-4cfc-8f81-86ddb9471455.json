@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-04T09:04:36.527Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Portimao GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Portimao GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
