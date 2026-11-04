@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-04T19:31:59.428Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Django",
+  "discordUserId": "227520343013720067",
+  "setup": "Lexus Daytona GO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Daytona GO",
+  "manufacturer": "GO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
