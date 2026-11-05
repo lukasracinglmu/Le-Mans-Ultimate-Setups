@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-05T10:49:30.193Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Road Atlanta HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Road Atlanta HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
