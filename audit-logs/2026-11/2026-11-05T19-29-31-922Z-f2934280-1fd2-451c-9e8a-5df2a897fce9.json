@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-05T19:29:31.922Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Oreca 07 ELMS Paul Ricard 1A V2 GO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 ELMS Paul Ricard 1A V2 GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
