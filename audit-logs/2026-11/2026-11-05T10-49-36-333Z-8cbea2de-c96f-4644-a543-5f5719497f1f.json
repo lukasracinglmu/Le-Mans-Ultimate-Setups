@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-05T10:49:36.333Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "499P Long Beach HYMO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P Long Beach HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
