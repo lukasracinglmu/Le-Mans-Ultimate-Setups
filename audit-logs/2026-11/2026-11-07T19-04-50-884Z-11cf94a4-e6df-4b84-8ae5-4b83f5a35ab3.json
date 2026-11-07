@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-07T19:04:50.884Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "BMW M4 Interlagos HYMO.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Interlagos HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
