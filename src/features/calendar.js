@@ -17,6 +17,8 @@ async function getTable(name, query, apiKey) {
   return response.json();
 }
 
+function normalizeClass(value) { const raw=String(value||'').toUpperCase(); return raw.includes('LMGT3')?'GT3':raw.includes('HYPER')||raw==='HYPERCAR'?'HYPER-K':raw.includes('LMP2')?'LMP2':raw.includes('GTE')?'GTE':raw.includes('LMP3')?'LMP3':String(value||''); }
+
 function normalize(series, event) {
   const type = String(series.type || 'daily').toLowerCase();
   const classes = Array.isArray(series.car_classes) ? series.car_classes : [];
@@ -27,7 +29,9 @@ function normalize(series, event) {
     track: series.track_friendly || series.track_name || '',
     type: type.includes('special') ? 'special' : type.includes('champ') || type === 'weekly' ? 'championship' : type,
     championship: type.includes('champ') || type === 'weekly',
-    class: classes[0] || '',
+    seriesId: String(series.series_id || ''),
+    weekKey: String(series.week_key || event.week_key || ''),
+    class: normalizeClass(classes[0] || ''),
     safety: series.sr_requirement || '',
     duration: series.race_duration_minutes ? series.race_duration_minutes + ' min' : '',
     setup: String(series.setup || '').toLowerCase().includes('fixed') ? 'Fixed Setups' : 'Open Setups',
