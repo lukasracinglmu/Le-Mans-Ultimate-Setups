@@ -66,7 +66,7 @@ Die ungenutzten Einträge können aus der Worker-Konfiguration entfernt werden. 
 
 ## Rennkalender
 
-Die Website bietet `/calendar` mit Upcoming- und Future-Schedule-Tab, Countdown in Europe/Berlin, Tomorrow-Markierung, Filtern und den Klassen-/Event-Badges. Der Worker ruft das Portal serverseitig auf; Tokens werden nie an den Browser ausgeliefert. Falls der Portal-Endpunkt abweicht, setze zusätzlich `LMUPORTAL_SCHEDULE_URL` auf den aktuellen Schedule-Endpunkt.
+Die Website bietet `/calendar` mit Upcoming- und Future-Schedule-Tab, Countdown in Europe/Berlin, Tomorrow-Markierung, Filtern und den Klassen-/Event-Badges. Der Worker ruft das Portal serverseitig auf; Tokens werden nie an den Browser ausgeliefert. Der Proxy nutzt den aktuellen LMU-Portal-Datensatz über `db.lmuportal.space`; `LMUPORTAL_API1` und optional `LMUPORTAL_API2` werden als sichere Server-Schlüssel verwendet.
 
 ## Secrets setzen
 
