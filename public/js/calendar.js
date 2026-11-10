@@ -1,3 +1,5 @@
+import { initHeaderActions } from './home/header-actions.js';
+initHeaderActions();
 import { logout } from './home/access.js';
 const themeButton=document.getElementById('themeButton');
 function syncTheme(){const light=document.documentElement.dataset.theme==='light';if(themeButton)themeButton.textContent=light?'Dark Mode':'Light Mode'}
