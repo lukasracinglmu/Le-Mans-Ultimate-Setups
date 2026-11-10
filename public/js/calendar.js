@@ -1,3 +1,10 @@
+import { logout } from './home/access.js';
+const themeButton=document.getElementById('themeButton');
+function syncTheme(){const light=document.documentElement.dataset.theme==='light';if(themeButton)themeButton.textContent=light?'Dark Mode':'Light Mode'}
+themeButton?.addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('tpr-theme',next)}catch{}syncTheme()});
+document.querySelector('[data-action="logout"]')?.addEventListener('click',logout);
+async function loadAccount(){try{const r=await fetch('/api/me');const d=await r.json();if(d.loggedIn){document.getElementById('loginButton')?.classList.add('hidden');const a=document.getElementById('account');a.style.display='flex';document.getElementById('accountName').textContent=d.user?.username||'';if(d.user?.avatar){const i=document.getElementById('accountAvatar');i.src=d.user.avatar;i.style.display='block'}}}catch{}}
+syncTheme();loadAccount();
 const state={events:[],tab:'upcoming'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
