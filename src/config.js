@@ -19,6 +19,7 @@ export const REQUIRED_VARS = Object.freeze([
 	'GITHUB_BRANCH',
 	'BACKUP_GITHUB_REPO',
 	'BACKUP_GITHUB_BRANCH',
+	'LMUPORTAL_SCHEDULE_URL',
 ]);
 
 export const ownerUserId = (env) => read(env, 'DISCORD_OWNER_USER_ID');
