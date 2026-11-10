@@ -1743,3 +1743,7 @@ body.no-database-access #classFilter {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
+
+/* Calendar uses the same header action treatment as every other site action. */
+.calendar-link{display:inline-flex;align-items:center;text-decoration:none;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:800;white-space:nowrap}.calendar-link:hover,.calendar-link.active{background:var(--surface2);border-color:var(--accent)}
+@media (max-width:650px){.calendar-link{min-height:40px;padding:8px 9px;font-size:12px}}
