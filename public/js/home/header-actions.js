@@ -4,6 +4,7 @@ export function initHeaderActions() {
 	const header = document.querySelector('header');
 	if (!header) return;
 	const icons = {
+		calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
 		ticket:
 			'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>',
 		admin:
@@ -24,6 +25,7 @@ export function initHeaderActions() {
 		group.appendChild(a);
 		return a;
 	};
+	add('Rennkalender', '/calendar', 'calendar-action', 'calendar');
 	fetchMeResponse()
 		.then((r) => r.json())
 		.then((me) => {
