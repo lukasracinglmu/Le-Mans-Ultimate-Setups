@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-10T16:46:34.353Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Corvette Imola GO.zip",
+  "vehicle": "Chevrolet Corvette Z06 LMGT3.R",
+  "track": "Corvette Imola GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
