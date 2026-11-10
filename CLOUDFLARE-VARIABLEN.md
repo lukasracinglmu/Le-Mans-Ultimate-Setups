@@ -57,12 +57,16 @@ Der Code enthält keine Ersatzwerte für diese Werte. Fehlt eine Variable, greif
 | Name | Grund |
 | :--- | :--- |
 | `DISCORD_ROLE_ID` | Alte Ersatzrolle. Die getrennten Datenbank- und Upload-Rollen sind gesetzt. |
-| `LMUPORTAL_API1` | Der aktuelle Worker verwendet die LMU-Portal-Anbindung nicht. |
-| `LMUPORTAL_API2` | Der aktuelle Worker verwendet die LMU-Portal-Anbindung nicht. |
+| `LMUPORTAL_API1` | LMU-Portal-Token 1 für den geschützten Rennkalender-Proxy. Als Cloudflare Secret setzen. |
+| `LMUPORTAL_API2` | Optionaler zweiter LMU-Portal-Token/Fallback. Als Cloudflare Secret setzen. |
 | `UPLOADS_R2` | Setup-ZIPs werden direkt in GitHub gespeichert. |
 | `UPLOAD_QUEUE` | Uploads werden direkt und nacheinander verarbeitet. |
 
 Die ungenutzten Einträge können aus der Worker-Konfiguration entfernt werden. Bei R2 und Queue sollte zuerst geprüft werden, ob dort noch Daten oder Nachrichten liegen. Das Entfernen eines Bindings löscht die zugehörige Cloudflare-Ressource nicht automatisch.
+
+## Rennkalender
+
+Die Website bietet `/calendar` mit Upcoming- und Future-Schedule-Tab, Countdown in Europe/Berlin, Tomorrow-Markierung, Filtern und den Klassen-/Event-Badges. Der Worker ruft das Portal serverseitig auf; Tokens werden nie an den Browser ausgeliefert. Falls der Portal-Endpunkt abweicht, setze zusätzlich `LMUPORTAL_SCHEDULE_URL` auf den aktuellen Schedule-Endpunkt.
 
 ## Secrets setzen
 
@@ -71,6 +75,8 @@ npx wrangler@4 secret put DISCORD_CLIENT_SECRET
 npx wrangler@4 secret put DISCORD_BOT_TOKEN
 npx wrangler@4 secret put GITHUB_TOKEN
 npx wrangler@4 secret put SESSION_SECRET
+npx wrangler@4 secret put LMUPORTAL_API1
+npx wrangler@4 secret put LMUPORTAL_API2
 ```
 
 Der Discord-Redirect muss zu `SITE_URL` passen:
