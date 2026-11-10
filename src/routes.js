@@ -40,6 +40,7 @@ import { deleteSetup, updateSetupVersion, uploadSetups } from './features/setup-
 import { downloadSetup, setupSummary } from './features/setup-files.js';
 import { listSetups } from './features/setup-list.js';
 import { fullAdminApi } from './full-admin.js';
+import { calendarApi } from './features/calendar.js';
 import { catchErrors } from './lib/http.js';
 import { requireHttps } from './middleware/https.js';
 import { maintenanceGate } from './middleware/maintenance.js';
@@ -88,6 +89,8 @@ export const routes = [
 	},
 	{ method: 'GET', path: '/setups.json', handler: catalogFile },
 	{ method: 'GET', path: '/', handler: homePage },
+	{ method: 'GET', path: ['/calendar','/calendar.html'], handler: (request, env, ctx) => staticPublic(request, env, ctx) },
+	{ method: 'GET', path: '/api/calendar', handler: calendarApi },
 	{
 		method: 'GET',
 		path: [
