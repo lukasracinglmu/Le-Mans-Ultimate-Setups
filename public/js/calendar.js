@@ -230,7 +230,7 @@ function updateHeading(events) {
     future: 'Future Schedule',
   };
   setText('#scheduleTitle', titles[state.view] || titles.series);
-  $('#eventCount').textContent = events.length;
+  setText('#eventCount', events.length);
   const range = nextWeekRange();
   const futureLabel = new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short',
@@ -251,7 +251,7 @@ function render() {
 
 async function load() {
   const status = $('#status');
-  status.textContent = 'Loading race schedule…';
+  if (status) status.textContent = 'Loading race schedule…';
   try {
     const response = await fetch('/api/calendar', { headers: { Accept: 'application/json' } });
     const data = await response.json();
