@@ -79,11 +79,51 @@ function renderNext(events) {
       '<div class="next-start-name">'+esc(item.race)+'</div><div class="next-start-track">'+esc(item.track||'')+'</div></article>';
   }).join(''):'<div class="race-fact">Keine weiteren Starts in den geladenen Kalenderdaten.</div>';
 }
+
+const TRACK_LAYOUTS = [
+  { keys:['bahrain','sakhir'], name:'Bahrain International Circuit', layout:'Grand Prix / Endurance reference', image:'https://cdn.sanity.io/images/5xqo0b3r/production/f3f0551a4e0d599c56294c79aa285f3ea94f3106-1920x1080.png?auto=format&fit=clip&q=75', source:'Track Titan' },
+  { keys:['barcelona','catalunya'], name:'Circuit de Barcelona-Catalunya', layout:'Grand Prix layout', image:'https://res.cloudinary.com/prod-f2f3/image/upload/v1718719581/f3/articles/2024/06_June/F3-Web024_Preview_05ESP-2.jpg', source:'FIA Formula 3' },
+  { keys:['le mans','sarthe','lemans'], name:'Circuit de la Sarthe', layout:'24 Hours layout', image:'https://newsroom.porsche.com/.imaging/mte/porsche-templating-theme/teaser_720x406x2/dam/press-kits/Motorsport-Guide-2019/02-World-Tour-2019-Rennserien/FIA-WEC/Strecken/WEC_2.jpg/jcr%3Acontent/WEC_2.jpg', source:'Porsche Newsroom' },
+  { keys:['paul ricard'], name:'Circuit Paul Ricard', layout:'Grand Prix layout reference', image:'https://www.currusracing.com/plans/plan-circuit-paul-ricard.png', source:'Circuit Paul Ricard / Currus Racing' },
+  { keys:['cota','circuit of the americas','americas'], name:'Circuit of the Americas', layout:'Grand Prix layout', image:'https://www.fia.com/sites/default/files/news/main_image/cota_2020_wec_circuitmap.png', source:'FIA' },
+  { keys:['daytona'], name:'Daytona International Speedway', layout:'Road Course', image:'https://sim-lab.us/cdn/shop/files/Group_19.png?v=1763035624&width=539', source:'Sim-Lab' },
+  { keys:['fuji'], name:'Fuji Speedway', layout:'WEC layout', image:'https://cdn-image.as-web.jp/2024/09/11130833/asimg_wec_6hfuji_fa66e117c0c9bc6.jpg', source:'FIA WEC' },
+  { keys:['imola','enzo e dino ferrari'], name:'Autodromo Enzo e Dino Ferrari', layout:'Grand Prix layout', image:'https://cdn-image.as-web.jp/2024/04/19004703/asimg_Circuit-map-imola-wec2024_c066214077343ed.jpg', source:'FIA WEC' },
+  { keys:['interlagos','jose carlos pace'], name:'Autódromo José Carlos Pace', layout:'Grand Prix layout', image:'https://img2.51gt3.com/rac/track/202304/c0bcb433231b430d8586c98f252ee4fd.png', source:'51GT3' },
+  { keys:['laguna seca'], name:'WeatherTech Raceway Laguna Seca', layout:'Full Course', image:'https://dl.motorsportreg.com/3e65bb44-a667-4142-94ad-4e7e29bcf837/-/crop/1200x674/0%2C0/-/preview/', source:'MotorsportReg' },
+  { keys:['lusail','qatar'], name:'Lusail International Circuit', layout:'Grand Prix layout', image:'https://cdn.sanity.io/images/5xqo0b3r/production/2ff941c026513e2dd668409cf67977242983a4f1-1920x1080.webp?auto=format&fit=clip&q=75', source:'Track Titan' },
+  { keys:['monza'], name:'Autodromo Nazionale Monza', layout:'Grand Prix layout', image:'https://motorsporttickets.com/blog/wp-content/uploads/2024/08/Italy-Stats.png', source:'Motorsport Tickets' },
+  { keys:['portimao','portimão','algarve'], name:'Autódromo Internacional do Algarve', layout:'Grand Prix layout', image:'https://media.formula1.com/image/upload/c_fit%2Ch_704/q_auto/v1740000001/common/f1/2027/track/2027trackalgarveinternationalcircuitdetailed.webp', source:'Formula 1' },
+  { keys:['sebring'], name:'Sebring International Raceway', layout:'Full Course', image:'https://cdn.sanity.io/images/5xqo0b3r/production/9c2fcdd0fa67beee345daabe11a597c588845039-1920x1080.png?auto=format&fit=clip&q=75', source:'Track Titan' },
+  { keys:['silverstone'], name:'Silverstone Circuit', layout:'Grand Prix layout', image:'https://www.pngkit.com/png/full/372-3728803_egp-united-kingdom-silverstone-silverstone-circuit.png', source:'PNGkit' },
+  { keys:['spa','francorchamps'], name:'Circuit de Spa-Francorchamps', layout:'Grand Prix / Endurance reference', image:'https://cdn.sanity.io/images/5xqo0b3r/production/2e1930c0f7d04e53a11a9345028a52c66015de00-1920x1080.png?auto=format&fit=clip&q=75', source:'Track Titan' },
+  { keys:['road atlanta','michelin raceway'], name:'Michelin Raceway Road Atlanta', layout:'Full Course', image:'https://thetrackmaps.com/cdn/shop/files/simplyframed_roadatl_24x30_WB.png?v=1736973978&width=1445', source:'The Track Maps' },
+  { keys:['long beach'], name:'Streets of Long Beach', layout:'Street Circuit', image:'https://indymotorspeedway.com/files/IRL-Track-Layout-LongBeach.jpg', source:'Indy Motor Speedway' }
+];
+function trackLayoutFor(track) {
+  const value=String(track||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+  return TRACK_LAYOUTS.find(item=>item.keys.some(key=>value.includes(key.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''))))||null;
+}
+function renderTrackLayout(track) {
+  const root=$('#trackLayout');
+  if(!root)return;
+  const item=trackLayoutFor(track);
+  if(!item){root.innerHTML='<div class="track-layout-empty">Für diese Strecke ist aktuell kein verifiziertes Layout hinterlegt.</div>';return;}
+  root.classList.add('has-image');
+  root.innerHTML='<img class="track-layout-image" alt="Streckenlayout '+esc(item.name)+'" loading="lazy" decoding="async"><div class="track-layout-caption"><span>'+esc(item.name)+' · '+esc(item.layout)+'</span><a href="'+esc(item.image)+'" target="_blank" rel="noopener noreferrer">Bildquelle: '+esc(item.source)+'</a></div>';
+  const image=root.querySelector('img');
+  image.addEventListener('error',()=>{
+    root.classList.remove('has-image');
+    root.innerHTML='<div class="track-layout-empty">Das Streckenlayout konnte gerade nicht geladen werden. Bitte später erneut versuchen.</div>';
+  },{once:true});
+  image.src=item.image;
+}
 function render(event, events) {
   activeEvent=event;
   const p=parts(event.startTime);
   $('#raceName').textContent=event.race;
   $('#raceTrack').textContent=event.track||'';
+  renderTrackLayout(event.track);
   $('#raceType').textContent=({special:'SPECIAL EVENT',weekly:'WEEKLY RACE',daily:'DAILY RACE',championship:'CHAMPIONSHIP'}[event.type]||'RACE');
   $('#raceClasses').innerHTML=classBadges(event);
   $('#raceSafety').innerHTML=rankBadge(event.safety);
