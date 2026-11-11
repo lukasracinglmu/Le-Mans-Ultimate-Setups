@@ -20,7 +20,7 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
 
 function syncTheme() {
   if (themeButton) {
-    themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dark Mode' : 'Light Mode';
+    themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dunkles Design' : 'Helles Design';
   }
 }
 
@@ -53,7 +53,7 @@ async function loadAccount() {
 loadAccount();
 
 function berlinParts(date) {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin',
     year: 'numeric',
     month: '2-digit',
@@ -108,9 +108,9 @@ function isTomorrow(date) {
 
 function startLabel(event, futureRange) {
   const parts = berlinParts(event.startTime);
-  if (futureRange) return 'Next Week';
-  if (isTomorrow(event.startTime)) return 'Tomorrow';
-  if (berlinDateKey(event.startTime) === berlinDateKey(Date.now())) return 'Today';
+  if (futureRange) return 'Nächste Woche';
+  if (isTomorrow(event.startTime)) return 'Morgen';
+  if (berlinDateKey(event.startTime) === berlinDateKey(Date.now())) return 'Heute';
   return parts.day + '.' + parts.month + '.';
 }
 
@@ -170,7 +170,7 @@ function safetyBadge(value) {
   const rank = normalized.includes('gold') ? 'gold'
     : normalized.includes('silver') ? 'silver'
       : normalized.includes('bronze') ? 'bronze' : 'unranked';
-  const label = rank === 'unranked' ? (value || 'No SR') : rank[0].toUpperCase() + rank.slice(1);
+  const label = rank === 'unranked' ? (value || 'Kein SR') : rank[0].toUpperCase() + rank.slice(1);
   return '<span class="pill safety-badge ' + rank + '">' + esc(label) + '</span>';
 }
 
@@ -179,25 +179,25 @@ function renderEvent(event, showTimer) {
   const timer = showTimer ? countdown(event) : null;
   const label = startLabel(event, false);
   const time = parts.hour + ':' + parts.minute;
-  const typeLabel = event.type === 'special' ? 'Special Event'
-    : event.type === 'championship' ? 'Championship' : 'Daily Race';
+  const typeLabel = event.type === 'special' ? 'Sonderevent'
+    : event.type === 'championship' ? 'Meisterschaft' : 'Daily-Rennen';
   const timerHtml = timer
     ? '<span class="countdown ' + timer.className + '">' + esc(timer.text) + '</span>'
     : '<span class="start-date">' + esc(label) + '</span>'; 
   const safety = event.safety || '—';
   const duration = event.duration || '—';
-  const setup = event.setup === 'Fixed' ? 'Fixed Setups' : 'Open Setups';
-  const format = event.team === 'Team' ? 'Team Event' : 'Solo Event';
+  const setup = event.setup === 'Fixed' ? 'Festes Setup' : 'Offenes Setup';
+  const format = event.team === 'Team' ? 'Teamrennen' : 'Einzelrennen';
 
   return '<div class="schedule-row" role="row">'
     + '<div class="start-cell">' + timerHtml
-    + '<span class="start-at">at ' + esc(time) + '</span></div>'
+    + '<span class="start-at">um ' + esc(time) + ' Uhr</span></div>'
     + '<div><div class="race-name">' + (event.championship ? '♜ ' : '')
     + esc(event.race) + '</div><div class="track-name">' + esc(event.track) + '</div>'
     + (event.type === 'special' ? '<div class="special-label">✦ SPECIAL EVENT</div>' : '')
     + '</div><div class="req">' + safetyBadge(safety)
     + classBadges(event) + '<span class="format"><strong>' + esc(duration)
-    + '</strong> race · <strong>' + esc(setup) + '</strong> · <strong>'
+    + '</strong> Rennen · <strong>' + esc(setup) + '</strong> · <strong>'
     + esc(format) + '</strong></span></div>'
     + '<div class="details-type ' + (event.type === 'special' ? 'special' : '') + '">'
     + esc(typeLabel) + '</div></div>';
@@ -216,17 +216,16 @@ function groupEvents(events) {
 
 function updateHeading(events) {
   const titles = {
-    series: 'Races this week',
-    time: 'Upcoming by start time',
-    championship: 'Championship races this week',
-    special: 'Special events this week',
+    series: 'Rennen diese Woche',
+    championship: 'Meisterschaftsrennen diese Woche',
+    special: 'Sonderevents diese Woche',
   };
   setText('#scheduleTitle', titles[state.view] || titles.series);
   setText('#eventCount', events.length);
   const range = currentWeekRange();
   const start = new Date(range.start);
   const end = new Date(range.end - 1);
-  const formatter = new Intl.DateTimeFormat('en-GB', {
+  const formatter = new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short',
   });
   setText('#weekLabel', formatter.format(start) + ' – ' + formatter.format(end));
@@ -243,17 +242,17 @@ function render() {
 
 async function load() {
   const status = $('#status');
-  if (status) status.textContent = 'Loading race schedule…';
+  if (status) status.textContent = 'Rennkalender wird geladen …';
   try {
     const response = await fetch('/api/calendar', { headers: { Accept: 'application/json' } });
     const data = await response.json();
     if (!response.ok || !data.success) {
-      throw Error(data.detail || data.error || 'Race schedule could not be loaded.');
+      throw Error(data.detail || data.error || 'Der Rennkalender konnte nicht geladen werden.');
     }
     state.events = Array.isArray(data.events) ? data.events : [];
     if (status) status.textContent = state.events.length
       ? ''
-      : 'The LMU Portal connection responded, but returned no upcoming races.';
+      : 'Die Verbindung zum LMU Portal funktioniert, es wurden aber keine kommenden Rennen gefunden.';
     setText('#dateLabel', new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Europe/Berlin', day: '2-digit', month: 'short', year: 'numeric',
     }).format(new Date()));
@@ -261,7 +260,7 @@ async function load() {
     if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(render, 1000);
   } catch (error) {
-    if (status) status.textContent = 'Calendar loading failed: ' + error.message;
+    if (status) status.textContent = 'Fehler beim Laden des Rennkalenders: ' + error.message;
     const calendar = $('#calendar');
     if (calendar) calendar.innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>';
   }
