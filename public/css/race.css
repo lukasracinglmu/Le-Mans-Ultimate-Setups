@@ -42,3 +42,7 @@
 .track-layout-loading,.track-layout-empty{color:var(--muted);font-size:13px;text-align:center;padding:25px}
 .track-layout-card.has-image{display:block}
 .track-layout-card img[hidden]{display:none}
+
+.weather-grid .race-fact-value{display:flex;align-items:center;gap:9px}
+.weather-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;font-size:23px;line-height:1}
+.track-layout-image{min-height:210px}
