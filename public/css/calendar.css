@@ -34,20 +34,20 @@
 .schedule-head{min-height:46px;color:var(--muted);font-size:11px;letter-spacing:.12em;font-weight:800;background:var(--surface2)}
 .start-cell{font-variant-numeric:tabular-nums}
 .countdown{display:inline-flex;align-items:center;justify-content:center;min-width:72px;padding:6px 9px;border-radius:6px;border:1px solid currentColor;font-size:19px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
-.countdown.ready{color:#36c987;background:#36c98718}
-.countdown.soon{color:#e0ad42;background:#e0ad4218}
-.countdown.urgent{color:#ef647d;background:#ef647d18}
+.countdown.ready{color:#79b99a;background:#79b99a18;border-color:#79b99a66}
+.countdown.soon{color:#c7aa68;background:#c7aa6818;border-color:#c7aa6866}
+.countdown.urgent{color:#cf7884;background:#cf788418;border-color:#cf788466}
 .start-date{display:block;font-size:13px;font-weight:700;color:var(--text)}
 .start-at{display:block;color:var(--muted);font-size:11px;margin-top:5px}
 .race-name{font-weight:800;font-size:15px;line-height:1.35}
 .track-name{color:var(--muted);font-size:13px;margin-top:6px}
-.special-label{color:#d6a84e;font-size:10px;letter-spacing:.1em;font-weight:800;margin-top:6px}
+.special-label{color:#a99ac7;font-size:10px;letter-spacing:.1em;font-weight:750;margin-top:6px}
 .req{display:flex;flex-wrap:wrap;align-items:center;gap:7px;color:var(--muted);font-size:13px}
 .pill{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;padding:5px 8px;font-size:11px;color:#fff;font-weight:800;line-height:1.15}
-.safety-badge{min-width:58px;min-height:23px;border-radius:4px;padding:4px 9px;font-size:10px;letter-spacing:.045em;text-transform:uppercase;text-shadow:0 1px 1px #0005;box-shadow:inset 0 1px 0 #ffffff55,inset 0 -1px 0 #0003,0 1px 2px #0003}
-.safety-badge.bronze{background:linear-gradient(180deg,#d59a61 0%,#a96a38 48%,#784622 100%);border:1px solid #d09a68;color:#fff}
-.safety-badge.silver{background:linear-gradient(180deg,#eef1f4 0%,#aeb8c3 48%,#737e8a 100%);border:1px solid #d6dce2;color:#18212a;text-shadow:0 1px 0 #ffffff80}
-.safety-badge.gold{background:linear-gradient(180deg,#ffe58a 0%,#d6aa3c 48%,#98701a 100%);border:1px solid #f0ce68;color:#2c2107;text-shadow:0 1px 0 #ffffff70}
+.safety-badge{min-width:58px;min-height:23px;border-radius:5px;padding:4px 9px;font-size:10px;letter-spacing:.045em;text-transform:uppercase;font-weight:750;text-shadow:none;box-shadow:none}
+.safety-badge.bronze{background:#795b49;border:1px solid #92715d;color:#f2e7df}
+.safety-badge.silver{background:#626d78;border:1px solid #7d8995;color:#eef1f4}
+.safety-badge.gold{background:#887443;border:1px solid #a38d57;color:#f6f0df}
 .safety-badge.unranked{background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
 .class-badge.gte{background:#9b5b29}
 .class-badge.gt3{background:#287b50}
