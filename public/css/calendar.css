@@ -61,3 +61,9 @@
 .empty{padding:34px 18px;color:var(--muted);text-align:center}
 @media(max-width:900px){.schedule-tools{grid-template-columns:1fr 1fr}.portal-search{grid-column:1/-1}.schedule-row{grid-template-columns:100px minmax(150px,1fr) minmax(220px,1.3fr)}.schedule-row>div:last-child{display:none}}
 @media(max-width:650px){.portal-main{padding:26px 14px 55px}.portal-hero{display:block;padding-top:12px}.calendar-summary{margin-top:20px;min-width:0}.portal-tabs{gap:18px}.portal-tab{font-size:12px}.schedule-tools{grid-template-columns:1fr 1fr}.portal-search{grid-column:1/-1}.schedule-heading{align-items:flex-start;flex-direction:column}.schedule-row{grid-template-columns:82px minmax(0,1fr);gap:9px;padding:12px}.schedule-row.schedule-head{display:none}.schedule-row>div:nth-child(3){grid-column:1/-1;padding-left:91px}.schedule-row>div:nth-child(4){display:none}.countdown{min-width:65px;font-size:16px}.race-name{font-size:13px}}
+
+/* LMU Safety Rank tiers: flat rank colors. */
+.safety-badge.bronze{background:#a9683b;border:1px solid #c18455;color:#fff1e5}
+.safety-badge.silver{background:#8995a2;border:1px solid #aab4bf;color:#101820}
+.safety-badge.gold{background:#c49a32;border:1px solid #e0ba59;color:#211906}
+.safety-badge.platinum{background:#55a9c2;border:1px solid #83c9dc;color:#071d25}
