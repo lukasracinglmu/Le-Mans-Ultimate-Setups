@@ -41,8 +41,8 @@ async function loadAccount() {
     if (!data.loggedIn) return;
     $('#loginButton')?.classList.add('hidden');
     const account = $('#account');
-    account.style.display = 'flex';
-    $('#accountName').textContent = data.user?.username || '';
+    if (account) account.style.display = 'flex';
+    setText('#accountName', data.user?.username || '');
     if (data.user?.avatar) {
       const avatar = $('#accountAvatar');
       avatar.src = data.user.avatar;
@@ -135,7 +135,7 @@ function matchesFilters(event) {
   const query = ($('#search')?.value || '').trim().toLowerCase();
   const safety = ($('#safety')?.value || '').trim().toLowerCase();
   const carClass = ($('#class')?.value || '').trim().toLowerCase();
-  const type = $('#type')?.value || ''; 
+  const type = $('#type')?.value || '';
   const searchable = [event.race, event.track, event.seriesId].join(' ').toLowerCase();
   const classes = eventClasses(event).map((value) => value.toLowerCase());
   return (!query || searchable.includes(query))
@@ -246,7 +246,7 @@ function render() {
   const calendar = $('#calendar');
   if (calendar) calendar.innerHTML = events.length
     ? groupEvents(events)
-    : '<div class="empty">No upcoming races match this view or its filters.</div>'; 
+    : '<div class="empty">No upcoming races match this view or its filters.</div>';
 }
 
 async function load() {
@@ -271,7 +271,7 @@ async function load() {
   } catch (error) {
     if (status) status.textContent = 'Calendar loading failed: ' + error.message;
     const calendar = $('#calendar');
-    if (calendar) calendar.innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>'; 
+    if (calendar) calendar.innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>';
   }
 }
 
