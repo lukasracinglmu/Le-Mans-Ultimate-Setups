@@ -77,6 +77,9 @@ function normalize(series, event) {
     duration: series.race_duration_minutes ? series.race_duration_minutes + ' min' : '',
     setup: String(series.setup || '').toLowerCase().includes('fixed') ? 'Fixed' : 'Open',
     team: series.team_championship || series.driver_swap_enabled ? 'Team' : 'Solo',
+    // Keep the original Portal payload so the detail view can display fields not used by the overview.
+    seriesData: series,
+    eventData: event,
   };
 }
 

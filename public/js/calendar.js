@@ -194,7 +194,7 @@ function renderEvent(event, showTimer) {
   const setup = event.setup === 'Fixed' ? 'Fixed Setup' : 'Open Setup';
   const format = event.team === 'Team' ? 'Teamrennen' : 'Einzelrennen';
 
-  return '<div class="schedule-row" role="row">'
+  return '<a class="schedule-row schedule-row-link" role="row" href="/race?id=' + encodeURIComponent(event.id) + '" aria-label="Renndetails: ' + esc(event.race) + '">'
     + '<div class="start-cell">' + timerHtml
     + '<span class="start-at">um ' + esc(time) + ' Uhr</span></div>'
     + '<div><div class="race-name">' + (event.championship ? '🏆 ' : '')
@@ -205,7 +205,7 @@ function renderEvent(event, showTimer) {
     + '</strong> Rennen · <strong>' + esc(setup) + '</strong> · <strong>'
     + esc(format) + '</strong></span></div>'
     + '<div class="details-type ' + (event.type === 'special' ? 'special' : '') + '">'
-    + esc(typeLabel) + '</div></div>';
+    + esc(typeLabel) + '</div></a>';
 }
 
 function groupEvents(events) {

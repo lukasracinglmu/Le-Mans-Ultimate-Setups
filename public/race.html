@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#151317"><title>Renndetails | Three Peaks Racing</title>
+<link rel="icon" type="image/webp" href="/assets/header-logo.webp?v=3p1">
+<script src="/js/shared/theme.js"></script>
+<link rel="stylesheet" href="/css/home.css">
+<link rel="stylesheet" href="/css/shared/visual-polish.css">
+<link rel="stylesheet" href="/css/calendar.css">
+<link rel="stylesheet" href="/css/race.css">
+</head>
+<body>
+<header>
+<a class="brand" href="/calendar" aria-label="Zurück zum Rennkalender"><img class="brand-logo" src="/assets/bp-logo.webp?v=20261023-1" alt="Three Peaks Racing" width="96" height="48"><div class="brand-copy"><div class="brand-title">Three Peaks Racing</div><div class="brand-sub">LMU Setup Database</div></div></a>
+<div class="header-actions"><a class="back-calendar" href="/calendar">← Rennkalender</a><button data-action="toggle-theme" id="themeButton">Helles Design</button></div>
+</header>
+<main class="race-main">
+<div id="raceStatus" class="race-status">Renndetails werden geladen …</div>
+<div id="raceContent" hidden>
+<section class="race-hero">
+<div class="race-hero-top"><span id="raceType" class="race-type">DAILY RACE</span><span id="raceTrack" class="race-track"></span></div>
+<h1 id="raceName">Rennen</h1>
+<div id="raceClasses" class="race-classes"></div>
+<div class="race-countdown-panel">
+<div class="race-countdown-copy"><span class="eyebrow">RENNSTART IN</span><div id="raceCountdown" class="race-countdown ready">--:--:--</div><div id="raceStartAt" class="race-start-at">Startzeit wird geladen</div></div>
+<div id="raceSafety" class="race-safety"></div>
+</div>
+</section>
+<section class="next-starts-section">
+<div class="section-heading"><div><span class="eyebrow">UP NEXT</span><h2>Next three starts</h2></div></div>
+<div id="nextStarts" class="next-starts"></div>
+</section>
+<section class="race-section">
+<div class="section-heading"><div><span class="eyebrow">EVENT INFORMATION</span><h2>Race Details</h2></div></div>
+<div id="raceFacts" class="race-facts"></div>
+</section>
+<section class="race-section">
+<div class="section-heading"><div><span class="eyebrow">SESSION</span><h2>Session Details</h2></div></div>
+<div id="sessionFacts" class="race-facts"></div>
+</section>
+<section class="race-section">
+<div class="section-heading"><div><span class="eyebrow">CONDITIONS</span><h2>Weather &amp; Track</h2></div></div>
+<div id="weatherFacts" class="weather-grid"></div>
+</section>
+<p class="race-source-note">Eventdaten aus dem LMU Portal. Nicht für jedes Event werden alle Angaben bereitgestellt.</p>
+</div>
+</main>
+<script type="module" src="/js/race.js"></script>
+</body></html>
