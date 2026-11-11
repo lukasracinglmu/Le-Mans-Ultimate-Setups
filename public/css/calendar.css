@@ -34,9 +34,9 @@
 .schedule-head{min-height:46px;color:var(--muted);font-size:11px;letter-spacing:.12em;font-weight:800;background:var(--surface2)}
 .start-cell{font-variant-numeric:tabular-nums}
 .countdown{display:inline-flex;align-items:center;justify-content:center;min-width:72px;padding:6px 9px;border-radius:6px;border:1px solid currentColor;font-size:19px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
-.countdown.ready{color:#79b99a;background:#79b99a18;border-color:#79b99a66}
-.countdown.soon{color:#c7aa68;background:#c7aa6818;border-color:#c7aa6866}
-.countdown.urgent{color:#cf7884;background:#cf788418;border-color:#cf788466}
+.countdown.ready{color:#35d07f;background:#35d07f24;border-color:#35d07f}
+.countdown.soon{color:#ffd23f;background:#ffd23f26;border-color:#ffd23f}
+.countdown.urgent{color:#ff5968;background:#ff59682b;border-color:#ff5968}
 .start-date{display:block;font-size:13px;font-weight:700;color:var(--text)}
 .start-at{display:block;color:var(--muted);font-size:11px;margin-top:5px}
 .race-name{font-weight:800;font-size:15px;line-height:1.35}
