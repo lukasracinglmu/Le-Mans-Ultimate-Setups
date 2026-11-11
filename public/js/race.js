@@ -58,7 +58,7 @@ function countdown() {
   node.className='race-countdown '+(ms<=5*60000?'urgent':ms<=10*60000?'soon':'ready');
 }
 function temperatureEmojis(value) {
-  const match=String(value??'').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/);
+  const match=String(value??'').replace(',', '.').match(/-?\d+(?:\.\d+)?/);
   if(!match)return '';
   const degrees=Math.abs(Math.round(Number(match[0])));
   return '🌡️'.repeat(degrees);
