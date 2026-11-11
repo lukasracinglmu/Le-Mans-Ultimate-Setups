@@ -93,11 +93,11 @@ function berlinMidnight(key) {
   return guess;
 }
 
-function nextWeekRange() {
+function currentWeekRange() {
   const todayKey = berlinDateKey(Date.now());
   const today = new Date(todayKey + 'T12:00:00Z');
-  const daysUntilMonday = (8 - today.getUTCDay()) % 7 || 7;
-  const startKey = addDaysToKey(todayKey, daysUntilMonday);
+  const daysSinceMonday = (today.getUTCDay() + 6) % 7;
+  const startKey = addDaysToKey(todayKey, -daysSinceMonday);
   const endKey = addDaysToKey(startKey, 7);
   return { start: berlinMidnight(startKey), end: berlinMidnight(endKey), startKey, endKey };
 }
@@ -116,13 +116,20 @@ function startLabel(event, futureRange) {
 
 function countdown(event) {
   const difference = Date.parse(event.startTime) - Date.now();
-  if (difference <= 0 || difference > 30 * 60 * 1000) return null;
-  const seconds = Math.floor(difference / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainder = seconds % 60;
+  if (!Number.isFinite(difference) || difference <= 0) return null;
+  const totalMinutes = Math.floor(difference / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  const seconds = Math.floor((difference % 60000) / 1000);
+  const text = days > 0
+    ? days + 'd ' + String(hours).padStart(2, '0') + 'h'
+    : totalMinutes >= 60
+      ? String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' + String(minutes).padStart(2, '0')
+      : String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
   return {
-    text: minutes + ':' + String(remainder).padStart(2, '0'),
-    className: difference <= 5 * 60 * 1000 ? 'urgent' : difference <= 10 * 60 * 1000 ? 'soon' : '',
+    text,
+    className: difference <= 60 * 60 * 1000 ? 'urgent' : difference <= 6 * 60 * 60 * 1000 ? 'soon' : 'ready',
   };
 }
 
@@ -146,14 +153,11 @@ function matchesFilters(event) {
 
 function filteredEvents() {
   const now = Date.now();
-  let events = state.events.filter((event) => Date.parse(event.startTime) > now && matchesFilters(event));
-  if (state.view === 'future') {
-    const range = nextWeekRange();
-    events = events.filter((event) => {
-      const time = Date.parse(event.startTime);
-      return time >= range.start && time < range.end;
-    });
-  }
+  const week = currentWeekRange();
+  let events = state.events.filter((event) => {
+    const time = Date.parse(event.startTime);
+    return Number.isFinite(time) && time > now && time >= week.start && time < week.end && matchesFilters(event);
+  });
   if (state.view === 'championship') events = events.filter((event) => event.type === 'championship');
   if (state.view === 'special') events = events.filter((event) => event.type === 'special');
   return events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime));
@@ -163,20 +167,29 @@ function classBadges(event) {
   return eventClasses(event).map((value) => {
     const css = value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const label = value === 'HYPER-K' ? 'HY' : value;
-    return '<span class="pill ' + esc(css) + '">' + esc(label) + '</span>';
+    return '<span class="pill class-badge ' + esc(css) + '">' + esc(label) + '</span>';
   }).join('');
+}
+
+function safetyBadge(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  const rank = normalized.includes('gold') ? 'gold'
+    : normalized.includes('silver') ? 'silver'
+      : normalized.includes('bronze') ? 'bronze' : 'unranked';
+  const label = rank === 'unranked' ? (value || 'No SR') : rank[0].toUpperCase() + rank.slice(1);
+  return '<span class="pill safety-badge ' + rank + '">' + esc(label) + '</span>';
 }
 
 function renderEvent(event) {
   const parts = berlinParts(event.startTime);
   const timer = countdown(event);
-  const label = startLabel(event, state.view === 'future');
+  const label = startLabel(event, false);
   const time = parts.hour + ':' + parts.minute;
   const typeLabel = event.type === 'special' ? 'Special Event'
     : event.type === 'championship' ? 'Championship' : 'Daily Race';
   const timerHtml = timer
     ? '<span class="countdown ' + timer.className + '">' + esc(timer.text) + '</span>'
-    : '<span class="start-date">' + esc(label) + '</span>';
+    : '<span class="start-date">' + esc(label) + '</span>'; 
   const safety = event.safety || '—';
   const duration = event.duration || '—';
   const setup = event.setup === 'Fixed' ? 'Fixed Setups' : 'Open Setups';
@@ -188,7 +201,7 @@ function renderEvent(event) {
     + '<div><div class="race-name">' + (event.championship ? '♜ ' : '')
     + esc(event.race) + '</div><div class="track-name">' + esc(event.track) + '</div>'
     + (event.type === 'special' ? '<div class="special-label">✦ SPECIAL EVENT</div>' : '')
-    + '</div><div class="req"><span class="pill safety">' + esc(safety) + '</span>'
+    + '</div><div class="req">' + safetyBadge(safety)
     + classBadges(event) + '<span class="format"><strong>' + esc(duration)
     + '</strong> race · <strong>' + esc(setup) + '</strong> · <strong>'
     + esc(format) + '</strong></span></div>'
@@ -197,47 +210,25 @@ function renderEvent(event) {
 }
 
 function groupEvents(events) {
-  if (state.view !== 'series' && state.view !== 'calendar') {
-    return events.map(renderEvent).join('');
-  }
-
-  const groups = new Map();
-  for (const event of events) {
-    const key = state.view === 'series' ? event.seriesId || event.race : berlinDateKey(event.startTime);
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(event);
-  }
-
-  return [...groups.entries()].map(([, items]) => {
-    const title = state.view === 'series'
-      ? items[0].race
-      : new Intl.DateTimeFormat('de-DE', {
-        timeZone: 'Europe/Berlin', weekday: 'long', day: '2-digit', month: 'long',
-      }).format(new Date(items[0].startTime));
-    return '<div class="calendar-group"><div class="calendar-group-title">' + esc(title)
-      + '<span>' + items.length + ' ' + (items.length === 1 ? 'Race' : 'Races') + '</span></div>'
-      + items.map(renderEvent).join('') + '</div>';
-  }).join('');
+  return events.map(renderEvent).join('');
 }
 
 function updateHeading(events) {
   const titles = {
-    series: 'On the grid this week',
-    calendar: 'Calendar',
+    series: 'Races this week',
     time: 'Upcoming by start time',
-    championship: 'Championships',
-    special: 'Special Events',
-    future: 'Future Schedule',
+    championship: 'Championship races this week',
+    special: 'Special events this week',
   };
   setText('#scheduleTitle', titles[state.view] || titles.series);
   setText('#eventCount', events.length);
-  const range = nextWeekRange();
-  const futureLabel = new Intl.DateTimeFormat('de-DE', {
+  const range = currentWeekRange();
+  const start = new Date(range.start);
+  const end = new Date(range.end - 1);
+  const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short',
-  }).format(new Date(range.start)) + ' – ' + new Intl.DateTimeFormat('de-DE', {
-    timeZone: 'Europe/Berlin', day: '2-digit', month: 'short', year: 'numeric',
-  }).format(new Date(range.end - 1));
-  setText('#weekLabel', state.view === 'future' ? futureLabel : 'This week on track');
+  });
+  setText('#weekLabel', formatter.format(start) + ' – ' + formatter.format(end));
 }
 
 function render() {
