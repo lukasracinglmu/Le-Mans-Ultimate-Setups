@@ -1,8 +1,8 @@
 /* Calendar styling follows the Three Peaks Racing site theme. */
 .portal-main{max-width:1180px;margin:0 auto;padding:42px 26px 84px;color:var(--text);font-family:Arial,Helvetica,sans-serif}
 .portal-hero{display:flex;justify-content:space-between;align-items:center;gap:28px;padding:20px 0 34px;border-bottom:1px solid var(--border)}
-.portal-kicker{font-size:10px;letter-spacing:.14em;font-weight:800;color:var(--accent);text-transform:uppercase}
-.portal-hero h1{font-size:clamp(36px,5vw,54px);font-weight:800;line-height:1.06;letter-spacing:-.045em;margin:12px 0 10px}
+.portal-kicker{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--accent);text-transform:uppercase}
+.portal-hero h1{font-size:clamp(36px,5vw,54px);font-weight:800;line-height:1.06;letter-spacing:-.045em;margin:12px 0 10px}.portal-hero h1.calendar-title{font-size:clamp(30px,4.4vw,48px);letter-spacing:.015em;line-height:1.12;margin:0;max-width:780px}
 .portal-hero h1 em{font-style:normal;color:var(--accent)}
 .portal-hero p{margin:0;color:var(--muted);font-size:14px}
 .calendar-summary{min-width:245px;display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:17px}
@@ -12,14 +12,14 @@
 .calendar-summary #dateLabel{font-size:12px;color:var(--muted)}
 .summary-arrow{font-size:25px;color:var(--muted);margin-left:auto}
 .portal-tabs{display:flex;align-items:center;gap:22px;border-bottom:1px solid var(--border);margin:22px 0 22px;overflow:auto}
-.portal-tab{border:0;border-radius:0;background:transparent;color:var(--muted);padding:14px 0 12px;white-space:nowrap;font-weight:700;font-size:13px;border-bottom:2px solid transparent}
+.portal-tab{border:0;border-radius:0;background:transparent;color:var(--muted);padding:15px 0 13px;white-space:nowrap;font-weight:750;font-size:14px;border-bottom:2px solid transparent}
 .portal-tab:hover{background:transparent;color:var(--text);transform:none}
 .portal-tab span{font-size:16px;margin-right:7px}
 .portal-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .schedule-tools{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(130px,1fr));gap:10px;align-items:end;margin-bottom:25px}
-.portal-search,.schedule-tools select{height:42px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0 12px;outline:none}
+.portal-search,.schedule-tools select{height:46px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0 13px;outline:none;font-size:14px}
 .portal-search:focus,.schedule-tools select:focus{border-color:var(--accent)}
-.schedule-tools label span{display:block;color:var(--muted);font-size:11px;margin:0 0 6px}
+.schedule-tools label span{display:block;color:var(--muted);font-size:12px;font-weight:650;margin:0 0 7px}
 .schedule-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:14px}
 .schedule-heading h2{font-size:18px;margin:0 0 7px}
 .schedule-heading h2 small{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:20px;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;margin-left:8px}
@@ -28,10 +28,10 @@
 .timezone strong{color:var(--accent)}
 .status{color:var(--muted);font-size:13px;margin:12px 0}
 .schedule-table{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
-.schedule-row{display:grid;grid-template-columns:112px minmax(190px,1.15fr) minmax(280px,1.5fr) minmax(105px,.55fr);gap:16px;align-items:center;padding:13px 17px;border-bottom:1px solid var(--border);min-height:76px}
+.schedule-row{display:grid;grid-template-columns:120px minmax(190px,1.15fr) minmax(280px,1.5fr) minmax(105px,.55fr);gap:18px;align-items:center;padding:15px 18px;border-bottom:1px solid var(--border);min-height:82px}
 .schedule-row:last-child{border-bottom:0}
 .schedule-row:not(.schedule-head):hover{background:var(--surface2)}
-.schedule-head{min-height:43px;color:var(--muted);font-size:10px;letter-spacing:.12em;font-weight:800;background:var(--surface2)}
+.schedule-head{min-height:46px;color:var(--muted);font-size:11px;letter-spacing:.12em;font-weight:800;background:var(--surface2)}
 .start-cell{font-variant-numeric:tabular-nums}
 .countdown{display:inline-flex;align-items:center;justify-content:center;min-width:72px;padding:6px 9px;border-radius:6px;border:1px solid currentColor;font-size:19px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
 .countdown.ready{color:#36c987;background:#36c98718}
@@ -39,23 +39,24 @@
 .countdown.urgent{color:#ef647d;background:#ef647d18}
 .start-date{display:block;font-size:13px;font-weight:700;color:var(--text)}
 .start-at{display:block;color:var(--muted);font-size:11px;margin-top:5px}
-.race-name{font-weight:800;font-size:14px}
-.track-name{color:var(--muted);font-size:12px;margin-top:5px}
+.race-name{font-weight:800;font-size:15px;line-height:1.35}
+.track-name{color:var(--muted);font-size:13px;margin-top:6px}
 .special-label{color:#d6a84e;font-size:10px;letter-spacing:.1em;font-weight:800;margin-top:6px}
-.req{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-size:12px}
-.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;padding:4px 7px;font-size:10px;color:#fff;font-weight:800;line-height:1.15}
-.safety-badge.bronze{background:#a96836;border:1px solid #c88b55;color:#fff}
-.safety-badge.silver{background:#7b8795;border:1px solid #aab4c0;color:#fff}
-.safety-badge.gold{background:#b88b24;border:1px solid #e0b84f;color:#fff}
+.req{display:flex;flex-wrap:wrap;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;padding:5px 8px;font-size:11px;color:#fff;font-weight:800;line-height:1.15}
+.safety-badge{min-width:58px;min-height:23px;border-radius:4px;padding:4px 9px;font-size:10px;letter-spacing:.045em;text-transform:uppercase;text-shadow:0 1px 1px #0005;box-shadow:inset 0 1px 0 #ffffff55,inset 0 -1px 0 #0003,0 1px 2px #0003}
+.safety-badge.bronze{background:linear-gradient(180deg,#d59a61 0%,#a96a38 48%,#784622 100%);border:1px solid #d09a68;color:#fff}
+.safety-badge.silver{background:linear-gradient(180deg,#eef1f4 0%,#aeb8c3 48%,#737e8a 100%);border:1px solid #d6dce2;color:#18212a;text-shadow:0 1px 0 #ffffff80}
+.safety-badge.gold{background:linear-gradient(180deg,#ffe58a 0%,#d6aa3c 48%,#98701a 100%);border:1px solid #f0ce68;color:#2c2107;text-shadow:0 1px 0 #ffffff70}
 .safety-badge.unranked{background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
 .class-badge.gte{background:#9b5b29}
 .class-badge.gt3{background:#287b50}
 .class-badge.lmp3{background:#74439b}
 .class-badge.lmp2{background:#3268a8}
 .class-badge.hyper-k{background:#ad3541}
-.format{flex-basis:100%;color:var(--muted);font-size:11px;line-height:1.5;margin-top:3px}
+.format{flex-basis:100%;color:var(--muted);font-size:12px;line-height:1.6;margin-top:4px}
 .format strong{color:var(--text);font-weight:700}
-.details-type{color:var(--muted);font-size:11px}
+.details-type{color:var(--muted);font-size:12px;font-weight:650}
 .details-type.special{color:#d6a84e}
 .empty{padding:34px 18px;color:var(--muted);text-align:center}
 @media(max-width:900px){.schedule-tools{grid-template-columns:1fr 1fr}.portal-search{grid-column:1/-1}.schedule-row{grid-template-columns:100px minmax(150px,1fr) minmax(220px,1.3fr)}.schedule-row>div:last-child{display:none}}
