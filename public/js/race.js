@@ -43,13 +43,25 @@ function countdown() {
   const node=$('#raceCountdown');
   if(!node||!activeEvent)return;
   const ms=Date.parse(activeEvent.startTime)-Date.now();
-  if(ms<=0){node.textContent='STARTED';node.className='race-countdown started';return;}
+  if(ms<=0){
+    node.textContent='STARTED';
+    node.className='race-countdown started';
+    node.dataset.state='started';
+    return;
+  }
+  node.dataset.state='counting';
   let seconds=Math.floor(ms/1000);
   const days=Math.floor(seconds/86400);seconds%=86400;
   const hours=Math.floor(seconds/3600);seconds%=3600;
   const minutes=Math.floor(seconds/60);seconds%=60;
   node.textContent=(days?days+'d ':'')+[hours,minutes,seconds].map(n=>String(n).padStart(2,'0')).join(':');
   node.className='race-countdown '+(ms<=5*60000?'urgent':ms<=10*60000?'soon':'ready');
+}
+function temperatureEmojis(value) {
+  const match=String(value??'').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/);
+  if(!match)return '';
+  const degrees=Math.abs(Math.round(Number(match[0])));
+  return '🌡️'.repeat(Math.min(degrees, 60));
 }
 function objectText(value) {
   if(value===null||value===undefined||value==='')return '';
@@ -194,7 +206,9 @@ function render(event, events) {
   ];
   $('#weatherFacts').innerHTML=weatherFields.map(([label,keys])=>{
     const value=lookup(event,keys);
-    return fact(label,value,label==='Weather'&&value?weatherIcon(value):'');
+    const isTemperature=label==='Air Temperature'||label==='Track Temperature';
+    const icon=isTemperature?temperatureEmojis(value):(label==='Weather'&&value?weatherIcon(value):'');
+    return fact(label,value,icon);
   }).join('')||'<div class="race-fact">Wetterdaten werden für dieses Event nicht übermittelt.</div>';
   renderNext(events);
   $('#raceContent').hidden=false;
