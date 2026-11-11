@@ -34,3 +34,11 @@
 .back-calendar{color:var(--muted);text-decoration:none;font-size:13px;font-weight:700}.back-calendar:hover{color:var(--text)}
 @media(max-width:800px){.race-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.weather-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){.race-main{padding:22px 13px 55px}.race-hero{padding:19px}.race-countdown-panel{align-items:flex-start;flex-direction:column}.race-safety{min-height:0}.next-starts{grid-template-columns:1fr}.race-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.weather-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-heading h2{font-size:18px}}
+
+.track-layout-card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:13px;background:var(--surface);min-height:180px;display:flex;align-items:center;justify-content:center;padding:16px}
+.track-layout-image{display:block;width:100%;height:clamp(210px,34vw,390px);object-fit:contain;object-position:center;border-radius:7px;background:#fff}
+.track-layout-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 3px 0;color:var(--muted);font-size:11px;flex-wrap:wrap}
+.track-layout-caption a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.track-layout-loading,.track-layout-empty{color:var(--muted);font-size:13px;text-align:center;padding:25px}
+.track-layout-card.has-image{display:block}
+.track-layout-card img[hidden]{display:none}
