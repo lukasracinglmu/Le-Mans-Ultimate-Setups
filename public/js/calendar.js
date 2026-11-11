@@ -154,7 +154,9 @@ function filteredEvents() {
   });
   if (state.view === 'championship') events = events.filter((event) => event.type === 'championship');
   if (state.view === 'special') events = events.filter((event) => event.type === 'special');
-  return events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime)).slice(0, 15);
+  events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime));
+  // Keep the Special Events view focused on the next one or two upcoming events.
+  return events.slice(0, state.view === 'special' ? 2 : 15);
 }
 
 function classBadges(event) {
@@ -192,7 +194,7 @@ function renderEvent(event, showTimer) {
     : '<span class="start-date">' + esc(label) + '</span>'; 
   const safety = event.safety || '—';
   const duration = event.duration || '—';
-  const setup = event.setup === 'Fixed' ? 'Festes Setup' : 'Offenes Setup';
+  const setup = event.setup === 'Fixed' ? 'Fixed Setup' : 'Open Setup';
   const format = event.team === 'Team' ? 'Teamrennen' : 'Einzelrennen';
 
   return '<div class="schedule-row" role="row">'
