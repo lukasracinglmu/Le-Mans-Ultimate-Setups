@@ -138,7 +138,7 @@ function renderTrackLayout(track) {
   const item=trackLayoutFor(track);
   if(!item){root.innerHTML='<div class="track-layout-empty">Für diese Strecke ist aktuell kein verifiziertes Layout hinterlegt.</div>';return;}
   root.classList.add('has-image');
-  root.innerHTML='<img class="track-layout-image" alt="Streckenlayout '+esc(item.name)+'" loading="lazy" decoding="async"><div class="track-layout-caption"><span>'+esc(item.name)+' · '+esc(item.layout)+'</span><a href="'+esc(item.image)+'" target="_blank" rel="noopener noreferrer">Bildquelle: '+esc(item.source)+'</a></div>';
+  root.innerHTML='<img class="track-layout-image" alt="Streckenlayout '+esc(item.name)+'" loading="eager" decoding="async" referrerpolicy="no-referrer"><div class="track-layout-caption"><span>'+esc(item.name)+' · '+esc(item.layout)+'</span><a href="'+esc(item.image)+'" target="_blank" rel="noopener noreferrer">Bildquelle: '+esc(item.source)+'</a></div>';
   const image=root.querySelector('img');
   image.addEventListener('error',()=>{
     root.classList.remove('has-image');
