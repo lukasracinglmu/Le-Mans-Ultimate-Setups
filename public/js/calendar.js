@@ -237,7 +237,7 @@ function render() {
   const calendar = $('#calendar');
   if (calendar) calendar.innerHTML = events.length
     ? groupEvents(events)
-    : '<div class="empty">No upcoming races match this view or its filters.</div>';
+    : '<div class="empty">Keine Rennen für diese Ansicht oder Filter gefunden.</div>';
 }
 
 async function load() {
@@ -253,7 +253,7 @@ async function load() {
     if (status) status.textContent = state.events.length
       ? ''
       : 'Die Verbindung zum LMU Portal funktioniert, es wurden aber keine kommenden Rennen gefunden.';
-    setText('#dateLabel', new Intl.DateTimeFormat('en-GB', {
+    setText('#dateLabel', new Intl.DateTimeFormat('de-DE', {
       timeZone: 'Europe/Berlin', day: '2-digit', month: 'short', year: 'numeric',
     }).format(new Date()));
     render();
@@ -262,7 +262,7 @@ async function load() {
   } catch (error) {
     if (status) status.textContent = 'Fehler beim Laden des Rennkalenders: ' + error.message;
     const calendar = $('#calendar');
-    if (calendar) calendar.innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>';
+    if (calendar) calendar.innerHTML = '<div class="empty">Der Rennkalender ist vorübergehend nicht verfügbar.</div>';
   }
 }
 
