@@ -152,7 +152,6 @@ function filteredEvents() {
     const time = Date.parse(event.startTime);
     return Number.isFinite(time) && time > now && time >= week.start && time < week.end && matchesFilters(event);
   });
-  if (state.view === 'championship') events = events.filter((event) => event.type === 'championship');
   if (state.view === 'special') events = events.filter((event) => event.type === 'special');
   events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime));
   // Keep the Special Events view focused on the next one or two upcoming events.
@@ -223,7 +222,6 @@ function groupEvents(events) {
 function updateHeading(events) {
   const titles = {
     series: 'Rennen diese Woche',
-    championship: 'Meisterschaftsrennen diese Woche',
     special: 'Sonderevents diese Woche',
   };
   setText('#scheduleTitle', titles[state.view] || titles.series);
