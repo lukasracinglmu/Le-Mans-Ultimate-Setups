@@ -61,7 +61,7 @@ function temperatureEmojis(value) {
   const match=String(value??'').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/);
   if(!match)return '';
   const degrees=Math.abs(Math.round(Number(match[0])));
-  return '🌡️'.repeat(Math.min(degrees, 60));
+  return '🌡️'.repeat(degrees);
 }
 function objectText(value) {
   if(value===null||value===undefined||value==='')return '';
