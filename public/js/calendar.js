@@ -1,3 +1,9 @@
+import { initHeaderActions } from './home/header-actions.js';
+import { logout } from './home/access.js';
+
+initHeaderActions();
+
+const themeButton = document.getElementById('themeButton');
 const state = { events: [], view: 'series', timer: null };
 const $ = (selector) => document.querySelector(selector);
 const setText = (selector, value) => {
@@ -11,6 +17,40 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '"': '&quot;',
   "'": '&#39;',
 }[char]));
+
+function syncTheme() {
+  if (themeButton) {
+    themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dark Mode' : 'Light Mode';
+  }
+}
+
+themeButton?.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('tpr-theme', next); } catch {}
+  syncTheme();
+});
+
+document.querySelector('[data-action="logout"]')?.addEventListener('click', logout);
+syncTheme();
+
+async function loadAccount() {
+  try {
+    const response = await fetch('/api/me');
+    const data = await response.json();
+    if (!data.loggedIn) return;
+    $('#loginButton')?.classList.add('hidden');
+    const account = $('#account');
+    if (account) account.style.display = 'flex';
+    setText('#accountName', data.user?.username || '');
+    if (data.user?.avatar) {
+      const avatar = $('#accountAvatar');
+      avatar.src = data.user.avatar;
+      avatar.style.display = 'block';
+    }
+  } catch {}
+}
+loadAccount();
 
 function berlinParts(date) {
   return new Intl.DateTimeFormat('en-GB', {
