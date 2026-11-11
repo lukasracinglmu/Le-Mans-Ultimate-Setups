@@ -194,7 +194,7 @@ function renderEvent(event, showTimer) {
     + '<span class="start-at">um ' + esc(time) + ' Uhr</span></div>'
     + '<div><div class="race-name">' + (event.championship ? '🏆 ' : '')
     + esc(event.race) + '</div><div class="track-name">' + esc(event.track) + '</div>'
-    + (event.type === 'special' ? '<div class="special-label">⚑ SPECIAL EVENT</div>' : '')
+    + (event.type === 'special' ? '<div class="special-label">★ SPECIAL EVENT</div>' : '')
     + '</div><div class="req">' + safetyBadge(safety)
     + classBadges(event) + '<span class="format"><strong>' + esc(duration)
     + '</strong> Rennen · <strong>' + esc(setup) + '</strong> · <strong>'

@@ -41,13 +41,13 @@
 .start-at{display:block;color:var(--muted);font-size:11px;margin-top:5px}
 .race-name{font-weight:800;font-size:15px;line-height:1.35}
 .track-name{color:var(--muted);font-size:13px;margin-top:6px}
-.special-label{color:#a99ac7;font-size:10px;letter-spacing:.1em;font-weight:750;margin-top:6px}
+.special-label{color:#d6a84e;font-size:10px;letter-spacing:.1em;font-weight:800;margin-top:6px}
 .req{display:flex;flex-wrap:wrap;align-items:center;gap:7px;color:var(--muted);font-size:13px}
 .pill{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;padding:5px 8px;font-size:11px;color:#fff;font-weight:800;line-height:1.15}
 .safety-badge{min-width:58px;min-height:23px;border-radius:5px;padding:4px 9px;font-size:10px;letter-spacing:.045em;text-transform:uppercase;font-weight:750;text-shadow:none;box-shadow:none}
-.safety-badge.bronze{background:#795b49;border:1px solid #92715d;color:#f2e7df}
-.safety-badge.silver{background:#626d78;border:1px solid #7d8995;color:#eef1f4}
-.safety-badge.gold{background:#887443;border:1px solid #a38d57;color:#f6f0df}
+.safety-badge.bronze{background:#a9683b;border:1px solid #c18455;color:#fff1e5}
+.safety-badge.silver{background:#8995a2;border:1px solid #aab4bf;color:#101820}
+.safety-badge.gold{background:#c49a32;border:1px solid #e0ba59;color:#211906}
 .safety-badge.unranked{background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
 .class-badge.gte{background:#9b5b29}
 .class-badge.gt3{background:#287b50}
