@@ -101,8 +101,8 @@ const TRACK_LAYOUTS = [
   { keys:['long beach'], name:'Streets of Long Beach', layout:'Street Circuit', image:'https://indymotorspeedway.com/files/IRL-Track-Layout-LongBeach.jpg', source:'Indy Motor Speedway' }
 ];
 function trackLayoutFor(track) {
-  const value=String(track||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
-  return TRACK_LAYOUTS.find(item=>item.keys.some(key=>value.includes(key.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''))))||null;
+  const value=String(track||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return TRACK_LAYOUTS.find(item=>item.keys.some(key=>value.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g,''))))||null;
 }
 function renderTrackLayout(track) {
   const root=$('#trackLayout');
