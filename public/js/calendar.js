@@ -140,7 +140,7 @@ function matchesFilters(event) {
   const searchable = [event.race, event.track, event.seriesId].join(' ').toLowerCase();
   const classes = eventClasses(event).map((value) => value.toLowerCase());
   return (!query || searchable.includes(query))
-    && (!safety || String(event.safety || '').toUpperCase().replace(/\\s+/g, '') === safety)
+    && (!safety || String(event.safety || '').toUpperCase().replace(/\s+/g, '') === safety)
     && (!carClass || classes.includes(carClass))
     && (!type || event.type === type);
 }
@@ -167,8 +167,8 @@ function classBadges(event) {
 
 function safetyBadge(value) {
   const normalized = String(value || '').trim().toUpperCase();
-  const match = normalized.match(/\\b([BSGP])\\s*([0-3])\\b/);
-  const wordRank = normalized.match(/\\b(BRONZE|SILVER|GOLD|PLATINUM)\\s*([0-3])?\\b/);
+  const match = normalized.match(/\b([BSGP])\s*([0-3])\b/);
+  const wordRank = normalized.match(/\b(BRONZE|SILVER|GOLD|PLATINUM)\s*([0-3])?\b/);
   const prefix = match?.[1] || ({
     BRONZE: 'B', SILVER: 'S', GOLD: 'G', PLATINUM: 'P',
   }[wordRank?.[1]] || '');
