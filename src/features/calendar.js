@@ -48,11 +48,14 @@ function normalize(series, event) {
 
   const rawType = String(series.type || 'daily').toLowerCase();
   const compactType = rawType.replace(/[\s_-]/g, '');
+  // Weekly races are their own race mode, separate from Online Championships.
   const type = compactType.includes('special')
     ? 'special'
-    : compactType.includes('championship') || compactType.includes('weekly')
+    : compactType.includes('championship')
       ? 'championship'
-      : 'daily';
+      : compactType.includes('weekly')
+        ? 'weekly'
+        : 'daily';
   const classes = classNames(series);
   const safetyValue = series.sr_requirement || series.safety_requirement || series.safety_rating || '';
   const safety = safetyValue && typeof safetyValue === 'object'
