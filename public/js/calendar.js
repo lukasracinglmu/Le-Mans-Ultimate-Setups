@@ -134,13 +134,13 @@ function eventClasses(event) {
 
 function matchesFilters(event) {
   const query = ($('#search')?.value || '').trim().toLowerCase();
-  const safety = ($('#safety')?.value || '').trim().toLowerCase();
+  const safety = ($('#safety')?.value || '').trim().toUpperCase();
   const carClass = ($('#class')?.value || '').trim().toLowerCase();
   const type = $('#type')?.value || '';
   const searchable = [event.race, event.track, event.seriesId].join(' ').toLowerCase();
   const classes = eventClasses(event).map((value) => value.toLowerCase());
   return (!query || searchable.includes(query))
-    && (!safety || String(event.safety || '').toLowerCase() === safety)
+    && (!safety || String(event.safety || '').toUpperCase().replace(/\\s+/g, '') === safety)
     && (!carClass || classes.includes(carClass))
     && (!type || event.type === type);
 }
@@ -166,11 +166,16 @@ function classBadges(event) {
 }
 
 function safetyBadge(value) {
-  const normalized = String(value || '').trim().toLowerCase();
-  const rank = normalized.includes('gold') ? 'gold'
-    : normalized.includes('silver') ? 'silver'
-      : normalized.includes('bronze') ? 'bronze' : 'unranked';
-  const label = rank === 'unranked' ? (value || 'Kein SR') : rank[0].toUpperCase() + rank.slice(1);
+  const normalized = String(value || '').trim().toUpperCase();
+  const match = normalized.match(/\\b([BSGP])\\s*([0-3])\\b/);
+  const wordRank = normalized.match(/\\b(BRONZE|SILVER|GOLD|PLATINUM)\\s*([0-3])?\\b/);
+  const prefix = match?.[1] || ({
+    BRONZE: 'B', SILVER: 'S', GOLD: 'G', PLATINUM: 'P',
+  }[wordRank?.[1]] || '');
+  const level = match?.[2] || wordRank?.[2] || '';
+  const rank = ({ B: 'bronze', S: 'silver', G: 'gold', P: 'platinum' })[prefix] || 'unranked';
+  const code = prefix ? prefix + level : '';
+  const label = code ? 'SR ' + code : 'Kein SR';
   return '<span class="pill safety-badge ' + rank + '">' + esc(label) + '</span>';
 }
 
@@ -180,7 +185,8 @@ function renderEvent(event, showTimer) {
   const label = startLabel(event, false);
   const time = parts.hour + ':' + parts.minute;
   const typeLabel = event.type === 'special' ? 'Special Event'
-    : event.type === 'championship' ? 'Championship' : 'Daily-Rennen';
+    : event.type === 'championship' ? 'Championship'
+      : event.type === 'weekly' ? 'Weekly-Rennen' : 'Daily-Rennen';
   const timerHtml = timer
     ? '<span class="countdown ' + timer.className + '">' + esc(timer.text) + '</span>'
     : '<span class="start-date">' + esc(label) + '</span>'; 
