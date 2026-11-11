@@ -179,8 +179,8 @@ function renderEvent(event, showTimer) {
   const timer = showTimer ? countdown(event) : null;
   const label = startLabel(event, false);
   const time = parts.hour + ':' + parts.minute;
-  const typeLabel = event.type === 'special' ? 'Sonderevent'
-    : event.type === 'championship' ? 'Meisterschaft' : 'Daily-Rennen';
+  const typeLabel = event.type === 'special' ? 'Special Event'
+    : event.type === 'championship' ? 'Championship' : 'Daily-Rennen';
   const timerHtml = timer
     ? '<span class="countdown ' + timer.className + '">' + esc(timer.text) + '</span>'
     : '<span class="start-date">' + esc(label) + '</span>'; 
@@ -192,9 +192,9 @@ function renderEvent(event, showTimer) {
   return '<div class="schedule-row" role="row">'
     + '<div class="start-cell">' + timerHtml
     + '<span class="start-at">um ' + esc(time) + ' Uhr</span></div>'
-    + '<div><div class="race-name">' + (event.championship ? '♜ ' : '')
+    + '<div><div class="race-name">' + (event.championship ? '🏆 ' : '')
     + esc(event.race) + '</div><div class="track-name">' + esc(event.track) + '</div>'
-    + (event.type === 'special' ? '<div class="special-label">✦ SPECIAL EVENT</div>' : '')
+    + (event.type === 'special' ? '<div class="special-label">⚑ SPECIAL EVENT</div>' : '')
     + '</div><div class="req">' + safetyBadge(safety)
     + classBadges(event) + '<span class="format"><strong>' + esc(duration)
     + '</strong> Rennen · <strong>' + esc(setup) + '</strong> · <strong>'
