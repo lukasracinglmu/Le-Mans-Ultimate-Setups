@@ -20,7 +20,7 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
 
 function syncTheme() {
   if (themeButton) {
-    themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dunkles Design' : 'Helles Design';
+    themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dark Mode' : 'Light Mode';
   }
 }
 

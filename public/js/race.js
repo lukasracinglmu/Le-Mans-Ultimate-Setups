@@ -1,6 +1,18 @@
 import { initHeaderActions } from './home/header-actions.js';
 initHeaderActions();
 
+const themeButton = document.getElementById('themeButton');
+function syncThemeButton() {
+  if (themeButton) themeButton.textContent = document.documentElement.dataset.theme === 'light' ? 'Dark Mode' : 'Light Mode';
+}
+themeButton?.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('tpr-theme', next); } catch {}
+  syncThemeButton();
+});
+syncThemeButton();
+
 const $ = (selector) => document.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const params = new URLSearchParams(location.search);
@@ -46,7 +58,7 @@ function objectText(value) {
   if(typeof value==='boolean')return value?'Ja':'Nein';
   return String(value);
 }
-function normalizedKey(value){return String(value).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function normalizedKey(value){return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
 function lookup(event, aliases) {
   const sources=[event.seriesData||{},event.eventData||{}];
   const wanted=new Set(aliases.map(normalizedKey));
@@ -66,9 +78,25 @@ function lookup(event, aliases) {
   }
   return '';
 }
-function fact(label,value) {
+function fact(label,value,icon='') {
   if(!value)return '';
-  return '<div class="race-fact"><div class="race-fact-label">'+esc(label)+'</div><div class="race-fact-value">'+esc(value)+'</div></div>';
+  return '<div class="race-fact"><div class="race-fact-label">'+esc(label)+'</div><div class="race-fact-value">'+(icon?'<span class="weather-icon" aria-hidden="true">'+icon+'</span>':'')+esc(value)+'</div></div>';
+}
+function weatherIcon(value) {
+  const text=String(value||'').toLowerCase();
+  if(/thunder|storm|lightning|gewitter|sturm/.test(text))return '⛈️';
+  if(/snow|sleet|schnee|schneefall|blizzard/.test(text))return '❄️';
+  if(/shower|showers|schauer|drizzle|niesel/.test(text))return '🌦️';
+  if(/rain|raining|regen|precipitation/.test(text))return '🌧️';
+  if(/partly|mostly sunny|sun.*cloud|cloud.*sun|wechselnd bewölkt|heiter/.test(text))return '🌤️';
+  if(/cloud|overcast|bewölkt|bedeckt/.test(text))return '☁️';
+  if(/fog|mist|nebel/.test(text))return '🌫️';
+  if(/sunny|clear|sunshine|sonnig|klar/.test(text))return '☀️';
+  return '🌡️';
+}
+function trackName(track) {
+  if(track&&typeof track==='object')return String(track.name??track.trackName??track.label??track.value??track.displayName??'');
+  return String(track??'');
 }
 function renderNext(events) {
   const next=events.filter(item=>item.id!==activeEvent.id&&Date.parse(item.startTime)>Date.now()).sort((a,b)=>Date.parse(a.startTime)-Date.parse(b.startTime)).slice(0,3);
@@ -101,8 +129,8 @@ const TRACK_LAYOUTS = [
   { keys:['long beach'], name:'Streets of Long Beach', layout:'Street Circuit', image:'https://indymotorspeedway.com/files/IRL-Track-Layout-LongBeach.jpg', source:'Indy Motor Speedway' }
 ];
 function trackLayoutFor(track) {
-  const value=String(track||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  return TRACK_LAYOUTS.find(item=>item.keys.some(key=>value.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g,''))))||null;
+  const value=normalizedKey(track);
+  return TRACK_LAYOUTS.find(item=>item.keys.some(key=>value.includes(normalizedKey(key))))||null;
 }
 function renderTrackLayout(track) {
   const root=$('#trackLayout');
@@ -110,7 +138,7 @@ function renderTrackLayout(track) {
   const item=trackLayoutFor(track);
   if(!item){root.innerHTML='<div class="track-layout-empty">Für diese Strecke ist aktuell kein verifiziertes Layout hinterlegt.</div>';return;}
   root.classList.add('has-image');
-  root.innerHTML='<img class="track-layout-image" alt="Streckenlayout '+esc(item.name)+'" loading="lazy" decoding="async"><div class="track-layout-caption"><span>'+esc(item.name)+' · '+esc(item.layout)+'</span><a href="'+esc(item.image)+'" target="_blank" rel="noopener noreferrer">Bildquelle: '+esc(item.source)+'</a></div>';
+  root.innerHTML='<img class="track-layout-image" alt="Streckenlayout '+esc(item.name)+'" loading="eager" decoding="async" referrerpolicy="no-referrer"><div class="track-layout-caption"><span>'+esc(item.name)+' · '+esc(item.layout)+'</span><a href="'+esc(item.image)+'" target="_blank" rel="noopener noreferrer">Bildquelle: '+esc(item.source)+'</a></div>';
   const image=root.querySelector('img');
   image.addEventListener('error',()=>{
     root.classList.remove('has-image');
@@ -122,8 +150,9 @@ function render(event, events) {
   activeEvent=event;
   const p=parts(event.startTime);
   $('#raceName').textContent=event.race;
-  $('#raceTrack').textContent=event.track||'';
-  renderTrackLayout(event.track);
+  const currentTrack=trackName(event.track)||lookup(event,['track_name','track','circuit','venue']);
+  $('#raceTrack').textContent=currentTrack;
+  renderTrackLayout(currentTrack);
   $('#raceType').textContent=({special:'SPECIAL EVENT',weekly:'WEEKLY RACE',daily:'DAILY RACE',championship:'CHAMPIONSHIP'}[event.type]||'RACE');
   $('#raceClasses').innerHTML=classBadges(event);
   $('#raceSafety').innerHTML=rankBadge(event.safety);
@@ -154,7 +183,7 @@ function render(event, events) {
   ];
   $('#sessionFacts').innerHTML=sessionFields.map(([label,keys])=>fact(label,lookup(event,keys))).join('')||'<div class="race-fact">Keine Session Details vom Portal übermittelt.</div>';
   const weatherFields=[
-    ['Weather',['weather','weather_condition','conditions']],
+    ['Weather',['weather','weather_condition','weather_type','weather_description','forecast','conditions']],
     ['Air Temperature',['air_temperature','air_temp','temperature']],
     ['Track Temperature',['track_temperature','track_temp']],
     ['Wind',['wind','wind_speed','wind_direction']],
@@ -163,7 +192,10 @@ function render(event, events) {
     ['Cloud Cover',['cloud_cover','cloudiness']],
     ['Pressure',['pressure','air_pressure']]
   ];
-  $('#weatherFacts').innerHTML=weatherFields.map(([label,keys])=>fact(label,lookup(event,keys))).join('')||'<div class="race-fact">Wetterdaten werden für dieses Event nicht übermittelt.</div>';
+  $('#weatherFacts').innerHTML=weatherFields.map(([label,keys])=>{
+    const value=lookup(event,keys);
+    return fact(label,value,label==='Weather'&&value?weatherIcon(value):'');
+  }).join('')||'<div class="race-fact">Wetterdaten werden für dieses Event nicht übermittelt.</div>';
   renderNext(events);
   $('#raceContent').hidden=false;
   $('#raceStatus').hidden=true;
