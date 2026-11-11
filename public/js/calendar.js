@@ -116,20 +116,14 @@ function startLabel(event, futureRange) {
 
 function countdown(event) {
   const difference = Date.parse(event.startTime) - Date.now();
-  if (!Number.isFinite(difference) || difference <= 0) return null;
-  const totalMinutes = Math.floor(difference / 60000);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-  const seconds = Math.floor((difference % 60000) / 1000);
-  const text = days > 0
-    ? days + 'd ' + String(hours).padStart(2, '0') + 'h'
-    : totalMinutes >= 60
-      ? String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' + String(minutes).padStart(2, '0')
-      : String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+  if (!Number.isFinite(difference) || difference <= 0 || difference > 30 * 60 * 1000) return null;
+  const totalSeconds = Math.ceil(difference / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
   return {
-    text,
-    className: difference <= 60 * 60 * 1000 ? 'urgent' : difference <= 6 * 60 * 60 * 1000 ? 'soon' : 'ready',
+    text: String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0'),
+    className: difference <= 5 * 60 * 1000 ? 'urgent'
+      : difference <= 10 * 60 * 1000 ? 'soon' : 'ready',
   };
 }
 
@@ -160,7 +154,7 @@ function filteredEvents() {
   });
   if (state.view === 'championship') events = events.filter((event) => event.type === 'championship');
   if (state.view === 'special') events = events.filter((event) => event.type === 'special');
-  return events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime));
+  return events.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime)).slice(0, 15);
 }
 
 function classBadges(event) {
@@ -180,9 +174,9 @@ function safetyBadge(value) {
   return '<span class="pill safety-badge ' + rank + '">' + esc(label) + '</span>';
 }
 
-function renderEvent(event) {
+function renderEvent(event, showTimer) {
   const parts = berlinParts(event.startTime);
-  const timer = countdown(event);
+  const timer = showTimer ? countdown(event) : null;
   const label = startLabel(event, false);
   const time = parts.hour + ':' + parts.minute;
   const typeLabel = event.type === 'special' ? 'Special Event'
@@ -210,7 +204,14 @@ function renderEvent(event) {
 }
 
 function groupEvents(events) {
-  return events.map(renderEvent).join('');
+  const timerEventIds = new Set(events
+    .filter((event) => {
+      const difference = Date.parse(event.startTime) - Date.now();
+      return Number.isFinite(difference) && difference > 0 && difference <= 30 * 60 * 1000;
+    })
+    .slice(0, 4)
+    .map((event) => event.id || event.eventId || event.startTime));
+  return events.map((event) => renderEvent(event, timerEventIds.has(event.id || event.eventId || event.startTime))).join('');
 }
 
 function updateHeading(events) {
