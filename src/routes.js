@@ -90,6 +90,7 @@ export const routes = [
 	{ method: 'GET', path: '/setups.json', handler: catalogFile },
 	{ method: 'GET', path: '/', handler: homePage },
 	{ method: 'GET', path: ['/calendar','/calendar.html'], handler: (request, env, ctx) => staticPublic(request, env, ctx) },
+	{ method: 'GET', path: ['/race', '/race.html'], handler: (request, env, ctx) => staticPublic(request, env, ctx) },
 	{ method: 'GET', path: '/api/calendar', handler: calendarApi },
 	{
 		method: 'GET',
