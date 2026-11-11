@@ -67,3 +67,5 @@
 .safety-badge.silver{background:#8995a2;border:1px solid #aab4bf;color:#101820}
 .safety-badge.gold{background:#c49a32;border:1px solid #e0ba59;color:#211906}
 .safety-badge.platinum{background:#55a9c2;border:1px solid #83c9dc;color:#071d25}
+
+.schedule-row-link{display:grid;color:inherit;text-decoration:none;cursor:pointer}.schedule-row-link:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
