@@ -6,6 +6,10 @@ initHeaderActions();
 const themeButton = document.getElementById('themeButton');
 const state = { events: [], view: 'series', timer: null };
 const $ = (selector) => document.querySelector(selector);
+const setText = (selector, value) => {
+  const element = $(selector);
+  if (element) element.textContent = value;
+};
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;',
   '<': '&lt;',
@@ -37,8 +41,8 @@ async function loadAccount() {
     if (!data.loggedIn) return;
     $('#loginButton')?.classList.add('hidden');
     const account = $('#account');
-    account.style.display = 'flex';
-    $('#accountName').textContent = data.user?.username || '';
+    if (account) account.style.display = 'flex';
+    setText('#accountName', data.user?.username || '');
     if (data.user?.avatar) {
       const avatar = $('#accountAvatar');
       avatar.src = data.user.avatar;
@@ -128,10 +132,10 @@ function eventClasses(event) {
 }
 
 function matchesFilters(event) {
-  const query = $('#search').value.trim().toLowerCase();
-  const safety = $('#safety').value.trim().toLowerCase();
-  const carClass = $('#class').value.trim().toLowerCase();
-  const type = $('#type').value;
+  const query = ($('#search')?.value || '').trim().toLowerCase();
+  const safety = ($('#safety')?.value || '').trim().toLowerCase();
+  const carClass = ($('#class')?.value || '').trim().toLowerCase();
+  const type = $('#type')?.value || '';
   const searchable = [event.race, event.track, event.seriesId].join(' ').toLowerCase();
   const classes = eventClasses(event).map((value) => value.toLowerCase());
   return (!query || searchable.includes(query))
@@ -225,28 +229,29 @@ function updateHeading(events) {
     special: 'Special Events',
     future: 'Future Schedule',
   };
-  $('#scheduleTitle').textContent = titles[state.view] || titles.series;
-  $('#eventCount').textContent = events.length;
+  setText('#scheduleTitle', titles[state.view] || titles.series);
+  setText('#eventCount', events.length);
   const range = nextWeekRange();
   const futureLabel = new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short',
   }).format(new Date(range.start)) + ' – ' + new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short', year: 'numeric',
   }).format(new Date(range.end - 1));
-  $('#weekLabel').textContent = state.view === 'future' ? futureLabel : 'This week on track';
+  setText('#weekLabel', state.view === 'future' ? futureLabel : 'This week on track');
 }
 
 function render() {
   const events = filteredEvents();
   updateHeading(events);
-  $('#calendar').innerHTML = events.length
+  const calendar = $('#calendar');
+  if (calendar) calendar.innerHTML = events.length
     ? groupEvents(events)
     : '<div class="empty">No upcoming races match this view or its filters.</div>';
 }
 
 async function load() {
   const status = $('#status');
-  status.textContent = 'Loading race schedule…';
+  if (status) status.textContent = 'Loading race schedule…';
   try {
     const response = await fetch('/api/calendar', { headers: { Accept: 'application/json' } });
     const data = await response.json();
@@ -254,18 +259,19 @@ async function load() {
       throw Error(data.detail || data.error || 'Race schedule could not be loaded.');
     }
     state.events = Array.isArray(data.events) ? data.events : [];
-    status.textContent = state.events.length
+    if (status) status.textContent = state.events.length
       ? ''
       : 'The LMU Portal connection responded, but returned no upcoming races.';
-    $('#dateLabel').textContent = new Intl.DateTimeFormat('en-GB', {
+    setText('#dateLabel', new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Europe/Berlin', day: '2-digit', month: 'short', year: 'numeric',
-    }).format(new Date());
+    }).format(new Date()));
     render();
     if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(render, 1000);
   } catch (error) {
-    status.textContent = 'Calendar loading failed: ' + error.message;
-    $('#calendar').innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>';
+    if (status) status.textContent = 'Calendar loading failed: ' + error.message;
+    const calendar = $('#calendar');
+    if (calendar) calendar.innerHTML = '<div class="empty">The race schedule is temporarily unavailable.</div>';
   }
 }
 
@@ -280,7 +286,7 @@ document.querySelectorAll('.portal-tab').forEach((button) => {
 });
 
 ['#search', '#safety', '#class', '#type'].forEach((selector) => {
-  $(selector).addEventListener('input', render);
+  $(selector)?.addEventListener('input', render);
 });
 
 load();
