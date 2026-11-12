@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-12T18:59:00.439Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Valkyrie Bahrain GO.zip",
+  "vehicle": "Aston Martin Valkyrie AMR LMH",
+  "track": "Valkyrie Bahrain GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
