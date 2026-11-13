@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-13T11:08:11.504Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "SC63 Bahrain HYMO.zip",
+  "vehicle": "Lamborghini SC63",
+  "track": "SC63 Bahrain HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
