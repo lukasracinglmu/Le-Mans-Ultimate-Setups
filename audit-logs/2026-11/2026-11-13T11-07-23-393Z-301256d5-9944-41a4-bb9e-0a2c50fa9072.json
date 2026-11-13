@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-13T11:07:23.393Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Monza HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Monza HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
