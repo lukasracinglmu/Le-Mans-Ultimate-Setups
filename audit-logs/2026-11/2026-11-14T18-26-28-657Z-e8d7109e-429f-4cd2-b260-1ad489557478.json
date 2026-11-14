@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-14T18:26:28.657Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "BMW M4 Monza beAlien.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Monza beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
