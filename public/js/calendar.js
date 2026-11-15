@@ -96,8 +96,9 @@ function berlinMidnight(key) {
 function currentWeekRange() {
   const todayKey = berlinDateKey(Date.now());
   const today = new Date(todayKey + 'T12:00:00Z');
-  const daysSinceMonday = (today.getUTCDay() + 6) % 7;
-  const startKey = addDaysToKey(todayKey, -daysSinceMonday);
+  // LMU race weeks run from Tuesday 00:00 to the following Tuesday 00:00.
+  const daysSinceTuesday = (today.getUTCDay() + 5) % 7;
+  const startKey = addDaysToKey(todayKey, -daysSinceTuesday);
   const endKey = addDaysToKey(startKey, 7);
   return { start: berlinMidnight(startKey), end: berlinMidnight(endKey), startKey, endKey };
 }
@@ -228,7 +229,8 @@ function updateHeading(events) {
   setText('#eventCount', events.length);
   const range = currentWeekRange();
   const start = new Date(range.start);
-  const end = new Date(range.end - 1);
+  // The displayed end date is the next Tuesday, matching the LMU week boundary.
+  const end = new Date(range.end);
   const formatter = new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: 'short',
   });
