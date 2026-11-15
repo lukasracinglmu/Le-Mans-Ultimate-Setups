@@ -87,8 +87,25 @@ export async function calendarApi(request, env) {
   if (request.method !== 'GET') return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 
   const now = new Date();
-  const from = new Date(now.getTime() - 2 * 86400000).toISOString().slice(0, 10);
-  const to = new Date(now.getTime() + 14 * 86400000).toISOString().slice(0, 10);
+  // Include the full current LMU week. Its start_date is Tuesday, so using
+  // "today minus two days" can accidentally exclude the active week.
+  const berlinDateParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now).reduce((parts, item) => {
+    parts[item.type] = item.value;
+    return parts;
+  }, {});
+  const todayKey = berlinDateParts.year + '-' + berlinDateParts.month + '-' + berlinDateParts.day;
+  const weekStart = new Date(todayKey + 'T12:00:00Z');
+  const daysSinceTuesday = (weekStart.getUTCDay() + 5) % 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceTuesday);
+  const from = weekStart.toISOString().slice(0, 10);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 21);
+  const to = weekEnd.toISOString().slice(0, 10);
   const weekQuery = 'select=week_key,status,start_date,visible&visible=eq.true&start_date=gte.' + from
     + '&start_date=lte.' + to + '&order=week_key';
   let lastError = null;
