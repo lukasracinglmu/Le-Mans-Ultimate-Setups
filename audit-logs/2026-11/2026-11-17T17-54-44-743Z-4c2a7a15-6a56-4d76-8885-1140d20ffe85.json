@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T17:54:44.743Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "911 Monza beAlien.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Monza beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
