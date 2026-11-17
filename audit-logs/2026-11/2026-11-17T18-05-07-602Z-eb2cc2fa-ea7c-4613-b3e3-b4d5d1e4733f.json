@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T18:05:07.602Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "963 Paul Ricard beAlien.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
