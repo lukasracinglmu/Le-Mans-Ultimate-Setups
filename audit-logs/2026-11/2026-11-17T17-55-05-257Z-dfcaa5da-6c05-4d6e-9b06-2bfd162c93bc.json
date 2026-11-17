@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T17:55:05.257Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Benz Monza beAlien.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Monza beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
