@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T18:32:07.850Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "BMW M4 Monza GO.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
