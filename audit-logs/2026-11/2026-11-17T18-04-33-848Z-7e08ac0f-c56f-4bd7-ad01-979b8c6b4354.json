@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T18:04:33.848Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "963 Monza Curva Grande beAlien.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Monza Curva Grande beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
