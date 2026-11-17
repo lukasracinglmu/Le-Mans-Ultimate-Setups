@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T17:29:41.128Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Toyota Monza GO.zip",
+  "vehicle": "Toyota GR010",
+  "track": "Toyota Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
