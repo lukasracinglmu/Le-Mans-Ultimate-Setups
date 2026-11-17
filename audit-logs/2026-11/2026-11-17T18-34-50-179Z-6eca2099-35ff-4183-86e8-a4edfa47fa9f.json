@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T18:34:50.179Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "9X8 Monza GO.zip",
+  "vehicle": "Peugeot 9X8",
+  "track": "9X8 Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
