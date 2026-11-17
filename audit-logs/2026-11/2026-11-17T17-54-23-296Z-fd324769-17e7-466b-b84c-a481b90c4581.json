@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T17:54:23.296Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Lexus Monza beAlien.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Monza beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
