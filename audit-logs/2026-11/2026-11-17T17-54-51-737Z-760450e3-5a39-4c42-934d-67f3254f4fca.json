@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T17:54:51.737Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Cadillac Monza beAlien.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Monza beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
