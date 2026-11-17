@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-17T18:03:21.719Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "963 Portimao beAlien.zip",
+  "vehicle": "Porsche 963",
+  "track": "963 Portimao beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
