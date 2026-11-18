@@ -1,7 +1,9 @@
 import { initHeaderActions } from './home/header-actions.js';
 import { logout } from './home/access.js';
+import { initOwnerNavEditor } from './shared/owner-nav-editor.js';
 
 initHeaderActions();
+initOwnerNavEditor();
 
 const themeButton = document.getElementById('themeButton');
 const state = { events: [], view: 'series', timer: null };
