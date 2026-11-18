@@ -468,7 +468,7 @@ export async function choosePreviousSetups(files, target, versions) {
 		dialog.className = 'upload-version-dialog';
 		dialog.setAttribute('aria-labelledby', 'oldSetupsTitle');
 		dialog.innerHTML =
-			'<h2 id="oldSetupsTitle">Setup bereits vorhanden</h2><p>Wähle, was mit den vorhandenen passenden Setups desselben Herstellers passieren soll. Die Entscheidung gilt auch bei gleicher oder fehlender Version. Ersetzen aktualisiert eine gleichnamige Datei. Löschen entfernt die alte Datei erst, nachdem die neue separat gespeichert ist. Veraltet markieren behält die alte ZIP und kennzeichnet sie.</p><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
+			'<h2 id="oldSetupsTitle">Setup bereits vorhanden</h2><p>Wähle, was mit den vorhandenen passenden Setups desselben Herstellers passieren soll. Die Entscheidung gilt auch bei gleicher oder fehlender Version. Ersetzen aktualisiert eine gleichnamige Datei. Löschen entfernt die alte Datei erst, nachdem die neue separat gespeichert ist. Veraltet markieren behält die alte ZIP und kennzeichnet sie.</p><div class="old-setup-bulk-actions"><button type="button" data-all-keep>Alle behalten</button><button type="button" class="discord-button" data-all-replace>Alle ersetzen</button></div><div class="old-setup-choices"></div><p class="upload-version-error" role="alert"></p><div class="upload-version-actions"><button type="button" data-cancel>Abbrechen</button><button type="button" class="discord-button" data-start>Upload starten</button></div>';
 		let plans = null;
 		const rows = [],
 			container = dialog.querySelector('.old-setup-choices'),
@@ -532,6 +532,24 @@ export async function choosePreviousSetups(files, target, versions) {
 			row.append(list);
 			container.append(row);
 			rows.push({ choice, select, inputs });
+		});
+		dialog.querySelector('[data-all-keep]').addEventListener('click', () => {
+			for (const { select, inputs } of rows) {
+				if (!select) continue;
+				select.value = 'keep';
+				for (const { input } of inputs) input.checked = true;
+				select.dispatchEvent(new Event('change'));
+			}
+			error.textContent = '';
+		});
+		dialog.querySelector('[data-all-replace]').addEventListener('click', () => {
+			for (const { select, inputs } of rows) {
+				if (!select) continue;
+				select.value = 'replace';
+				for (const { input } of inputs) input.checked = true;
+				select.dispatchEvent(new Event('change'));
+			}
+			error.textContent = '';
 		});
 		dialog.querySelector('[data-cancel]').addEventListener('click', () => dialog.close());
 		dialog.querySelector('[data-start]').addEventListener('click', () => {
