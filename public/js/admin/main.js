@@ -1,9 +1,13 @@
+import { initHeaderActions } from '../home/header-actions.js';
+import { initOwnerNavEditor } from '../shared/owner-nav-editor.js';
 import { fetchMe } from '../shared/api.js';
 import { initAccessPanel } from './access.js';
 import { initBackups } from './backups.js';
 import { initMaintenance, restrictMaintenanceToOwner } from './maintenance.js';
 
 // Module scripts run after the document is parsed, so all panels already exist.
+initHeaderActions();
+initOwnerNavEditor();
 const access = initAccessPanel();
 initMaintenance();
 const backups = initBackups();
