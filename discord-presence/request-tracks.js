@@ -69,6 +69,7 @@ export const REQUEST_TRACKS = Object.freeze(
 			'lemans',
 			'default',
 		],
+		['Le Mans – Mulsanne', ['Le Mans Mulsanne', 'Mulsanne', 'Mulsan'], 'lemans', 'mulsanne'],
 		['Long Beach', ['Streets of Long Beach'], 'longbeach', 'default'],
 		['Lusail', ['Lusail International Circuit', 'Losail', 'Qatar'], 'lusail', 'default'],
 		['Lusail – Short', ['Lusail Short', 'Losail Short', 'Qatar Short'], 'lusail', 'short'],
@@ -177,7 +178,7 @@ const FILE_FAMILIES = {
 	imola: ['imola', 'imo'],
 	interlagos: ['interlagos', 'josecarlospace', 'saopaulo'],
 	laguna: ['lagunaseca'],
-	lemans: ['lemans', 'sarthe'],
+	lemans: ['lemans', 'sarthe', 'mulsanne'],
 	longbeach: ['longbeach'],
 	lusail: ['lusail', 'losail', 'qatar'],
 	monza: ['monza'],
@@ -205,10 +206,11 @@ export function requestTrackFromFilename(value) {
 	if (
 		(family === 'portimao' && /\belms\b/.test(words)) ||
 		(family === 'spa' && /\bendurance\b/.test(words)) ||
-		(family === 'lemans' && /mulsanne|nochicane|ohneschikane/.test(compact))
+		(family === 'lemans' && /nochicane|ohneschikane/.test(compact))
 	)
 		return null;
 	const layouts = {
+		lemans: [['mulsanne', /mulsanne|mulsan/]],
 		bahrain: [
 			['endurance', /endurance/],
 			['outer', /outer/],

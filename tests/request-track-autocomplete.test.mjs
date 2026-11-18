@@ -28,9 +28,9 @@ const browser = {
 		requestPage.searchRequestTracks(REQUEST_TRACKS, value, limit),
 };
 
-test('Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
-	assert.equal(REQUEST_TRACKS.length, 33);
-	assert.equal(new Set(REQUEST_TRACKS.map((t) => t.name)).size, 33);
+test('Bestätigte 34 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
+	assert.equal(REQUEST_TRACKS.length, 34);
+	assert.equal(new Set(REQUEST_TRACKS.map((t) => t.name)).size, 34);
 	for (const omitted of ['Portimao ELMS', 'Spa Endurance', 'Le Mans Mulsanne No Chicanes'])
 		assert.equal(resolveRequestTrack(omitted), null);
 	assert.equal(searchRequestTracks('', 100).length, 25);
@@ -43,6 +43,7 @@ test('Kurzformen, Akzente, Layouts und Teiltreffer funktionieren in beiden Oberf
 		['Spa', 'Spa-Francorchamps'],
 		['COTA', 'Circuit of the Americas / COTA'],
 		['Le Mans', 'Le Mans / Circuit de la Sarthe'],
+		['Le Mans Mulsanne', 'Le Mans – Mulsanne'],
 		['Paul Ricard 1av2-short', 'Paul Ricard – 1A V2 Short'],
 	])
 		assert.equal(resolveRequestTrack(query)?.name, name);
@@ -82,6 +83,7 @@ test('Vorhanden-Prüfung erkennt Kurzformen, aber verwechselt keine Layouts', ()
 		['Toyota Bahrain Outer GO.zip']
 	);
 	assert.equal(matchingRequestSetups(files, 'Bahrain – Endurance').length, 0);
+	assert.equal(matchingRequestSetups([{ name: 'Toyota Le Mans Mulsanne HYMO.zip' }], 'Le Mans – Mulsanne').length, 1);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A').length, 0);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A V2').length, 0);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A V2 Short').length, 1);
@@ -107,6 +109,7 @@ test('Paul Ricard Default ist separat von allen vier benannten Layouts', () => {
 	assert.equal(resolveRequestTrack('Circuit Paul Ricard')?.name, 'Paul Ricard - Default');
 	assert.equal(resolveRequestTrack('Paul Ricard Default')?.name, 'Paul Ricard - Default');
 	assert.equal(resolveRequestTrack('Paul Ricard 1A')?.layout, '1a');
+	assert.equal(resolveRequestTrack('Mulsanne')?.layout, 'mulsanne');
 	const files = [
 		'BMW V8 Paul Ricard HYMO.zip',
 		'BMW V8 Paul Ricard 1A HYMO.zip',
@@ -173,7 +176,7 @@ test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf', async 
 		assert.equal(response.status, 200);
 		assert.match(response.headers.get('content-type'), /^application\/json/);
 		const body = await response.json();
-		assert.equal(body.tracks.length, 33);
+		assert.equal(body.tracks.length, 34);
 		assert.equal(body.tracks.at(-1).name, 'Spa-Francorchamps');
 	} finally {
 		globalThis.fetch = original;
@@ -404,7 +407,7 @@ test('Bot registriert beide Vorschlagsfelder und beantwortet das tatsächlich fo
 	assert.equal(empty.choices.length, 25);
 });
 
-test('Bot validiert die Strecke und behält Button, Rollen-Tag und Ping-Unterdrückung', async () => {
+test('Bot validiert die Strecke und sendet einen echten Rollen-Ping', async () => {
 	const b = await bot(),
 		invalid = slash('Nürburgring');
 	await b.handle(invalid);
@@ -420,8 +423,8 @@ test('Bot validiert die Strecke und behält Button, Rollen-Tag und Ping-Unterdr�
 	);
 	assert.equal(message.components[0].components[0].custom_id, 'setup_ready:1033453785416208564');
 	assert.match(message.content, /<@&1538601074074849330>/);
-	assert.equal(message.allowedMentions.roles.length, 0);
-	assert.equal(message.flags, 4096);
+	assert.deepEqual(message.allowedMentions.roles, ['1538601074074849330']);
+	assert.equal(message.flags, undefined);
 });
 
 test('Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrzeug', async () => {

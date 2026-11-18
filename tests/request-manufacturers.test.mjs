@@ -77,8 +77,8 @@ test('Beide Request-Wege erzeugen Embed mit Hersteller, Personen-Tag und sichtba
 		'<@' + owner + '>'
 	);
 	assert.equal(p.components[0].components[0].custom_id, 'setup_ready:' + owner);
-	assert.deepEqual(p.allowed_mentions, { parse: [], roles: [], users: [] });
-	assert.equal(p.flags, 4096);
+	assert.deepEqual(p.allowed_mentions, { parse: [], roles: ['1538601074074849330'], users: [] });
+	assert.equal(p.flags, undefined);
 	assert.equal(
 		canConfirmSetupRequest('222222222222222222', ['1538601074074849330'], '1538601074074849330'),
 		true
@@ -218,7 +218,11 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
 			'Egal'
 		);
 		assert.equal(created.sends[0].components[0].components[0].label, 'Setup wurde hochgeladen');
-		assert.deepEqual(created.sends[0].allowed_mentions, { parse: [], roles: [], users: [] });
+		assert.deepEqual(created.sends[0].allowed_mentions, {
+			parse: [],
+			roles: ['1538601074074849330'],
+			users: [],
+		});
 		const existing = await website(['Toyota Spa HYMO.zip'], manufacturer);
 		assert.equal(existing.body.alreadyExists, true);
 		assert.equal(existing.sends.length, 0);

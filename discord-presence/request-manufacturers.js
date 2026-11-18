@@ -104,7 +104,10 @@ export function setupRequestPayload(data, roleId, now = new Date()) {
 				],
 			},
 		],
-		allowed_mentions: { parse: [], roles: [], users: [] },
-		flags: 4096,
+		allowed_mentions: {
+			parse: [],
+			roles: /^\d{16,22}$/.test(String(roleId || '')) ? [String(roleId)] : [],
+			users: [],
+		},
 	};
 }
