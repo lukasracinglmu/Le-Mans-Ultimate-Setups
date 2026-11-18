@@ -28,8 +28,8 @@ const browser = {
 		requestPage.searchRequestTracks(REQUEST_TRACKS, value, limit),
 };
 
-test('Bestätigte 33 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
-	assert.equal(REQUEST_TRACKS.length, 33);
+test('Bestätigte 34 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
+	assert.equal(REQUEST_TRACKS.length, 34);
 	assert.equal(new Set(REQUEST_TRACKS.map((t) => t.name)).size, 33);
 	for (const omitted of ['Portimao ELMS', 'Spa Endurance', 'Le Mans Mulsanne No Chicanes'])
 		assert.equal(resolveRequestTrack(omitted), null);
@@ -43,6 +43,7 @@ test('Kurzformen, Akzente, Layouts und Teiltreffer funktionieren in beiden Oberf
 		['Spa', 'Spa-Francorchamps'],
 		['COTA', 'Circuit of the Americas / COTA'],
 		['Le Mans', 'Le Mans / Circuit de la Sarthe'],
+		['Le Mans Mulsanne', 'Le Mans – Mulsanne'],
 		['Paul Ricard 1av2-short', 'Paul Ricard – 1A V2 Short'],
 	])
 		assert.equal(resolveRequestTrack(query)?.name, name);
@@ -173,7 +174,7 @@ test('Streckenliste kommt direkt aus dem Worker ohne einen GitHub-Abruf', async 
 		assert.equal(response.status, 200);
 		assert.match(response.headers.get('content-type'), /^application\/json/);
 		const body = await response.json();
-		assert.equal(body.tracks.length, 33);
+		assert.equal(body.tracks.length, 34);
 		assert.equal(body.tracks.at(-1).name, 'Spa-Francorchamps');
 	} finally {
 		globalThis.fetch = original;
