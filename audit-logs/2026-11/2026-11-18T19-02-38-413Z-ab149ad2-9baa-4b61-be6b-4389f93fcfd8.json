@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-18T19:02:38.413Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "499P Monza GO.zip",
+  "vehicle": "Ferrari 499P",
+  "track": "499P Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
