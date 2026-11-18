@@ -5,6 +5,7 @@ import { staticFile } from './features/assets.js';
 import { currentUser, discordCallback, discordLogin, logout } from './features/auth.js';
 import { catalogFile } from './features/catalog.js';
 import { favoritesApi } from './features/favorites.js';
+import { ownerNavigationPreferences } from './features/owner-navigation.js';
 import {
 	adminPage,
 	bugReportPage,
@@ -61,6 +62,7 @@ export const routes = [
 	{ method: BASE_METHODS, path: '/auth/discord/callback', handler: requireHttps(discordCallback) },
 	{ method: BASE_METHODS, path: '/auth/logout', handler: requireHttps(catchErrors(logout)) },
 	{ method: 'GET', path: '/api/me', handler: requireHttps(currentUser) },
+	{ method: ['GET', 'PUT'], path: '/api/owner/navigation', handler: requireHttps(ownerNavigationPreferences) },
 	{
 		method: '*',
 		path: ['/strategy', '/strategy.html', '/strategy.js'],
