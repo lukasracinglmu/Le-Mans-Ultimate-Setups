@@ -1,7 +1,5 @@
 import { initHeaderActions } from './home/header-actions.js';
-import { initOwnerNavigation } from './shared/owner-navigation.js';
 initHeaderActions();
-initOwnerNavigation();
 
 const themeButton = document.getElementById('themeButton');
 function syncThemeButton() {
