@@ -77,8 +77,8 @@ test('Beide Request-Wege erzeugen Embed mit Hersteller, Personen-Tag und sichtba
 		'<@' + owner + '>'
 	);
 	assert.equal(p.components[0].components[0].custom_id, 'setup_ready:' + owner);
-	assert.deepEqual(p.allowed_mentions, { parse: [], roles: [], users: [] });
-	assert.equal(p.flags, 4096);
+	assert.deepEqual(p.allowed_mentions, { parse: [], roles: ['1538601074074849330'], users: [] });
+	assert.equal(p.flags, undefined);
 	assert.equal(
 		canConfirmSetupRequest('222222222222222222', ['1538601074074849330'], '1538601074074849330'),
 		true
