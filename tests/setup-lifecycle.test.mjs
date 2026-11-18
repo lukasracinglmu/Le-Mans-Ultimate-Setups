@@ -273,7 +273,11 @@ test('Setup Request derives class from catalog and mentions exactly the configur
 		assert.equal((await createWebsiteRequest(req('BMW M4 LMGT3'), env)).status, 200);
 		assert.equal(sends[0].embeds[0].fields.find((field) => field.name === 'Klasse').value, 'LMGT3');
 		assert.match(sends[0].content, /<@&1538601074074849330>/);
-		assert.deepEqual(sends[0].allowed_mentions, { parse: [], roles: [], users: [] });
+		assert.deepEqual(sends[0].allowed_mentions, {
+			parse: [],
+			roles: ['1538601074074849330'],
+			users: [],
+		});
 		assert.equal((await createWebsiteRequest(req('BMW'), env)).status, 400);
 		assert.equal(sends.length, 1);
 	} finally {
