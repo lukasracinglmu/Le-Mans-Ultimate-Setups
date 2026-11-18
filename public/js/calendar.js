@@ -1,7 +1,9 @@
 import { initHeaderActions } from './home/header-actions.js';
+import { initOwnerNavigation } from './shared/owner-navigation.js';
 import { logout } from './home/access.js';
 
 initHeaderActions();
+initOwnerNavigation();
 
 const themeButton = document.getElementById('themeButton');
 const state = { events: [], view: 'series', timer: null };
