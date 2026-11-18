@@ -88,7 +88,7 @@ export async function initOwnerNavEditor() {
 			grip.textContent = '⠿';
 			grip.setAttribute('aria-hidden', 'true');
 			const label = document.createElement('span');
-			label.textContent = original.textContent.trim();
+			label.textContent = original.querySelector('.action-label')?.textContent.trim() || original.textContent.trim();
 			const controls = document.createElement('span');
 			controls.className = 'owner-nav-editor-moves';
 			for (const [step, symbol, labelText] of [[-1, '↑', 'Nach oben'], [1, '↓', 'Nach unten']]) {
