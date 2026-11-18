@@ -30,7 +30,7 @@ const browser = {
 
 test('Bestätigte 34 Einträge ohne die drei ausdrücklich entfernten Layouts', () => {
 	assert.equal(REQUEST_TRACKS.length, 34);
-	assert.equal(new Set(REQUEST_TRACKS.map((t) => t.name)).size, 33);
+	assert.equal(new Set(REQUEST_TRACKS.map((t) => t.name)).size, 34);
 	for (const omitted of ['Portimao ELMS', 'Spa Endurance', 'Le Mans Mulsanne No Chicanes'])
 		assert.equal(resolveRequestTrack(omitted), null);
 	assert.equal(searchRequestTracks('', 100).length, 25);
@@ -83,6 +83,7 @@ test('Vorhanden-Prüfung erkennt Kurzformen, aber verwechselt keine Layouts', ()
 		['Toyota Bahrain Outer GO.zip']
 	);
 	assert.equal(matchingRequestSetups(files, 'Bahrain – Endurance').length, 0);
+	assert.equal(matchingRequestSetups([{ name: 'Toyota Le Mans Mulsanne HYMO.zip' }], 'Le Mans – Mulsanne').length, 1);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A').length, 0);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A V2').length, 0);
 	assert.equal(matchingRequestSetups(files, 'Paul Ricard – 1A V2 Short').length, 1);
@@ -108,6 +109,7 @@ test('Paul Ricard Default ist separat von allen vier benannten Layouts', () => {
 	assert.equal(resolveRequestTrack('Circuit Paul Ricard')?.name, 'Paul Ricard - Default');
 	assert.equal(resolveRequestTrack('Paul Ricard Default')?.name, 'Paul Ricard - Default');
 	assert.equal(resolveRequestTrack('Paul Ricard 1A')?.layout, '1a');
+	assert.equal(resolveRequestTrack('Mulsanne')?.layout, 'mulsanne');
 	const files = [
 		'BMW V8 Paul Ricard HYMO.zip',
 		'BMW V8 Paul Ricard 1A HYMO.zip',
