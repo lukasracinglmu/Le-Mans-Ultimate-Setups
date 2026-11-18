@@ -407,7 +407,7 @@ test('Bot registriert beide Vorschlagsfelder und beantwortet das tats채chlich fo
 	assert.equal(empty.choices.length, 25);
 });
 
-test('Bot validiert die Strecke und beh채lt Button, Rollen-Tag und Ping-Unterdr체ckung', async () => {
+test('Bot validiert die Strecke und sendet einen echten Rollen-Ping', async () => {
 	const b = await bot(),
 		invalid = slash('N체rburgring');
 	await b.handle(invalid);
@@ -423,8 +423,8 @@ test('Bot validiert die Strecke und beh채lt Button, Rollen-Tag und Ping-Unterdr�
 	);
 	assert.equal(message.components[0].components[0].custom_id, 'setup_ready:1033453785416208564');
 	assert.match(message.content, /<@&1538601074074849330>/);
-	assert.equal(message.allowedMentions.roles.length, 0);
-	assert.equal(message.flags, 4096);
+	assert.deepEqual(message.allowedMentions.roles, ['1538601074074849330']);
+	assert.equal(message.flags, undefined);
 });
 
 test('Vorhandenes Setup bleibt privat und verlinkt weiterhin direkt in das Fahrzeug', async () => {
