@@ -8,7 +8,6 @@ import { initDatabaseAccess } from './database-access.js';
 import { initDelete, openDeleteModal } from './delete.js';
 import { initHeaderActions } from './header-actions.js';
 import { initLogo, initManufacturerCarousel, initResize, moveUpcomingPanel } from './layout.js';
-import { initOwnerNavigation } from '../shared/owner-navigation.js';
 import { setSetupActions } from './setup-list.js';
 import { loadTheme, toggleTheme } from './theme-button.js';
 import { initUpload } from './upload.js';
@@ -25,7 +24,6 @@ initCarPage();
 loadTheme();
 initBrandLink();
 initHeaderActions();
-initOwnerNavigation();
 initDatabaseAccess();
 initActions({
 	logout: () => logout(),
