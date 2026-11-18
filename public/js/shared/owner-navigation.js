@@ -56,9 +56,10 @@ export async function initOwnerNavigation() {
 	if (!data?.success || !validOrder(data.navigationOrder)) return;
 
 	addStylesheet();
-	let order = data.navigationOrder;
+	let order = readCache();
 	writeCache(order);
 	const nav = document.createElement('nav');
+	document.body.classList.add('owner-global-nav-active');
 	nav.id = 'ownerGlobalNav';
 	nav.setAttribute('aria-label', 'Hauptnavigation');
 	const edit = iconButton('Navigation bearbeiten', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z"/></svg>');
@@ -86,6 +87,11 @@ export async function initOwnerNavigation() {
 		}
 	};
 	render();
+	if (JSON.stringify(order) !== JSON.stringify(data.navigationOrder)) {
+		order = data.navigationOrder;
+		writeCache(order);
+		render();
+	}
 
 	const backdrop = document.createElement('div');
 	backdrop.className = 'owner-nav-backdrop';
