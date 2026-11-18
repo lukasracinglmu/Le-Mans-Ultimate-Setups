@@ -218,7 +218,11 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
 			'Egal'
 		);
 		assert.equal(created.sends[0].components[0].components[0].label, 'Setup wurde hochgeladen');
-		assert.deepEqual(created.sends[0].allowed_mentions, { parse: [], roles: [], users: [] });
+		assert.deepEqual(created.sends[0].allowed_mentions, {
+			parse: [],
+			roles: ['1538601074074849330'],
+			users: [],
+		});
 		const existing = await website(['Toyota Spa HYMO.zip'], manufacturer);
 		assert.equal(existing.body.alreadyExists, true);
 		assert.equal(existing.sends.length, 0);
