@@ -2,10 +2,8 @@ import { fetchMe } from '../shared/api.js';
 import { initAccessPanel } from './access.js';
 import { initBackups } from './backups.js';
 import { initMaintenance, restrictMaintenanceToOwner } from './maintenance.js';
-import { initOwnerNavigation } from '../shared/owner-navigation.js';
 
 // Module scripts run after the document is parsed, so all panels already exist.
-initOwnerNavigation();
 const access = initAccessPanel();
 initMaintenance();
 const backups = initBackups();
