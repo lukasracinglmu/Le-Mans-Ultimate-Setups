@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-20T20:24:35.295Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "BMW V8  Monza GO.zip",
+  "vehicle": "BMW M Hybrid V8",
+  "track": "BMW V8 Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
