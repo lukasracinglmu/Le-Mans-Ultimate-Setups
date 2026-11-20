@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-20T22:17:30.654Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Monza GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Monza GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
