@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-21T14:40:04.101Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Benz Daytona GO.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Daytona GO",
+  "manufacturer": "GO",
+  "version": "1.4.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
