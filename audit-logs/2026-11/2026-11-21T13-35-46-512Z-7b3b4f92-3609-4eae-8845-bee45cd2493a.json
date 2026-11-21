@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-21T13:35:46.512Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Martin H",
+  "discordUserId": "646758275714514955",
+  "setup": "911 Monza Go.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Monza Go",
+  "manufacturer": "GO",
+  "version": "1.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
