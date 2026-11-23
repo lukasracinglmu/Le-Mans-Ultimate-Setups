@@ -169,7 +169,7 @@ export async function calendarApi(request, env) {
               ? item.todays_start_times_utc
               : item.times_utc;
             const slots = (Array.isArray(times) ? times : []).filter((time) =>
-              typeof time === 'string' && /^(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$/.test(time),
+              typeof time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time),
             );
             const days = Array.isArray(item.race_days) ? item.race_days : [];
             const datedDays = new Set(dated.map((event) => Date.parse(event.race_starts_at))
