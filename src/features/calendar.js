@@ -143,10 +143,11 @@ export async function calendarApi(request, env) {
       }
 
       const inList = '(' + seriesIds.map((id) => id.replace(/[(),]/g, '')).join(',') + ')';
-      const [series] = await Promise.all([
-        getAllTable('race_series', 'select=*&series_id=in.' + encodeURIComponent(inList)
-          + '&order=series_name', apiKey),
-      ]);
+      const series = await getAllTable(
+        'race_series',
+        'select=*&series_id=in.' + encodeURIComponent(inList) + '&order=series_name',
+        apiKey
+      );
       const bySeries = new Map(series.map((item) => [String(item.series_id), item]));
       const seen = new Set();
       const normalized = [];
