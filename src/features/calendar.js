@@ -9,9 +9,14 @@ function keys(env) {
     .filter(Boolean);
 }
 
-async function getTable(name, query, apiKey) {
+async function getTable(name, query, apiKey, range) {
   const response = await fetch(REST_URL + '/' + name + '?' + query, {
-    headers: { Accept: 'application/json', apikey: apiKey, Authorization: 'Bearer ' + apiKey },
+    headers: {
+      Accept: 'application/json',
+      apikey: apiKey,
+      Authorization: 'Bearer ' + apiKey,
+      ...(range ? { 'Range-Unit': 'items', Range: range } : {}),
+    },
     signal: AbortSignal.timeout(12000),
   });
   if (!response.ok) {
@@ -21,6 +26,18 @@ async function getTable(name, query, apiKey) {
   const data = await response.json();
   if (!Array.isArray(data)) throw Error('LMU Portal returned an invalid ' + name + ' response.');
   return data;
+}
+
+async function getAllTable(name, query, apiKey) {
+  const pageSize = 1000;
+  const rows = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await getTable(name, query, apiKey, offset + '-' + (offset + pageSize - 1));
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+    if (offset >= 10000) throw Error('LMU Portal ' + name + ' exceeded the calendar pagination limit.');
+  }
 }
 
 function normalizeClass(value) {
@@ -87,8 +104,10 @@ export async function calendarApi(request, env) {
   if (request.method !== 'GET') return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 
   const now = new Date();
-  // Include the full current LMU week. Its start_date is Tuesday, so using
-  // "today minus two days" can accidentally exclude the active week.
+  // LMU daily races are not reliably linked to a visible week row. Query upcoming
+  // race events by their actual start time, then load only the series they reference.
+  // The extra day on each side accounts for the Europe/Berlin timezone boundary;
+  // the calendar UI applies the exact Tuesday-to-Tuesday display range.
   const berlinDateParts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Berlin',
     year: 'numeric',
@@ -102,19 +121,19 @@ export async function calendarApi(request, env) {
   const weekStart = new Date(todayKey + 'T12:00:00Z');
   const daysSinceTuesday = (weekStart.getUTCDay() + 5) % 7;
   weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceTuesday);
-  const from = weekStart.toISOString().slice(0, 10);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setUTCDate(weekEnd.getUTCDate() + 21);
-  const to = weekEnd.toISOString().slice(0, 10);
-  const weekQuery = 'select=week_key,status,start_date,visible&visible=eq.true&start_date=gte.' + from
-    + '&start_date=lte.' + to + '&order=week_key';
+  const fromDate = new Date(weekStart);
+  fromDate.setUTCDate(fromDate.getUTCDate() - 1);
+  const toDate = new Date(weekStart);
+  toDate.setUTCDate(toDate.getUTCDate() + 8);
+  const eventQuery = 'select=*&race_starts_at=gte.' + encodeURIComponent(fromDate.toISOString())
+    + '&race_starts_at=lt.' + encodeURIComponent(toDate.toISOString()) + '&order=race_starts_at';
   let lastError = null;
 
   for (const apiKey of keys(env)) {
     try {
-      const weeks = await getTable('week', weekQuery, apiKey);
-      const weekKeys = [...new Set(weeks.map((row) => row.week_key).filter(Boolean))];
-      if (!weekKeys.length) {
+      const events = await getAllTable('race_event', eventQuery, apiKey);
+      const seriesIds = [...new Set(events.map((event) => String(event.series_id || '')).filter(Boolean))];
+      if (!seriesIds.length) {
         return json({
           success: true,
           timezone: 'Europe/Berlin',
@@ -123,11 +142,12 @@ export async function calendarApi(request, env) {
         });
       }
 
-      const inList = '(' + weekKeys.map((key) => String(key).replace(/[(),]/g, '')).join(',') + ')';
-      const [series, events] = await Promise.all([
-        getTable('race_series', 'select=*&week_key=in.' + encodeURIComponent(inList) + '&order=series_name', apiKey),
-        getTable('race_event', 'select=*&week_key=in.' + encodeURIComponent(inList) + '&order=race_starts_at', apiKey),
-      ]);
+      const inList = '(' + seriesIds.map((id) => id.replace(/[(),]/g, '')).join(',') + ')';
+      const series = await getAllTable(
+        'race_series',
+        'select=*&series_id=in.' + encodeURIComponent(inList) + '&order=series_name',
+        apiKey
+      );
       const bySeries = new Map(series.map((item) => [String(item.series_id), item]));
       const seen = new Set();
       const normalized = [];
