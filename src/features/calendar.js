@@ -130,7 +130,7 @@ export async function calendarApi(request, env) {
       const weekInList = '(' + weekKeys.map((key) => key.replace(/[(),]/g, '')).join(',') + ')';
       const seriesQuery = 'select=*&week_key=in.' + encodeURIComponent(weekInList)
         + '&hidden=eq.false&order=series_id.asc';
-      const eventQuery = 'select=series_id,race_starts_at,event_id,track_name&week_key=in.'
+      const eventQuery = 'select=series_id,race_starts_at&week_key=in.'
         + encodeURIComponent(weekInList)
         + '&race_starts_at=gte.' + encodeURIComponent(utcMidnight.toISOString())
         + '&and=' + encodeURIComponent('(race_starts_at.lte.' + until.toISOString() + ')')
