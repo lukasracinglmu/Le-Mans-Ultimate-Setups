@@ -127,27 +127,44 @@ export async function calendarApi(request, env) {
   toDate.setUTCDate(toDate.getUTCDate() + 8);
   const eventQuery = 'select=*&race_starts_at=gte.' + encodeURIComponent(fromDate.toISOString())
     + '&race_starts_at=lt.' + encodeURIComponent(toDate.toISOString()) + '&order=race_starts_at';
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 21);
+  const weekQuery = 'select=week_key,status,start_date,visible&visible=eq.true&start_date=gte.'
+    + weekStart.toISOString().slice(0, 10) + '&start_date=lte.' + weekEnd.toISOString().slice(0, 10)
+    + '&order=week_key';
   let lastError = null;
 
   for (const apiKey of keys(env)) {
     try {
-      const events = await getAllTable('race_event', eventQuery, apiKey);
-      const seriesIds = [...new Set(events.map((event) => String(event.series_id || '')).filter(Boolean))];
-      if (!seriesIds.length) {
-        return json({
-          success: true,
-          timezone: 'Europe/Berlin',
-          updatedAt: new Date().toISOString(),
-          events: [],
-        });
+      // Daily sessions can be attached to visible LMU weeks even when the
+      // timestamp query does not return them. Merge both sources to avoid dropping them.
+      const weeks = await getAllTable('week', weekQuery, apiKey);
+      const weekKeys = [...new Set(weeks.map((row) => String(row.week_key || '')).filter(Boolean))];
+      const weekInList = '(' + weekKeys.map((key) => key.replace(/[(),]/g, '')).join(',') + ')';
+      const [timeEvents, weekEvents, weekSeries] = await Promise.all([
+        getAllTable('race_event', eventQuery, apiKey),
+        weekKeys.length
+          ? getAllTable('race_event', 'select=*&week_key=in.' + encodeURIComponent(weekInList) + '&order=race_starts_at', apiKey)
+          : Promise.resolve([]),
+        weekKeys.length
+          ? getAllTable('race_series', 'select=*&week_key=in.' + encodeURIComponent(weekInList) + '&order=series_name', apiKey)
+          : Promise.resolve([]),
+      ]);
+      const eventMap = new Map();
+      for (const event of [...timeEvents, ...weekEvents]) {
+        const key = String(event.event_id || event.id || '') || [
+          event.series_id, event.race_starts_at, event.week_key,
+        ].join('|');
+        eventMap.set(key, event);
       }
-
-      const inList = '(' + seriesIds.map((id) => id.replace(/[(),]/g, '')).join(',') + ')';
-      const series = await getAllTable(
-        'race_series',
-        'select=*&series_id=in.' + encodeURIComponent(inList) + '&order=series_name',
-        apiKey
-      );
+      const events = [...eventMap.values()];
+      const seriesIds = [...new Set(events.map((event) => String(event.series_id || '')).filter(Boolean))];
+      const idInList = '(' + seriesIds.map((id) => id.replace(/[(),]/g, '')).join(',') + ')';
+      const idSeries = seriesIds.length
+        ? await getAllTable('race_series', 'select=*&series_id=in.' + encodeURIComponent(idInList) + '&order=series_name', apiKey)
+        : [];
+      const seriesMap = new Map([...weekSeries, ...idSeries].map((item) => [String(item.series_id), item]));
+      const series = [...seriesMap.values()];
       const bySeries = new Map(series.map((item) => [String(item.series_id), item]));
       const seen = new Set();
       const normalized = [];
