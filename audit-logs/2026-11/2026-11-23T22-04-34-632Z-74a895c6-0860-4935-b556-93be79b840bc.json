@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-23T22:04:34.632Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Spa GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Spa GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
