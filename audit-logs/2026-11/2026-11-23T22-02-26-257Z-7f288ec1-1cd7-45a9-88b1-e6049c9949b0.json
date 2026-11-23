@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-23T22:02:26.257Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "911 Paul Ricard GO.zip",
+  "vehicle": "Porsche 911 GT3 R",
+  "track": "911 Paul Ricard GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
