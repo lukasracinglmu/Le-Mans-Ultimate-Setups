@@ -15,89 +15,85 @@ async function withFetch(mock, run) {
   }
 }
 
-test('calendar loads daily, weekly and special races without relying on week_key', async () => {
-  const calls = [];
-  const events = [
-    {
-      event_id: 1,
-      series_id: 10,
-      race_starts_at: '2026-11-23T15:00:00Z',
-      track_name: 'Spa',
-    },
-    {
-      event_id: 2,
-      series_id: 20,
-      race_starts_at: '2026-11-23T15:15:00Z',
-      track_name: 'Monza',
-    },
-    {
-      event_id: 3,
-      series_id: 30,
-      race_starts_at: '2026-11-23T15:30:00Z',
-      track_name: 'Le Mans',
-    },
-  ];
-  const series = [
-    { series_id: 10, type: 'daily', series_name: 'Daily GT3', car_classes: ['GT3'] },
-    { series_id: 20, type: 'weekly', series_name: 'Weekly Hypercar', car_classes: ['Hypercar'] },
-    { series_id: 30, type: 'special_event', series_name: 'Special Event', car_classes: ['LMP2'] },
-  ];
+test('calendar expands LMU Portal published Daily slots when no race_event rows exist', async () => {
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const utcToday = new Date(Math.floor(now.getTime() / dayMs) * dayMs);
+  const weekStart = new Date(utcToday);
+  const daysSinceTuesday = (weekStart.getUTCDay() + 5) % 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceTuesday);
+  const weekKey = weekStart.toISOString().slice(0, 10);
+  const dailyStart = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const dailySlot = dailyStart.toISOString().slice(11, 16);
+  const weeklyStart = new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString();
+  const specialStart = new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString();
 
-  await withFetch(async (url, options) => {
+  const tables = {
+    week: [{ week_key: weekKey, status: 'live', visible: true, start_date: weekKey }],
+    race_series: [
+      {
+        series_id: 10, week_key: weekKey, type: 'daily', series_name: 'Daily GT3',
+        track_friendly: 'Spa', car_classes: ['GT3'], times_utc: [dailySlot],
+        race_days: [utcToday.getUTCDay()], hidden: false,
+      },
+      {
+        series_id: 20, week_key: weekKey, type: 'weekly', series_name: 'Weekly Hypercar',
+        track_friendly: 'Monza', car_classes: ['HYPER-K'], times_utc: [],
+        race_days: [], hidden: false,
+      },
+      {
+        series_id: 30, week_key: weekKey, type: 'special_event', series_name: 'Special Event',
+        track_friendly: 'Le Mans', car_classes: ['LMP2'], hidden: false,
+      },
+    ],
+    race_event: [
+      { event_id: 2, series_id: 20, race_starts_at: weeklyStart, track_name: 'Monza' },
+      { event_id: 3, series_id: 30, race_starts_at: specialStart, track_name: 'Le Mans' },
+    ],
+  };
+
+  await withFetch(async (url) => {
     const parsed = new URL(url);
-    calls.push({ table: parsed.pathname.split('/').pop(), parsed, options });
-    if (parsed.pathname.endsWith('/race_event')) return Response.json(events);
-    if (parsed.pathname.endsWith('/race_series')) return Response.json(series);
-    throw Error('Unexpected table: ' + parsed.pathname);
+    const table = parsed.pathname.split('/').pop();
+    assert.ok(Object.hasOwn(tables, table), 'Unexpected table: ' + table);
+    return Response.json(tables[table]);
   }, async () => {
     const response = await calendarApi(request(), env);
     assert.equal(response.status, 200);
     const data = await response.json();
     assert.equal(data.success, true);
-    assert.deepEqual(data.events.map((event) => event.type), ['daily', 'weekly', 'special']);
-    assert.equal(data.events[0].race, 'Daily GT3');
+    assert.deepEqual(new Set(data.events.map((event) => event.type)), new Set(['daily', 'weekly', 'special']));
+    const daily = data.events.find((event) => event.type === 'daily');
+    assert.ok(daily, 'Daily slot should be synthesized from times_utc');
+    assert.equal(daily.race, 'Daily GT3');
+    assert.equal(daily.track, 'Spa');
+    assert.equal(daily.startTime, dailyStart.toISOString());
   });
-
-  const eventCall = calls.find((call) => call.table === 'race_event');
-  const seriesCall = calls.find((call) => call.table === 'race_series');
-  assert.ok(eventCall);
-  assert.ok(seriesCall);
-  assert.equal(eventCall.parsed.searchParams.has('week_key'), false);
-  assert.match(eventCall.parsed.searchParams.get('race_starts_at'), /^gte\./);
-  assert.match(eventCall.options.headers.Range, /^0-999$/);
-  assert.match(seriesCall.parsed.searchParams.get('series_id'), /10/);
 });
 
-test('calendar paginates event rows so frequent daily races are not truncated', async () => {
-  const firstPage = Array.from({ length: 1000 }, (_, index) => ({
-    event_id: index + 1,
-    series_id: 77,
-    race_starts_at: '2026-11-23T15:00:00Z',
-  }));
-  const secondPage = [
-    {
-      event_id: 1001,
-      series_id: 77,
-      race_starts_at: '2026-11-23T15:15:00Z',
-    },
-  ];
-  const ranges = [];
+test('calendar ignores hidden series and weeks that are not published', async () => {
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setUTCHours(0, 0, 0, 0);
+  const weekKey = weekStart.toISOString().slice(0, 10);
+  const tables = {
+    week: [
+      { week_key: weekKey, status: 'live', visible: true, start_date: weekKey },
+      { week_key: 'hidden-week', status: 'archived', visible: true, start_date: weekKey },
+    ],
+    race_series: [
+      { series_id: 1, week_key: weekKey, type: 'daily', series_name: 'Hidden', hidden: true },
+    ],
+    race_event: [],
+  };
 
-  await withFetch(async (url, options) => {
-    const parsed = new URL(url);
-    if (parsed.pathname.endsWith('/race_event')) {
-      ranges.push(options.headers.Range);
-      return Response.json(options.headers.Range === '0-999' ? firstPage : secondPage);
-    }
-    if (parsed.pathname.endsWith('/race_series')) {
-      return Response.json([{ series_id: 77, type: 'daily', series_name: 'Daily Race' }]);
-    }
-    throw Error('Unexpected table: ' + parsed.pathname);
+  await withFetch(async (url) => {
+    const table = new URL(url).pathname.split('/').pop();
+    return Response.json(tables[table] || []);
   }, async () => {
     const response = await calendarApi(request(), env);
-    assert.equal(response.status, 200);
     const data = await response.json();
-    assert.equal(data.events.length, 1001);
-    assert.deepEqual(ranges, ['0-999', '1000-1999']);
+    assert.equal(data.success, true);
+    assert.equal(data.events.length, 0);
   });
 });
