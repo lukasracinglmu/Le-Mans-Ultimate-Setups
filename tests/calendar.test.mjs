@@ -18,9 +18,24 @@ async function withFetch(mock, run) {
 test('calendar loads daily, weekly and special races without relying on week_key', async () => {
   const calls = [];
   const events = [
-    { event_id: 1, series_id: 10, race_starts_at: '2026-11-23T15:00:00Z', track_name: 'Spa' },
-    { event_id: 2, series_id: 20, race_starts_at: '2026-11-23T15:15:00Z', track_name: 'Monza' },
-    { event_id: 3, series_id: 30, race_starts_at: '2026-11-23T15:30:00Z', track_name: 'Le Mans' },
+    {
+      event_id: 1,
+      series_id: 10,
+      race_starts_at: '2026-11-23T15:00:00Z',
+      track_name: 'Spa',
+    },
+    {
+      event_id: 2,
+      series_id: 20,
+      race_starts_at: '2026-11-23T15:15:00Z',
+      track_name: 'Monza',
+    },
+    {
+      event_id: 3,
+      series_id: 30,
+      race_starts_at: '2026-11-23T15:30:00Z',
+      track_name: 'Le Mans',
+    },
   ];
   const series = [
     { series_id: 10, type: 'daily', series_name: 'Daily GT3', car_classes: ['GT3'] },
@@ -59,11 +74,13 @@ test('calendar paginates event rows so frequent daily races are not truncated', 
     series_id: 77,
     race_starts_at: '2026-11-23T15:00:00Z',
   }));
-  const secondPage = [{
-    event_id: 1001,
-    series_id: 77,
-    race_starts_at: '2026-11-23T15:15:00Z',
-  }];
+  const secondPage = [
+    {
+      event_id: 1001,
+      series_id: 77,
+      race_starts_at: '2026-11-23T15:15:00Z',
+    },
+  ];
   const ranges = [];
 
   await withFetch(async (url, options) => {
