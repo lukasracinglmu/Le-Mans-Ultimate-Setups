@@ -24,6 +24,7 @@ test('calendar expands LMU Portal published Daily slots when no race_event rows 
   weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceTuesday);
   const weekKey = weekStart.toISOString().slice(0, 10);
   const dailyStart = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  dailyStart.setUTCSeconds(0, 0);
   const dailySlot = dailyStart.toISOString().slice(11, 16);
   const weeklyStart = new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString();
   const specialStart = new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString();
