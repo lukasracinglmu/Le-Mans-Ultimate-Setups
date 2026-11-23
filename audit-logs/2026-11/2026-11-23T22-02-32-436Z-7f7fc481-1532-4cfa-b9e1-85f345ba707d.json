@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-23T22:02:32.436Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Cadillac Paul Ricard GO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Paul Ricard GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
