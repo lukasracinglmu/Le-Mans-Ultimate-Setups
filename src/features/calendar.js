@@ -104,78 +104,103 @@ export async function calendarApi(request, env) {
   if (request.method !== 'GET') return json({ success: false, error: 'Methode nicht erlaubt.' }, 405);
 
   const now = new Date();
-  // LMU daily races are not reliably linked to a visible week row. Query upcoming
-  // race events by their actual start time, then load only the series they reference.
-  // The extra day on each side accounts for the Europe/Berlin timezone boundary;
-  // the calendar UI applies the exact Tuesday-to-Tuesday display range.
-  const berlinDateParts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Berlin',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now).reduce((parts, item) => {
-    parts[item.type] = item.value;
-    return parts;
-  }, {});
-  const todayKey = berlinDateParts.year + '-' + berlinDateParts.month + '-' + berlinDateParts.day;
-  const weekStart = new Date(todayKey + 'T12:00:00Z');
-  const daysSinceTuesday = (weekStart.getUTCDay() + 5) % 7;
-  weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceTuesday);
-  const fromDate = new Date(weekStart);
-  fromDate.setUTCDate(fromDate.getUTCDate() - 1);
-  const toDate = new Date(weekStart);
-  toDate.setUTCDate(toDate.getUTCDate() + 8);
-  const eventQuery = 'select=*&race_starts_at=gte.' + encodeURIComponent(fromDate.toISOString())
-    + '&race_starts_at=lt.' + encodeURIComponent(toDate.toISOString()) + '&order=race_starts_at';
-  const weekEnd = new Date(weekStart);
-  weekEnd.setUTCDate(weekEnd.getUTCDate() + 21);
-  const weekQuery = 'select=week_key,status,start_date,visible&visible=eq.true&start_date=gte.'
-    + weekStart.toISOString().slice(0, 10) + '&start_date=lte.' + weekEnd.toISOString().slice(0, 10)
-    + '&order=week_key';
+  const dayMs = 24 * 60 * 60 * 1000;
+  const utcMidnight = new Date(Math.floor(now.getTime() / dayMs) * dayMs);
+  const until = new Date(now.getTime() + 60 * dayMs);
   let lastError = null;
 
   for (const apiKey of keys(env)) {
     try {
-      // Daily sessions can be attached to visible LMU weeks even when the
-      // timestamp query does not return them. Merge both sources to avoid dropping them.
-      const weeks = await getAllTable('week', weekQuery, apiKey);
-      const weekKeys = [...new Set(weeks.map((row) => String(row.week_key || '')).filter(Boolean))];
-      const weekInList = '(' + weekKeys.map((key) => key.replace(/[(),]/g, '')).join(',') + ')';
-      const [timeEvents, weekEvents, weekSeries] = await Promise.all([
-        getAllTable('race_event', eventQuery, apiKey),
-        weekKeys.length
-          ? getAllTable('race_event', 'select=*&week_key=in.' + encodeURIComponent(weekInList) + '&order=race_starts_at', apiKey)
-          : Promise.resolve([]),
-        weekKeys.length
-          ? getAllTable('race_series', 'select=*&week_key=in.' + encodeURIComponent(weekInList) + '&order=series_name', apiKey)
-          : Promise.resolve([]),
-      ]);
-      const eventMap = new Map();
-      for (const event of [...timeEvents, ...weekEvents]) {
-        const key = String(event.event_id || event.id || '') || [
-          event.series_id, event.race_starts_at, event.week_key,
-        ].join('|');
-        eventMap.set(key, event);
+      // The Portal publishes Daily schedules as series-level UTC time slots.
+      // Daily races are not guaranteed to have one race_event row per start.
+      // Read the published weeks and series, then expand their official slots.
+      const weeks = await getAllTable(
+        'week',
+        'select=week_key,status,visible,start_date&visible=eq.true&status=in.(live,upcoming)&order=week_key.asc',
+        apiKey,
+      );
+      const visibleWeeks = weeks.filter((week) =>
+        week.visible !== false && ['live', 'upcoming'].includes(String(week.status || '').toLowerCase()),
+      );
+      const weekKeys = [...new Set(visibleWeeks.map((week) => String(week.week_key || '')).filter(Boolean))];
+      if (!weekKeys.length) {
+        return json({ success: true, timezone: 'Europe/Berlin', updatedAt: new Date().toISOString(), events: [] });
       }
-      const events = [...eventMap.values()];
-      const seriesIds = [...new Set(events.map((event) => String(event.series_id || '')).filter(Boolean))];
-      const idInList = '(' + seriesIds.map((id) => id.replace(/[(),]/g, '')).join(',') + ')';
-      const idSeries = seriesIds.length
-        ? await getAllTable('race_series', 'select=*&series_id=in.' + encodeURIComponent(idInList) + '&order=series_name', apiKey)
-        : [];
-      const seriesMap = new Map([...weekSeries, ...idSeries].map((item) => [String(item.series_id), item]));
-      const series = [...seriesMap.values()];
-      const bySeries = new Map(series.map((item) => [String(item.series_id), item]));
-      const seen = new Set();
-      const normalized = [];
 
-      for (const event of events) {
-        const item = bySeries.get(String(event.series_id));
-        if (!item) continue;
-        const normalizedEvent = normalize(item, event);
-        if (!normalizedEvent || seen.has(normalizedEvent.id)) continue;
-        seen.add(normalizedEvent.id);
-        normalized.push(normalizedEvent);
+      const weekInList = '(' + weekKeys.map((key) => key.replace(/[(),]/g, '')).join(',') + ')';
+      const seriesQuery = 'select=*&week_key=in.' + encodeURIComponent(weekInList)
+        + '&hidden=eq.false&order=series_id.asc';
+      const eventQuery = 'select=series_id,race_starts_at,event_id,track_name&week_key=in.'
+        + encodeURIComponent(weekInList)
+        + '&race_starts_at=gte.' + encodeURIComponent(utcMidnight.toISOString())
+        + '&and=' + encodeURIComponent('(race_starts_at.lte.' + until.toISOString() + ')')
+        + '&order=race_starts_at.asc,event_id.asc';
+
+      const [series, datedEvents] = await Promise.all([
+        getAllTable('race_series', seriesQuery, apiKey),
+        getAllTable('race_event', eventQuery, apiKey),
+      ]);
+
+      const eventsBySeries = new Map();
+      for (const event of datedEvents) {
+        const id = String(event.series_id || '');
+        if (!eventsBySeries.has(id)) eventsBySeries.set(id, []);
+        eventsBySeries.get(id).push(event);
+      }
+      const weekByKey = new Map(visibleWeeks.map((week) => [String(week.week_key), week]));
+      const normalized = [];
+      const seen = new Set();
+
+      for (const item of series) {
+        if (item.hidden) continue;
+        const week = weekByKey.get(String(item.week_key || ''));
+        if (!week) continue;
+        const rawType = String(item.type || '').toLowerCase();
+        const dated = eventsBySeries.get(String(item.series_id)) || [];
+        const eventRows = [...dated];
+
+        // LMU Portal's published slots are the authoritative Daily/Weekly
+        // timetable. Explicit race_event rows take priority on their UTC day.
+        if (['daily', 'weekly'].includes(rawType)) {
+          const weekStart = Date.parse(String(week.start_date || week.week_key) + 'T00:00:00Z');
+          if (Number.isFinite(weekStart)) {
+            const times = rawType === 'daily' && Array.isArray(item.todays_start_times_utc)
+              && item.todays_start_times_utc.length
+              ? item.todays_start_times_utc
+              : item.times_utc;
+            const slots = (Array.isArray(times) ? times : []).filter((time) =>
+              typeof time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time),
+            );
+            const days = Array.isArray(item.race_days) ? item.race_days : [];
+            const datedDays = new Set(dated.map((event) => Date.parse(event.race_starts_at))
+              .filter(Number.isFinite).map((at) => Math.floor(at / dayMs)));
+            for (let day = Math.max(weekStart, utcMidnight.getTime()); day < weekStart + 7 * dayMs; day += dayMs) {
+              if (datedDays.has(day / dayMs)) continue;
+              const weekday = new Date(day).getUTCDay();
+              if ((rawType === 'weekly' || days.length) && !days.includes(weekday)) continue;
+              const date = new Date(day).toISOString().slice(0, 10);
+              for (const slot of slots) {
+                const raceStartsAt = date + 'T' + (slot.length === 5 ? slot + ':00' : slot) + 'Z';
+                if (Date.parse(raceStartsAt) <= now.getTime()) continue;
+                eventRows.push({
+                  event_id: String(item.series_id) + '-' + raceStartsAt,
+                  series_id: item.series_id,
+                  race_starts_at: raceStartsAt,
+                  week_key: item.week_key,
+                  track_name: item.track_name,
+                });
+              }
+            }
+          }
+        }
+
+        for (const event of eventRows) {
+          const normalizedEvent = normalize(item, event);
+          if (!normalizedEvent || Date.parse(normalizedEvent.startTime) > until.getTime()) continue;
+          if (seen.has(normalizedEvent.id)) continue;
+          seen.add(normalizedEvent.id);
+          normalized.push(normalizedEvent);
+        }
       }
 
       normalized.sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime));
