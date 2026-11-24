@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:48:38.075Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Duqueine Paul Ricard beAlien.zip",
+  "vehicle": "Duqueine D09",
+  "track": "Duqueine Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
