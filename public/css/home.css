@@ -1749,3 +1749,15 @@ body.no-database-access #classFilter {
 @media (max-width:650px){.calendar-link{min-height:40px;padding:8px 9px;font-size:12px}}
 
 #roleHeaderActions .calendar-action.active{background:var(--surface2);border-color:var(--accent);color:var(--text)}
+
+
+/* GTE uses orange and follows LMGT3 in the vehicle catalog. */
+.category[data-class='GTE'],
+#classFilter [data-class='GTE'] {
+	--class-color: #ff9b45;
+	--class-fill: #b85a12;
+}
+[data-theme='light'] .category[data-class='GTE'],
+[data-theme='light'] #classFilter [data-class='GTE'] {
+	--class-color: #b85a12;
+}
