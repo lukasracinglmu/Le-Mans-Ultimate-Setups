@@ -32,6 +32,10 @@ test('Auto Strecke Hersteller accepts multipart names and catalog aliases in the
 		['Oreca 07 WEC Silverstone GP GO.zip', 'Oreca 07 Gibson', 'Silverstone – GP / WEC'],
 		['9X8 Evo Fuji Classic HYMO.zip', 'Peugeot 9X8 Evo', 'Fuji – Classic, ohne Schikane'],
 		['Huracán Monza GO.ZIP', 'Lamborghini Huracán LMGT3', 'Monza'],
+		['Aston Martin Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR', 'Spa-Francorchamps'],
+		['Corvette RGTE Spa HYMO.zip', 'Corvette RGTE', 'Spa-Francorchamps'],
+		['Ferrari 488 GTE Evo Spa GO.zip', 'Ferrari 488 GTE Evo', 'Spa-Francorchamps'],
+		['Porsche 911 RSR-19 GTE Spa HYMO.zip', 'Porsche 911 RSR-19', 'Spa-Francorchamps'],
 		['Valkyrie Paul Ricard 1A_V2 HYMO.zip', 'Aston Martin Valkyrie AMR LMH', 'Paul Ricard – 1A V2'],
 	]) {
 		const result = parse(name);
