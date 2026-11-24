@@ -1,5 +1,6 @@
 /* @file-notes: Discord-Bot mit Präsenz und Setup-Request-Slash-Command. */
 import 'dotenv/config';
+import { flattenRequestVehicles } from './request-vehicles.js';
 import {
 	DEFAULT_SETUP_SUPPLY_ROLE_ID,
 	REQUEST_MANUFACTURERS,
@@ -130,11 +131,7 @@ async function loadVehicles() {
 		console.log('Fahrzeugdaten über die konfigurierte URL geladen.');
 	}
 
-	vehicles = Object.entries(data).flatMap(([className, entries]) =>
-		(Array.isArray(entries) ? entries : [])
-			.map((entry) => ({ name: String(entry?.name || '').trim(), className }))
-			.filter((entry) => entry.name)
-	);
+	vehicles = flattenRequestVehicles(data);
 }
 
 function normalizeSearch(value) {
