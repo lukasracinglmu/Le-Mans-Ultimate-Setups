@@ -6,7 +6,9 @@ import { flattenRequestVehicles } from '../discord-presence/request-vehicles.js'
 const catalog = JSON.parse(readFileSync(new URL('../public/setups.json', import.meta.url), 'utf8'));
 
 test('Discord /request autocomplete receives every GTE vehicle with class GTE', () => {
+	assert.deepEqual(Object.keys(catalog), ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'GTE']);
 	const vehicles = flattenRequestVehicles(catalog);
+	assert.equal(vehicles.length, 33);
 	const gte = vehicles.filter((vehicle) => vehicle.className === 'GTE');
 	assert.deepEqual(gte.map((vehicle) => vehicle.name), [
 		'Aston Martin Vantage AMR',
