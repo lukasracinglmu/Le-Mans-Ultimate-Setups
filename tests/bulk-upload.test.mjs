@@ -65,7 +65,10 @@ test('separators, case, accents and EVO do not change the model identity', () =>
 		assert.equal(detectUploadTarget(name, catalog).target?.vehicle, 'Peugeot 9X8 Evo');
 	assert.equal(detectUploadTarget('Oreca07_WEC_Spa_GO.zip', catalog).target?.category, 'LMP2');
 	assert.equal(detectUploadTarget('Vantage GTE Spa GO.zip', catalog).target?.category, 'GTE');
-	assert.equal(detectUploadTarget('911 RSR-19 GTE Spa GO.zip', catalog).target?.vehicle, 'Porsche 911 RSR-19');
+	assert.equal(
+		detectUploadTarget('911 RSR-19 GTE Spa GO.zip', catalog).target?.vehicle,
+		'Porsche 911 RSR-19'
+	);
 	assert.equal(detectUploadTarget('911 RSR-19 Spa GO.zip', catalog).target, null);
 	assert.equal(detectUploadTarget('Vantage AMR Spa GO.zip', catalog).target, null);
 });
