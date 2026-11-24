@@ -246,7 +246,6 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
 	);
 });
 
-
 test('GTE vehicles are available in the website request picker and keep their class in the submitted request', async () => {
 	const catalog = JSON.parse(
 		readFileSync(new URL('../public/setups.json', import.meta.url), 'utf8')
@@ -260,6 +259,9 @@ test('GTE vehicles are available in the website request picker and keep their cl
 	assert.equal(created.status, 200);
 	assert.equal(created.body.success, true);
 	assert.equal(created.sends.length, 1);
-	assert.equal(created.sends[0].embeds[0].fields.find((field) => field.name === 'Fahrzeug').value, 'Ferrari 488 GTE Evo');
+	assert.equal(
+		created.sends[0].embeds[0].fields.find((field) => field.name === 'Fahrzeug').value,
+		'Ferrari 488 GTE Evo'
+	);
 	assert.equal(created.sends[0].embeds[0].fields.find((field) => field.name === 'Klasse').value, 'GTE');
 });
