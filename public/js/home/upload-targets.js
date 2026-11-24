@@ -83,6 +83,10 @@ export function detectUploadTarget(filename, catalog) {
 	let candidates = catalog.filter((target) =>
 		[target.vehicle, ...(ALIASES[target.vehicle] || [])].some(contains)
 	);
+	// Explicit GTE model markers take priority over shared brand aliases such as Vantage, Corvette and 911.
+	if (/\\b(?:gte|rgte|rsr)\\b/i.test(stem)) {
+		candidates = candidates.filter((target) => target.category === 'GTE');
+	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
 	if (candidates.some((target) => target.vehicle === 'Peugeot 9X8') && contains('evo')) {
 		candidates = candidates.filter((target) => target.vehicle !== 'Peugeot 9X8');
