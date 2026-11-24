@@ -47,7 +47,7 @@ const samples = [
 	['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR'],
 	['Corvette RGTE Le Mans HYMO.zip', 'Corvette RGTE'],
 	['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo'],
-	['911 RSR-19 Sebring GO.zip', 'Porsche 911 RSR-19'],
+	['911 RSR-19 GTE Sebring GO.zip', 'Porsche 911 RSR-19'],
 ];
 test('a representative filename for every current car identifies the exact catalog entry', () => {
 	assert.equal(samples.length, catalog.length);
