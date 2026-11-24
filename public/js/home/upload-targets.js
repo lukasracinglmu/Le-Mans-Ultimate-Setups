@@ -41,7 +41,7 @@ const ALIASES = {
 function words(value) {
 	return String(value || '')
 		.normalize('NFKD')
-		.replace(/[\\u0300-\\u036f]/g, '')
+		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim();
@@ -78,8 +78,8 @@ export function flattenUploadCatalog(catalog) {
 export function detectUploadTarget(filename, catalog) {
 	// Ignore our own storage suffix and versions: neither identifies a vehicle.
 	const stem = String(filename || '')
-		.replace(/\\.zip$/i, '')
-		.replace(/\\s*\\(Version [^)]*\\)$/i, '');
+		.replace(/\.zip$/i, '')
+		.replace(/\s*\(Version [^)]*\)$/i, '');
 	const text = ' ' + words(stem) + ' ';
 	const contains = (alias) => text.includes(' ' + words(alias) + ' ');
 	let candidates = catalog.filter((target) =>
