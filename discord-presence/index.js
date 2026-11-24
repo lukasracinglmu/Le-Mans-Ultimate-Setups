@@ -126,7 +126,9 @@ async function loadVehicles() {
 	} catch (remoteError) {
 		try {
 			data = JSON.parse(await readFile(setupsFile, 'utf8'));
-			console.warn('Website-Katalog nicht erreichbar; lokaler Fahrzeugkatalog wird als Fallback verwendet.');
+			console.warn(
+				'Website-Katalog nicht erreichbar; lokaler Fahrzeugkatalog wird als Fallback verwendet.'
+			);
 		} catch (localError) {
 			throw new Error(
 				'Fahrzeugkatalog weder von der Website noch lokal verfügbar.',
