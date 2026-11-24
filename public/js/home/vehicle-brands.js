@@ -38,6 +38,9 @@ export function vehicleBrand(vehicleName) {
 		const prefix = b.name.toLowerCase();
 		return lower === prefix || lower.startsWith(prefix + ' ');
 	});
+	if (!brand && /^corvette(?:\\s|$)/i.test(name)) {
+		return { name: 'Chevrolet', logo: '/assets/brands/chevrolet.svg', mark: '' };
+	}
 	if (!brand) {
 		const word = name.split(/\s+/)[0];
 		return { name: word, logo: null, mark: word.charAt(0).toUpperCase() };
