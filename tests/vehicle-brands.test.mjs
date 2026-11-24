@@ -12,7 +12,7 @@ test('vehicle names map to their brand logo', () => {
 	);
 	assert.equal(vehicleBrand('Mercedes-AMG LMGT3').logo, '/assets/brands/mercedes-amg.svg');
 	assert.equal(vehicleBrand('Chevrolet Corvette Z06 LMGT3.R').logo, '/assets/brands/chevrolet.svg');
-	assert.equal(vehicleBrand('Corvette RGTE').logo, '/assets/brands/chevrolet.svg');
+	assert.equal(vehicleBrand('Corvette R GTE').logo, '/assets/brands/chevrolet.svg');
 	assert.equal(vehicleBrand('peugeot 9X8 Evo').logo, '/assets/brands/peugeot.svg');
 	assert.equal(
 		vehicleBrand('Isotta Fraschini Tipo6-C').logo,
