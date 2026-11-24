@@ -30,10 +30,16 @@ const ALIASES = {
 	'McLaren 720S LMGT3': ['mclaren', '720s'],
 	'Mercedes-AMG LMGT3': ['mercedes', 'benz', 'amg gt3', 'amg lmgt3'],
 	'Porsche 911 GT3 R': ['911', '992'],
-	'Aston Martin Vantage AMR': ['vantage amr gte', 'vantage gte'],
+	'Aston Martin Vantage AMR': ['aston martin vantage amr gte', 'vantage amr gte', 'vantage gte'],
 	'Corvette RGTE': ['corvette rgte', 'corvette r gte', 'rgte'],
-	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo', '488'],
-	'Porsche 911 RSR-19': ['911 rsr 19', '911 rsr', 'rsr 19', 'rsr'],
+	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo'],
+	'Porsche 911 RSR-19': [
+		'porsche 911 rsr 19 gte',
+		'911 rsr 19 gte',
+		'911 rsr19 gte',
+		'911 rsr gte',
+		'rsr19 gte',
+	],
 };
 
 function words(value) {
@@ -51,6 +57,7 @@ export function resolveUploadVehicleLabel(value, catalog) {
 	const query = words(value);
 	return (
 		catalog.find((target) => {
+			if (target.category === 'GTE' && !/\b(?:gte|rgte)\b/i.test(query)) return false;
 			const label = target.category === 'LMP2' ? query.replace(/ (?:elms|wec)$/, '') : query;
 			return [target.vehicle, ...(ALIASES[target.vehicle] || [])].some(
 				(alias) => words(alias) === label
@@ -83,9 +90,20 @@ export function detectUploadTarget(filename, catalog) {
 	let candidates = catalog.filter((target) =>
 		[target.vehicle, ...(ALIASES[target.vehicle] || [])].some(contains)
 	);
-	// Explicit GTE model markers take priority over shared brand aliases such as Vantage, Corvette and 911.
-	if (/\b(?:gte|rgte|rsr)\b/i.test(stem)) {
+	// GTE must be explicit in the filename. A Vantage AMR or 911 RSR
+	// without that marker must never be silently assigned to an LMGT3 car.
+	if (/\b(?:gte|rgte)\b/i.test(stem)) {
 		candidates = candidates.filter((target) => target.category === 'GTE');
+	} else {
+		candidates = candidates.filter((target) => target.category !== 'GTE');
+		if (/\brsr\b/i.test(stem)) {
+			candidates = candidates.filter((target) => target.vehicle !== 'Porsche 911 GT3 R');
+		}
+		if (/vantage\s+amr/i.test(stem)) {
+			candidates = candidates.filter(
+				(target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3'
+			);
+		}
 	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
 	if (candidates.some((target) => target.vehicle === 'Peugeot 9X8') && contains('evo')) {

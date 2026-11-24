@@ -4,7 +4,7 @@ import { resolveRequestTrack } from '../request/tracks.js';
 import { resolveUploadVehicleLabel } from '../home/upload-targets.js';
 
 export const UPLOAD_FILENAME_HINT =
-	'Erwartet: Auto Strecke Hersteller.zip, z. B. BMW V8 Spa GO.zip. Hersteller: GO, HYMO oder beAlien (auch bA/bA1/bA2).';
+	'Format: Auto Strecke Hersteller.zip. GTE-Dateien brauchen GTE im Fahrzeugnamen.';
 
 export function parseUploadFilename(name, catalog, tracks, target) {
 	const fail = (reason) => ({ error: reason + ' ' + UPLOAD_FILENAME_HINT });
