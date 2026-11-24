@@ -114,6 +114,7 @@ test('a valid filename cannot be uploaded into another car, class or 9X8 variant
 	assert.ok(parse('Porsche 911 RSR-19 Spa GO.zip', { category: 'GTE', vehicle: 'Porsche 911 RSR-19' }).error);
 	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
 	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
+	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
 });
 
 async function form(names, target = bmw) {
