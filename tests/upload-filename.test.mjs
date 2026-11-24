@@ -36,7 +36,7 @@ test('Auto Strecke Hersteller accepts multipart names and catalog aliases in the
 		['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR', 'Spa-Francorchamps'],
 		['Corvette RGTE Le Mans HYMO.zip', 'Corvette RGTE', 'Le Mans / Circuit de la Sarthe'],
 		['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo', 'Monza'],
-		['911 RSR-19 Sebring GO.zip', 'Porsche 911 RSR-19', 'Sebring'],
+		['911 RSR-19 GTE Sebring GO.zip', 'Porsche 911 RSR-19', 'Sebring'],
 	]) {
 		const result = parse(name);
 		assert.equal(result.error, undefined, name + ': ' + result.error);
@@ -111,6 +111,8 @@ test('a valid filename cannot be uploaded into another car, class or 9X8 variant
 	assert.ok(parse('BMW V8 Spa GO.zip', { category: 'Hypercar', vehicle: 'Ferrari 499P' }).error);
 	assert.ok(parse('BMW V8 Spa GO.zip', { ...bmw, category: 'LMGT3' }).error);
 	assert.ok(parse('9X8 Evo Spa GO.zip', { category: 'Hypercar', vehicle: 'Peugeot 9X8' }).error);
+	assert.ok(parse('Porsche 911 RSR-19 Spa GO.zip', { category: 'GTE', vehicle: 'Porsche 911 RSR-19' }).error);
+	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
 });
 
 async function form(names, target = bmw) {
