@@ -23,16 +23,20 @@ export function parseUploadFilename(name, catalog, tracks, target) {
 	for (let split = 1; split < parts.length; split++) {
 		const vehicle = resolveUploadVehicleLabel(parts.slice(0, split).join(' '), catalog);
 		const track = resolveRequestTrack(tracks, parts.slice(split).join(' '));
-		if (vehicle && track) matches.push({ ...vehicle, track: track.name });
+		if (vehicle && track)
+			matches.push({ ...vehicle, track: track.name, vehicleLabel: parts.slice(0, split).join(' ') });
 	}
 	if (matches.length !== 1)
 		return fail('Auto und Strecke müssen vollständig und in dieser Reihenfolge erkennbar sein.');
 	const found = matches[0];
-	if (target && (target.category !== found.category || target.vehicle !== found.vehicle))
+	if (found.category === 'GTE' && !/\\b(?:gte|rgte)\\b/i.test(found.vehicleLabel))
+		return fail('GTE muss ausdrücklich im Fahrzeugnamen stehen.');
+	const { vehicleLabel, ...resolved } = found;
+	if (target && (target.category !== resolved.category || target.vehicle !== resolved.vehicle))
 		return fail('Das Auto im Dateinamen passt nicht zum ausgewählten Fahrzeug.');
 	const vendor = match[2].toLowerCase();
 	return {
-		...found,
+		...resolved,
 		manufacturer: vendor === 'go' ? 'GO' : vendor === 'hymo' ? 'HYMO' : 'beAlien',
 	};
 }
