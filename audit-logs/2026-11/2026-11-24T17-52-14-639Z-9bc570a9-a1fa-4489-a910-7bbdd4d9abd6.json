@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:52:14.639Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "BMW M4 Spa GO.zip",
+  "vehicle": "BMW M4 LMGT3",
+  "track": "BMW M4 Spa GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
