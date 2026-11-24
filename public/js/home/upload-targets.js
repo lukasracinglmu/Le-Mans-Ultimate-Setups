@@ -30,6 +30,10 @@ const ALIASES = {
 	'McLaren 720S LMGT3': ['mclaren', '720s'],
 	'Mercedes-AMG LMGT3': ['mercedes', 'benz', 'amg gt3', 'amg lmgt3'],
 	'Porsche 911 GT3 R': ['911', '992'],
+	'Aston Martin Vantage AMR': ['vantage amr gte', 'vantage gte'],
+	'Corvette RGTE': ['corvette rgte', 'corvette r gte', 'rgte'],
+	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo', '488'],
+	'Porsche 911 RSR-19': ['911 rsr 19', '911 rsr', 'rsr 19', 'rsr'],
 };
 
 function words(value) {
