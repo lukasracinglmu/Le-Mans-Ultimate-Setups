@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:49:22.481Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Vantage GTE Interlagos GO.zip",
+  "vehicle": "Aston Martin Vantage AMR",
+  "track": "Vantage GTE Interlagos GO",
+  "manufacturer": "GO",
+  "version": "1.2.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
