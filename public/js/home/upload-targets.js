@@ -30,10 +30,20 @@ const ALIASES = {
 	'McLaren 720S LMGT3': ['mclaren', '720s'],
 	'Mercedes-AMG LMGT3': ['mercedes', 'benz', 'amg gt3', 'amg lmgt3'],
 	'Porsche 911 GT3 R': ['911', '992'],
-	'Aston Martin Vantage AMR': ['aston martin vantage amr gte', 'vantage amr gte', 'vantage gte'],
+	'Aston Martin Vantage AMR': [
+		'aston martin vantage amr gte',
+		'vantage amr gte',
+		'vantage gte',
+	],
 	'Corvette RGTE': ['corvette rgte', 'corvette r gte', 'rgte'],
 	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo'],
-	'Porsche 911 RSR-19': ['porsche 911 rsr 19 gte', '911 rsr 19 gte', '911 rsr19 gte', '911 rsr gte', 'rsr19 gte'],
+	'Porsche 911 RSR-19': [
+		'porsche 911 rsr 19 gte',
+		'911 rsr 19 gte',
+		'911 rsr19 gte',
+		'911 rsr gte',
+		'rsr19 gte',
+	],
 };
 
 function words(value) {
@@ -93,7 +103,9 @@ export function detectUploadTarget(filename, catalog) {
 			candidates = candidates.filter((target) => target.vehicle !== 'Porsche 911 GT3 R');
 		}
 		if (/vantage\s+amr/i.test(stem)) {
-			candidates = candidates.filter((target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3');
+			candidates = candidates.filter(
+				(target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3'
+			);
 		}
 	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
