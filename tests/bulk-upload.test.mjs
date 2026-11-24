@@ -45,7 +45,7 @@ const samples = [
 	['Benz Bahrain HYMO.zip', 'Mercedes-AMG LMGT3'],
 	['911 Barcelona GO.zip', 'Porsche 911 GT3 R'],
 	['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR'],
-	['Corvette RGTE Le Mans HYMO.zip', 'Corvette RGTE'],
+	['Corvette R GTE Le Mans HYMO.zip', 'Corvette R GTE'],
 	['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo'],
 	['911 RSR-19 GTE Sebring GO.zip', 'Porsche 911 RSR-19'],
 ];
