@@ -39,7 +39,9 @@ const requestRoleId =
 	process.env.DISCORD_SETUP_REQUEST_ROLE_ID?.trim() || process.env.DISCORD_ROLE_ID?.trim();
 const confirmingRequests = new Set();
 const setupsFile = process.env.SETUPS_FILE?.trim() || './setups.json';
-const setupsUrl = process.env.SETUPS_SOURCE_URL?.trim();
+const setupsUrl =
+	process.env.SETUPS_SOURCE_URL?.trim() ||
+	'https://le-mans-ultimate-setups.3peaks-database.workers.dev/setups.json';
 const githubToken = process.env.GITHUB_TOKEN?.trim();
 const githubOwner = process.env.GITHUB_OWNER?.trim() || 'lukasracinglmu';
 const githubRepo = process.env.GITHUB_REPO?.trim() || 'Le-Mans-Ultimate-Setups';
@@ -115,20 +117,22 @@ async function loadVehicles() {
 	let data;
 
 	try {
-		data = JSON.parse(await readFile(setupsFile, 'utf8'));
-		console.log(`Fahrzeugdaten lokal geladen: ${setupsFile}`);
-	} catch (localError) {
-		if (!setupsUrl) {
-			throw new Error(`Die Datei ${setupsFile} fehlt auf dem Bot-Host.`);
-		}
-
-		const response = await fetch(setupsUrl);
-		if (!response.ok) {
-			throw new Error(`Fahrzeugdaten konnten nicht geladen werden: HTTP ${response.status}`);
-		}
-
+		const response = await fetch(setupsUrl, { signal: AbortSignal.timeout(10000) });
+		if (!response.ok) throw new Error(`HTTP ${response.status}`);
 		data = await response.json();
-		console.log('Fahrzeugdaten über die konfigurierte URL geladen.');
+		if (!data || typeof data !== 'object' || Array.isArray(data))
+			throw new Error('Ungültiger Fahrzeugkatalog.');
+		console.log('Aktueller Fahrzeugkatalog von der Website geladen.');
+	} catch (remoteError) {
+		try {
+			data = JSON.parse(await readFile(setupsFile, 'utf8'));
+			console.warn('Website-Katalog nicht erreichbar; lokaler Fahrzeugkatalog wird als Fallback verwendet.');
+		} catch (localError) {
+			throw new Error(
+				'Fahrzeugkatalog weder von der Website noch lokal verfügbar.',
+				{ cause: localError || remoteError }
+			);
+		}
 	}
 
 	vehicles = flattenRequestVehicles(data);
