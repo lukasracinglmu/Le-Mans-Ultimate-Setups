@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:49:08.932Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Alpine Paul Ricard beAlien.zip",
+  "vehicle": "Alpine A424",
+  "track": "Alpine Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
