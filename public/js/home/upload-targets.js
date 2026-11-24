@@ -94,7 +94,7 @@ export function detectUploadTarget(filename, catalog) {
 		if (/(?:^|[^a-z0-9])rsr(?:$|[^a-z0-9])/i.test(stem)) {
 			candidates = candidates.filter((target) => target.vehicle !== 'Porsche 911 GT3 R');
 		}
-		if (/vantage\\s+amr/i.test(stem)) {
+		if (/vantage\s+amr/i.test(stem)) {
 			candidates = candidates.filter((target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3');
 		}
 	}
