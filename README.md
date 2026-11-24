@@ -34,6 +34,7 @@ Unterstützt werden:
 | **LMP2** | Leistungsstarke Langstrecken-Prototypen |
 | **LMP3** | Kompakte Prototypen mit engem Racing |
 | **LMGT3** | GT-Fahrzeuge für packende Zweikämpfe |
+| **GTE** | GT-Rennwagen der GTE-Klasse |
 
 ## Schnellstart
 
@@ -50,7 +51,7 @@ Die Fahrzeugübersicht zeigt dir außerdem direkt, wie viele Setups für ein Fah
 Die Übersicht bietet mehrere schnelle Wege zum passenden Fahrzeug:
 
 - **Suche:** Fahrzeugnamen direkt eingeben.
-- **Rennklassenfilter:** Hypercar, LMP2, LMP3 oder LMGT3 auswählen.
+- **Rennklassenfilter:** Hypercar, LMP2, LMP3, LMGT3 oder GTE auswählen.
 - **Setup-Hersteller:** Nach GO, HYMO oder beAlien filtern.
 - **Favoriten:** Fahrzeuge mit dem goldenen Stern markieren und später über „Favoriten anzeigen“ wiederfinden.
 

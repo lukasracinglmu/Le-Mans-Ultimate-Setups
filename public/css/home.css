@@ -703,6 +703,15 @@ main {
 [data-theme='light'] #classFilter [data-class='LMGT3'] {
 	--class-color: #157342;
 }
+.category[data-class='GTE'],
+#classFilter [data-class='GTE'] {
+	--class-color: #ffad42;
+	--class-fill: #a9570b;
+}
+[data-theme='light'] .category[data-class='GTE'],
+[data-theme='light'] #classFilter [data-class='GTE'] {
+	--class-color: #c45b00;
+}
 .category[data-class] > h2,
 .category[data-class] .vehicle-class {
 	color: var(--class-color);

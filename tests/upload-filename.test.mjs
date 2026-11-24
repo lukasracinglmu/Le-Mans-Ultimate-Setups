@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { flattenUploadCatalog } from '../public/js/home/upload-targets.js';
+import { detectUploadTarget, flattenUploadCatalog } from '../public/js/home/upload-targets.js';
 import { parseUploadFilename } from '../public/js/shared/upload-filename.js';
 import { REQUEST_TRACKS } from '../discord-presence/request-tracks.js';
 import { storeUploadedSetups } from '../src/features/setup-upload.js';
@@ -33,11 +33,32 @@ test('Auto Strecke Hersteller accepts multipart names and catalog aliases in the
 		['9X8 Evo Fuji Classic HYMO.zip', 'Peugeot 9X8 Evo', 'Fuji – Classic, ohne Schikane'],
 		['Huracán Monza GO.ZIP', 'Lamborghini Huracán LMGT3', 'Monza'],
 		['Valkyrie Paul Ricard 1A_V2 HYMO.zip', 'Aston Martin Valkyrie AMR LMH', 'Paul Ricard – 1A V2'],
+		['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR', 'Spa-Francorchamps'],
+		['Corvette RGTE Le Mans HYMO.zip', 'Corvette RGTE', 'Le Mans / Circuit de la Sarthe'],
+		['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo', 'Monza'],
+		['911 RSR-19 Sebring GO.zip', 'Porsche 911 RSR-19', 'Sebring'],
 	]) {
 		const result = parse(name);
 		assert.equal(result.error, undefined, name + ': ' + result.error);
 		assert.equal(result.vehicle, vehicle);
 		assert.equal(result.track, track);
+	}
+});
+
+test('GTE filenames resolve to the correct GTE vehicle, not similarly named LMGT3 cars', () => {
+	for (const [filename, vehicle] of [
+		['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR'],
+		['Corvette RGTE Le Mans HYMO.zip', 'Corvette RGTE'],
+		['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo'],
+		['911 RSR-19 Sebring GO.zip', 'Porsche 911 RSR-19'],
+	]) {
+		const result = parse(filename);
+		assert.equal(result.error, undefined, filename + ': ' + result.error);
+		assert.equal(result.category, 'GTE');
+		assert.equal(result.vehicle, vehicle);
+		const detected = detectUploadTarget(filename, catalog);
+		assert.equal(detected.target?.category, 'GTE', filename);
+		assert.equal(detected.target?.vehicle, vehicle, filename);
 	}
 });
 
