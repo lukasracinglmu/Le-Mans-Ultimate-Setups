@@ -29,7 +29,7 @@ export function parseUploadFilename(name, catalog, tracks, target) {
 	if (matches.length !== 1)
 		return fail('Auto und Strecke müssen vollständig und in dieser Reihenfolge erkennbar sein.');
 	const found = matches[0];
-	if (found.category === 'GTE' && !/\\b(?:gte|rgte)\\b/i.test(found.vehicleLabel))
+	if (found.category === 'GTE' && !/\b(?:gte|rgte)\b/i.test(found.vehicleLabel))
 		return fail('GTE muss ausdrücklich im Fahrzeugnamen stehen.');
 	const { vehicleLabel, ...resolved } = found;
 	if (target && (target.category !== resolved.category || target.vehicle !== resolved.vehicle))
