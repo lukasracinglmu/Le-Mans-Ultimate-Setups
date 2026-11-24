@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:49:23.547Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Lexus Paul Ricard beAlien.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
