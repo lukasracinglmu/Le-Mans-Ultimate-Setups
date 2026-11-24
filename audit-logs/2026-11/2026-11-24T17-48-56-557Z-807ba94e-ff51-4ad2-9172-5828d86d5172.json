@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:48:56.557Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Cadillac Paul Ricard beAlien.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
