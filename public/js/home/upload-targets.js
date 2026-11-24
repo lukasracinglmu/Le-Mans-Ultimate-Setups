@@ -85,14 +85,14 @@ export function detectUploadTarget(filename, catalog) {
 	);
 	// GTE must be explicit in the filename. A Vantage AMR or 911 RSR
 	// without that marker must never be silently assigned to an LMGT3 car.
-	if (/\\b(?:gte|rgte)\\b/i.test(stem)) {
+	if (/\b(?:gte|rgte)\b/i.test(stem)) {
 		candidates = candidates.filter((target) => target.category === 'GTE');
 	} else {
 		candidates = candidates.filter((target) => target.category !== 'GTE');
-		if (/\\brsr\\b/i.test(stem)) {
+		if (/\brsr\b/i.test(stem)) {
 			candidates = candidates.filter((target) => target.vehicle !== 'Porsche 911 GT3 R');
 		}
-		if (/vantage\\s+amr/i.test(stem)) {
+		if (/vantage\s+amr/i.test(stem)) {
 			candidates = candidates.filter((target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3');
 		}
 	}
