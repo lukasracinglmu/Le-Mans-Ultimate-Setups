@@ -244,3 +244,27 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
 		'Egal'
 	);
 });
+
+
+test('GTE-Fahrzeuge werden aus dem gemeinsamen Website-Katalog mit der Klasse GTE erkannt', async () => {
+	const catalog = JSON.parse(
+		readFileSync(new URL('../public/setups.json', import.meta.url), 'utf8')
+	);
+	assert.deepEqual(
+		catalog.GTE.map((car) => car.name),
+		[
+			'Aston Martin Vantage AMR',
+			'Corvette RGTE',
+			'Ferrari 488 GTE Evo',
+			'Porsche 911 RSR-19',
+		]
+	);
+	assert.equal(catalog.LMGT3.length, 10);
+	assert.equal(catalog.GTE.length, 4);
+	const payload = setupRequestPayload(
+		{ ...data, vehicle: 'Ferrari 488 GTE Evo', carClass: 'GTE' },
+		env.DISCORD_UPLOAD_ROLE_ID
+	);
+	assert.equal(payload.embeds[0].fields.find((field) => field.name === 'Fahrzeug').value, 'Ferrari 488 GTE Evo');
+	assert.equal(payload.embeds[0].fields.find((field) => field.name === 'Klasse').value, 'GTE');
+});
