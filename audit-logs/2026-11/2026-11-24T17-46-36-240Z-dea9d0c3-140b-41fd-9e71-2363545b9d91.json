@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:46:36.240Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Corvette RGTE Interlagos GO.zip",
+  "vehicle": "Corvette RGTE",
+  "track": "Corvette RGTE Interlagos GO",
+  "manufacturer": "GO",
+  "version": "1.2.4",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
