@@ -111,10 +111,15 @@ test('a valid filename cannot be uploaded into another car, class or 9X8 variant
 	assert.ok(parse('BMW V8 Spa GO.zip', { category: 'Hypercar', vehicle: 'Ferrari 499P' }).error);
 	assert.ok(parse('BMW V8 Spa GO.zip', { ...bmw, category: 'LMGT3' }).error);
 	assert.ok(parse('9X8 Evo Spa GO.zip', { category: 'Hypercar', vehicle: 'Peugeot 9X8' }).error);
-	assert.ok(parse('Porsche 911 RSR-19 Spa GO.zip', { category: 'GTE', vehicle: 'Porsche 911 RSR-19' }).error);
-	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
-	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
-	assert.ok(parse('Aston Martin Vantage AMR Spa GO.zip', { category: 'GTE', vehicle: 'Aston Martin Vantage AMR' }).error);
+	assert.ok(
+		parse('Porsche 911 RSR-19 Spa GO.zip', { category: 'GTE', vehicle: 'Porsche 911 RSR-19' }).error
+	);
+	assert.ok(
+		parse('Aston Martin Vantage AMR Spa GO.zip', {
+			category: 'GTE',
+			vehicle: 'Aston Martin Vantage AMR',
+		}).error
+	);
 });
 
 async function form(names, target = bmw) {
