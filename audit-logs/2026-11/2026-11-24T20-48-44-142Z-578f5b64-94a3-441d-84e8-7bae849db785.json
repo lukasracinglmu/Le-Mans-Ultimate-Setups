@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T20:48:44.142Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Oreca 07 WEC Paul Ricard GO.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca 07 WEC Paul Ricard GO",
+  "manufacturer": "GO",
+  "version": "1.4.1",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
