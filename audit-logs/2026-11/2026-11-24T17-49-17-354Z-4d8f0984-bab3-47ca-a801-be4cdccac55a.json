@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:49:17.354Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Benz Paul Ricard beAlien.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
