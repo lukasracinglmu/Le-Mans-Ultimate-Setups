@@ -3,11 +3,8 @@
 import { resolveRequestTrack } from '../request/tracks.js';
 import { resolveUploadVehicleLabel } from '../home/upload-targets.js';
 
-export const UPLOAD_FILENAME_HINT = [
-	'Erwartet: Auto Strecke Hersteller.zip, z. B. BMW V8 Spa GO.zip.',
-	'GTE-Fahrzeuge brauchen GTE im Namen, z. B. Porsche 911 RSR-19 GTE Spa GO.zip.',
-	'Hersteller: GO, HYMO oder beAlien (auch bA/bA1/bA2).',
-].join(' ');
+export const UPLOAD_FILENAME_HINT =
+	'Format: Auto Strecke Hersteller.zip. GTE-Dateien brauchen GTE im Fahrzeugnamen.';
 
 export function parseUploadFilename(name, catalog, tracks, target) {
 	const fail = (reason) => ({ error: reason + ' ' + UPLOAD_FILENAME_HINT });
@@ -26,22 +23,16 @@ export function parseUploadFilename(name, catalog, tracks, target) {
 	for (let split = 1; split < parts.length; split++) {
 		const vehicle = resolveUploadVehicleLabel(parts.slice(0, split).join(' '), catalog);
 		const track = resolveRequestTrack(tracks, parts.slice(split).join(' '));
-		if (vehicle && track) {
-			const vehicleLabel = parts.slice(0, split).join(' ');
-			matches.push({ ...vehicle, track: track.name, vehicleLabel });
-		}
+		if (vehicle && track) matches.push({ ...vehicle, track: track.name });
 	}
 	if (matches.length !== 1)
 		return fail('Auto und Strecke müssen vollständig und in dieser Reihenfolge erkennbar sein.');
 	const found = matches[0];
-	if (found.category === 'GTE' && !/\b(?:gte|rgte)\b/i.test(found.vehicleLabel))
-		return fail('GTE muss ausdrücklich im Fahrzeugnamen stehen.');
-	const { vehicleLabel, ...resolved } = found;
-	if (target && (target.category !== resolved.category || target.vehicle !== resolved.vehicle))
+	if (target && (target.category !== found.category || target.vehicle !== found.vehicle))
 		return fail('Das Auto im Dateinamen passt nicht zum ausgewählten Fahrzeug.');
 	const vendor = match[2].toLowerCase();
 	return {
-		...resolved,
+		...found,
 		manufacturer: vendor === 'go' ? 'GO' : vendor === 'hymo' ? 'HYMO' : 'beAlien',
 	};
 }
