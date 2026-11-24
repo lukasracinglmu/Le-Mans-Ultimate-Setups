@@ -57,6 +57,7 @@ export function resolveUploadVehicleLabel(value, catalog) {
 	const query = words(value);
 	return (
 		catalog.find((target) => {
+			if (target.category === 'GTE' && !/\\b(?:gte|rgte)\\b/i.test(query)) return false;
 			const label = target.category === 'LMP2' ? query.replace(/ (?:elms|wec)$/, '') : query;
 			return [target.vehicle, ...(ALIASES[target.vehicle] || [])].some(
 				(alias) => words(alias) === label
