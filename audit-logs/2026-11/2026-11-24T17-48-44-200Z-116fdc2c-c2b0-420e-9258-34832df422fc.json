@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:48:44.200Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "Oreca Paul Ricard beAlien.zip",
+  "vehicle": "Oreca 07 Gibson",
+  "track": "Oreca Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
