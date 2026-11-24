@@ -24,11 +24,8 @@ export function parseUploadFilename(name, catalog, tracks, target) {
 		const vehicle = resolveUploadVehicleLabel(parts.slice(0, split).join(' '), catalog);
 		const track = resolveRequestTrack(tracks, parts.slice(split).join(' '));
 		if (vehicle && track) {
-			matches.push({
-				...vehicle,
-				track: track.name,
-				vehicleLabel: parts.slice(0, split).join(' '),
-			});
+			const vehicleLabel = parts.slice(0, split).join(' ');
+			matches.push({ ...vehicle, track: track.name, vehicleLabel });
 		}
 	}
 	if (matches.length !== 1)
