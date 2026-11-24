@@ -38,7 +38,7 @@ export function vehicleBrand(vehicleName) {
 		const prefix = b.name.toLowerCase();
 		return lower === prefix || lower.startsWith(prefix + ' ');
 	});
-	if (!brand && /^corvette(?:\\s|$)/i.test(name)) {
+	if (!brand && /^corvette(?:\s|$)/i.test(name)) {
 		return { name: 'Chevrolet', logo: '/assets/brands/chevrolet.svg', mark: '' };
 	}
 	if (!brand) {
