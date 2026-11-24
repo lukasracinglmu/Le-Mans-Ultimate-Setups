@@ -30,12 +30,18 @@ const ALIASES = {
 	'McLaren 720S LMGT3': ['mclaren', '720s'],
 	'Mercedes-AMG LMGT3': ['mercedes', 'benz', 'amg gt3', 'amg lmgt3'],
 	'Porsche 911 GT3 R': ['911', '992'],
+	// GTE filenames must identify the class explicitly. This prevents a Vantage,
+	// Corvette or 911 RSR from being mistaken for its LMGT3 counterpart.
+	'Aston Martin Vantage AMR': ['aston martin vantage amr gte', 'vantage amr gte', 'vantage gte'],
+	'Corvette RGTE': ['corvette rgte', 'corvette gte', 'rgte'],
+	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo'],
+	'Porsche 911 RSR-19': ['911 rsr 19 gte', '911 rsr19 gte', '911 rsr gte', 'rsr19 gte'],
 };
 
 function words(value) {
 	return String(value || '')
 		.normalize('NFKD')
-		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[\\u0300-\\u036f]/g, '')
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim();
@@ -72,13 +78,20 @@ export function flattenUploadCatalog(catalog) {
 export function detectUploadTarget(filename, catalog) {
 	// Ignore our own storage suffix and versions: neither identifies a vehicle.
 	const stem = String(filename || '')
-		.replace(/\.zip$/i, '')
-		.replace(/\s*\(Version [^)]*\)$/i, '');
+		.replace(/\\.zip$/i, '')
+		.replace(/\\s*\\(Version [^)]*\\)$/i, '');
 	const text = ' ' + words(stem) + ' ';
 	const contains = (alias) => text.includes(' ' + words(alias) + ' ');
 	let candidates = catalog.filter((target) =>
 		[target.vehicle, ...(ALIASES[target.vehicle] || [])].some(contains)
 	);
+	// An explicit GTE model match wins over shared model/brand tokens such as
+	// Vantage, Corvette and 911. Without a GTE model match, GTE cars are excluded.
+	if (candidates.some((target) => target.category === 'GTE')) {
+		candidates = candidates.filter((target) => target.category === 'GTE');
+	} else {
+		candidates = candidates.filter((target) => target.category !== 'GTE');
+	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
 	if (candidates.some((target) => target.vehicle === 'Peugeot 9X8') && contains('evo')) {
 		candidates = candidates.filter((target) => target.vehicle !== 'Peugeot 9X8');
@@ -95,8 +108,10 @@ export function detectUploadTarget(filename, catalog) {
 			['peugeot', /^Peugeot /],
 			['aston martin', /^Aston Martin /],
 		];
-		candidates = catalog.filter((target) =>
-			brands.some(([alias, names]) => contains(alias) && names.test(target.vehicle))
+		candidates = catalog.filter(
+			(target) =>
+				target.category !== 'GTE' &&
+				brands.some(([alias, names]) => contains(alias) && names.test(target.vehicle))
 		);
 		return { target: null, candidates };
 	}
