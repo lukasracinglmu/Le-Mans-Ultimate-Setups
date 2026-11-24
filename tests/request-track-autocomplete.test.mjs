@@ -330,7 +330,7 @@ async function bot() {
 			Hypercar: [{ name: 'Toyota GR010' }],
 			GTE: [
 				{ name: 'Aston Martin Vantage AMR' },
-				{ name: 'Corvette RGTE' },
+				{ name: 'Corvette R GTE' },
 				{ name: 'Ferrari 488 GTE Evo' },
 				{ name: 'Porsche 911 RSR-19' },
 			],
@@ -341,7 +341,7 @@ async function bot() {
 					Hypercar: [{ name: 'Toyota GR010' }],
 					GTE: [
 						{ name: 'Aston Martin Vantage AMR' },
-						{ name: 'Corvette RGTE' },
+						{ name: 'Corvette R GTE' },
 						{ name: 'Ferrari 488 GTE Evo' },
 						{ name: 'Porsche 911 RSR-19' },
 					],
@@ -433,7 +433,7 @@ test('Bot schlägt alle vier GTE-Fahrzeuge mit der Klasse GTE vor', async () => 
 	const b = await bot();
 	for (const [query, vehicle] of [
 		['van', 'Aston Martin Vantage AMR'],
-		['cor', 'Corvette RGTE'],
+		['cor', 'Corvette R GTE'],
 		['488', 'Ferrari 488 GTE Evo'],
 		['911', 'Porsche 911 RSR-19'],
 	]) {
