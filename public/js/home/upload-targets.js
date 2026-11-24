@@ -85,12 +85,18 @@ export function detectUploadTarget(filename, catalog) {
 	let candidates = catalog.filter((target) =>
 		[target.vehicle, ...(ALIASES[target.vehicle] || [])].some(contains)
 	);
-	// An explicit GTE model match wins over shared model/brand tokens such as
-	// Vantage, Corvette and 911. Without a GTE model match, GTE cars are excluded.
-	if (candidates.some((target) => target.category === 'GTE')) {
+	// Explicit GTE markers win over shared Vantage, Corvette and 911 tokens.
+	const hasGteMarker = /(?:^|[^a-z0-9])(?:gte|rgte)(?=$|[^a-z0-9])/i.test(stem);
+	if (hasGteMarker) {
 		candidates = candidates.filter((target) => target.category === 'GTE');
 	} else {
 		candidates = candidates.filter((target) => target.category !== 'GTE');
+		if (/(?:^|[^a-z0-9])rsr(?:$|[^a-z0-9])/i.test(stem)) {
+			candidates = candidates.filter((target) => target.vehicle !== 'Porsche 911 GT3 R');
+		}
+		if (/vantage\\s+amr/i.test(stem)) {
+			candidates = candidates.filter((target) => target.vehicle !== 'Aston Martin Vantage AMR LMGT3');
+		}
 	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
 	if (candidates.some((target) => target.vehicle === 'Peugeot 9X8') && contains('evo')) {
