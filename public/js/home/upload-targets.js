@@ -35,7 +35,7 @@ const ALIASES = {
 	'Aston Martin Vantage AMR': ['aston martin vantage amr gte', 'vantage amr gte', 'vantage gte'],
 	'Corvette RGTE': ['corvette rgte', 'corvette gte', 'rgte'],
 	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo'],
-	'Porsche 911 RSR-19': ['911 rsr 19 gte', '911 rsr19 gte', '911 rsr gte', 'rsr19 gte'],
+	'Porsche 911 RSR-19': ['porsche 911 rsr 19 gte', '911 rsr 19 gte', '911 rsr19 gte', '911 rsr gte', 'rsr19 gte'],
 };
 
 function words(value) {
