@@ -429,7 +429,7 @@ test('Bot schlägt alle vier GTE-Fahrzeuge mit der Klasse GTE vor', async () => 
 		await b.handle(result);
 		const option = result.choices.find((choice) => choice.value === vehicle);
 		assert.ok(option, vehicle);
-		assert.match(option.name, /\\(GTE\\)$/);
+		assert.match(option.name, /\(GTE\)$/);
 	}
 });
 
