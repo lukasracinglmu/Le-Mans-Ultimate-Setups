@@ -44,6 +44,10 @@ const samples = [
 	['720S Bahrain HYMO.zip', 'McLaren 720S LMGT3'],
 	['Benz Bahrain HYMO.zip', 'Mercedes-AMG LMGT3'],
 	['911 Barcelona GO.zip', 'Porsche 911 GT3 R'],
+	['Aston Martin Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR'],
+	['Corvette RGTE Spa HYMO.zip', 'Corvette RGTE'],
+	['Ferrari 488 GTE Evo Spa GO.zip', 'Ferrari 488 GTE Evo'],
+	['Porsche 911 RSR-19 GTE Spa HYMO.zip', 'Porsche 911 RSR-19'],
 ];
 test('a representative filename for every current car identifies the exact catalog entry', () => {
 	assert.equal(samples.length, catalog.length);
@@ -60,6 +64,8 @@ test('separators, case, accents and EVO do not change the model identity', () =>
 	for (const name of ['PEUGEOT_9X8_EVO_SPA.zip', '9X8EVO-Spa-GO.zip', '9x8 Spa EVO.zip'])
 		assert.equal(detectUploadTarget(name, catalog).target?.vehicle, 'Peugeot 9X8 Evo');
 	assert.equal(detectUploadTarget('Oreca07_WEC_Spa_GO.zip', catalog).target?.category, 'LMP2');
+	assert.equal(detectUploadTarget('Vantage GTE Spa GO.zip', catalog).target?.category, 'GTE');
+	assert.equal(detectUploadTarget('911 RSR-19 GTE Spa HYMO.zip', catalog).target?.vehicle, 'Porsche 911 RSR-19');
 });
 
 test('unknown names, partial matches, brands and conflicting models are never auto-assigned', () => {
@@ -73,6 +79,8 @@ test('unknown names, partial matches, brands and conflicting models are never au
 		'911963.zip',
 		'499P 296 Spa.zip',
 		'963 BMW M4 Spa.zip',
+		'Vantage Spa GO.zip',
+		'911 RSR-19 Spa GO.zip',
 	])
 		assert.equal(detectUploadTarget(name, catalog).target, null, name);
 	assert.equal(detectUploadTarget('Peugeot Spa.zip', catalog).candidates.length, 2);
