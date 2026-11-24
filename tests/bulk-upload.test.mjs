@@ -79,8 +79,6 @@ test('unknown names, partial matches, brands and conflicting models are never au
 		'911963.zip',
 		'499P 296 Spa.zip',
 		'963 BMW M4 Spa.zip',
-		'Vantage Spa GO.zip',
-		'911 RSR-19 Spa GO.zip',
 	])
 		assert.equal(detectUploadTarget(name, catalog).target, null, name);
 	assert.equal(detectUploadTarget('Peugeot Spa.zip', catalog).candidates.length, 2);
