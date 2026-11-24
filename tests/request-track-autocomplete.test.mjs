@@ -335,7 +335,19 @@ async function bot() {
 				{ name: 'Porsche 911 RSR-19' },
 			],
 		}),
-		fetch: async () => Response.json([]),
+		fetch: async (url) => {
+			if (String(url).endsWith('/setups.json'))
+				return Response.json({
+					Hypercar: [{ name: 'Toyota GR010' }],
+					GTE: [
+						{ name: 'Aston Martin Vantage AMR' },
+						{ name: 'Corvette RGTE' },
+						{ name: 'Ferrari 488 GTE Evo' },
+						{ name: 'Porsche 911 RSR-19' },
+					],
+				});
+			return Response.json([]);
+		},
 		searchRequestTracks,
 		resolveRequestTrack,
 		matchingRequestSetups,
