@@ -11,6 +11,7 @@ import {
 import { matchingRequestSetups } from '../discord-presence/request-tracks.js';
 import { discordInteraction } from '../src/features/discord-interactions.js';
 import { createWebsiteRequest } from '../src/features/requests.js';
+import { listCars } from '../public/js/request/form.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 import { sessionCookie } from './helpers/session.mjs';
 const owner = '1033453785416208564';
@@ -85,14 +86,14 @@ test('Beide Request-Wege erzeugen Embed mit Hersteller, Personen-Tag und sichtba
 	);
 	assert.equal(canConfirmSetupRequest('222222222222222222', [], '1538601074074849330'), false);
 });
-async function website(files, manufacturer) {
+async function website(files, manufacturer, vehicleName = data.vehicle, carClass = data.carClass) {
 	const old = fetch,
 		sends = [];
 	const ownerEnv = { ...env, DISCORD_OWNER_USER_ID: owner, SESSION_SECRET: 'request-test' };
 	const cookie = await sessionCookie(owner, ownerEnv.SESSION_SECRET, { username: 'Lukas' });
 	globalThis.fetch = async (url, options) => {
 		if (String(url).includes('/contents/public/setups.json'))
-			return Response.json({ Hypercar: [{ name: 'Toyota GR010' }] });
+			return Response.json({ [carClass]: [{ name: vehicleName }] });
 		if (String(url).includes('api.github.com'))
 			return Response.json(files.map((name) => ({ name, type: 'file' })));
 		sends.push(JSON.parse(options.body));
@@ -107,7 +108,7 @@ async function website(files, manufacturer) {
 					'Content-Type': 'application/json',
 					Cookie: cookie,
 				},
-				body: JSON.stringify({ ...data, manufacturer }),
+				body: JSON.stringify({ ...data, vehicle: vehicleName, carClass, manufacturer }),
 			}),
 			ownerEnv
 		);
@@ -243,4 +244,22 @@ test('Website erlaubt fehlenden, leeren und null Hersteller; Embed und vorhanden
 		).embeds[0].fields.find((f) => f.name === 'Setup-Hersteller').value,
 		'Egal'
 	);
+});
+
+
+test('GTE vehicles are available in the website request picker and keep their class in the submitted request', async () => {
+	const catalog = JSON.parse(
+		readFileSync(new URL('../public/setups.json', import.meta.url), 'utf8')
+	);
+	const cars = listCars(catalog);
+	for (const name of catalog.GTE.map((car) => car.name)) {
+		const car = cars.find((entry) => entry.name === name);
+		assert.equal(car?.class, 'GTE', name);
+	}
+	const created = await website([], 'GO', 'Ferrari 488 GTE Evo', 'GTE');
+	assert.equal(created.status, 200);
+	assert.equal(created.body.success, true);
+	assert.equal(created.sends.length, 1);
+	assert.equal(created.sends[0].embeds[0].fields.find((field) => field.name === 'Fahrzeug').value, 'Ferrari 488 GTE Evo');
+	assert.equal(created.sends[0].embeds[0].fields.find((field) => field.name === 'Klasse').value, 'GTE');
 });
