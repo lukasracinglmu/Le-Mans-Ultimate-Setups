@@ -23,8 +23,13 @@ export function parseUploadFilename(name, catalog, tracks, target) {
 	for (let split = 1; split < parts.length; split++) {
 		const vehicle = resolveUploadVehicleLabel(parts.slice(0, split).join(' '), catalog);
 		const track = resolveRequestTrack(tracks, parts.slice(split).join(' '));
-		if (vehicle && track)
-			matches.push({ ...vehicle, track: track.name, vehicleLabel: parts.slice(0, split).join(' ') });
+		if (vehicle && track) {
+			matches.push({
+				...vehicle,
+				track: track.name,
+				vehicleLabel: parts.slice(0, split).join(' '),
+			});
+		}
 	}
 	if (matches.length !== 1)
 		return fail('Auto und Strecke müssen vollständig und in dieser Reihenfolge erkennbar sein.');
