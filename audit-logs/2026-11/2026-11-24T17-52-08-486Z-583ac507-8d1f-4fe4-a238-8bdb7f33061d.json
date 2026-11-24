@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:52:08.486Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Benz Spa GO.zip",
+  "vehicle": "Mercedes-AMG LMGT3",
+  "track": "Benz Spa GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
