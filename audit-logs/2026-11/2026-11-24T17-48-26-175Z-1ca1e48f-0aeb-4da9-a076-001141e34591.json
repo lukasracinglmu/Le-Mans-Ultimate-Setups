@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-24T17:48:26.175Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "davidh89",
+  "discordUserId": "771358435416473600",
+  "setup": "296 Paul Ricard beAlien.zip",
+  "vehicle": "Ferrari 296 LMGT3",
+  "track": "296 Paul Ricard beAlien",
+  "manufacturer": "beAlien",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
