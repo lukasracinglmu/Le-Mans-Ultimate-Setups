@@ -84,7 +84,7 @@ export function detectUploadTarget(filename, catalog) {
 		[target.vehicle, ...(ALIASES[target.vehicle] || [])].some(contains)
 	);
 	// Explicit GTE model markers take priority over shared brand aliases such as Vantage, Corvette and 911.
-	if (/\\b(?:gte|rgte|rsr)\\b/i.test(stem)) {
+	if (/\b(?:gte|rgte|rsr)\b/i.test(stem)) {
 		candidates = candidates.filter((target) => target.category === 'GTE');
 	}
 	// EVO explicitly identifies the separate 9X8 Evo entry, even with separators.
