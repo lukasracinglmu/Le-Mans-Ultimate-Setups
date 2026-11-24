@@ -20,6 +20,7 @@ import {
 import * as requestPage from '../public/js/request/tracks.js';
 import { repositoryEnv } from './helpers/repository-env.mjs';
 import { sessionCookie } from './helpers/session.mjs';
+import { flattenRequestVehicles } from '../discord-presence/request-vehicles.js';
 
 // The request page searches the list it loads from /api/request/tracks.
 const browser = {
@@ -312,6 +313,7 @@ async function bot() {
 		SETUP_CONFIRMATION_WHITELIST,
 		resolveRequestManufacturer,
 		setupRequestPayload,
+		flattenRequestVehicles,
 		isAnyRequestManufacturer,
 		Client,
 		REST,
@@ -324,7 +326,15 @@ async function bot() {
 		ActivityType: { Playing: 0 },
 		MessageFlags: { Ephemeral: 64, SuppressNotifications: 4096 },
 		Routes: { applicationGuildCommands: () => '/commands' },
-		readFile: async () => JSON.stringify({ Hypercar: [{ name: 'Toyota GR010' }] }),
+		readFile: async () => JSON.stringify({
+			Hypercar: [{ name: 'Toyota GR010' }],
+			GTE: [
+				{ name: 'Aston Martin Vantage AMR' },
+				{ name: 'Corvette RGTE' },
+				{ name: 'Ferrari 488 GTE Evo' },
+				{ name: 'Porsche 911 RSR-19' },
+			],
+		}),
 		fetch: async () => Response.json([]),
 		searchRequestTracks,
 		resolveRequestTrack,
@@ -405,6 +415,22 @@ test('Bot registriert beide Vorschlagsfelder und beantwortet das tatsächlich fo
 	const empty = autocomplete('strecke', '');
 	await b.handle(empty);
 	assert.equal(empty.choices.length, 25);
+});
+
+test('Bot schlägt alle vier GTE-Fahrzeuge mit der Klasse GTE vor', async () => {
+	const b = await bot();
+	for (const [query, vehicle] of [
+		['van', 'Aston Martin Vantage AMR'],
+		['cor', 'Corvette RGTE'],
+		['488', 'Ferrari 488 GTE Evo'],
+		['911', 'Porsche 911 RSR-19'],
+	]) {
+		const result = autocomplete('fahrzeug', query);
+		await b.handle(result);
+		const option = result.choices.find((choice) => choice.value === vehicle);
+		assert.ok(option, vehicle);
+		assert.match(option.name, /\\(GTE\\)$/);
+	}
 });
 
 test('Bot validiert die Strecke und sendet einen echten Rollen-Ping', async () => {
