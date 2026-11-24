@@ -31,7 +31,7 @@ const ALIASES = {
 	'Mercedes-AMG LMGT3': ['mercedes', 'benz', 'amg gt3', 'amg lmgt3'],
 	'Porsche 911 GT3 R': ['911', '992'],
 	'Aston Martin Vantage AMR': ['aston martin vantage amr gte', 'vantage amr gte', 'vantage gte'],
-	'Corvette R GTE': ['corvette rgte', 'corvette r gte', 'rgte'],
+	'Corvette C8.R GTE': ['corvette c8.r gte', 'corvette c8r gte', 'c8.r gte', 'corvette rgte', 'corvette r gte', 'rgte'],
 	'Ferrari 488 GTE Evo': ['488 gte evo', '488 gte', '488 evo'],
 	'Porsche 911 RSR-19': [
 		'porsche 911 rsr 19 gte',
