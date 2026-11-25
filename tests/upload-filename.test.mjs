@@ -35,6 +35,7 @@ test('Auto Strecke Hersteller accepts multipart names and catalog aliases in the
 		['Valkyrie Paul Ricard 1A_V2 HYMO.zip', 'Aston Martin Valkyrie AMR LMH', 'Paul Ricard – 1A V2'],
 		['Vantage AMR GTE Spa GO.zip', 'Aston Martin Vantage AMR', 'Spa-Francorchamps'],
 		['Corvette C8.R GTE Le Mans HYMO.zip', 'Corvette C8.R GTE', 'Le Mans / Circuit de la Sarthe'],
+		['Corvette GTE Barcelona HYMO.zip', 'Corvette C8.R GTE', 'Barcelona-Catalunya'],
 		['488 GTE Evo Monza beAlien.zip', 'Ferrari 488 GTE Evo', 'Monza'],
 		['911 RSR-19 GTE Sebring GO.zip', 'Porsche 911 RSR-19', 'Sebring'],
 	]) {
@@ -45,8 +46,12 @@ test('Auto Strecke Hersteller accepts multipart names and catalog aliases in the
 	}
 });
 
-test('Corvette C8.R GTE filenames resolve correctly and legacy RGTE names remain supported', () => {
-	for (const filename of ['Corvette C8.R GTE Le Mans HYMO.zip', 'Corvette RGTE Le Mans HYMO.zip']) {
+test('Corvette GTE short names resolve to the canonical C8.R GTE vehicle', () => {
+	for (const filename of [
+		'Corvette GTE Barcelona HYMO.zip',
+		'Corvette C8.R GTE Le Mans HYMO.zip',
+		'Corvette RGTE Le Mans HYMO.zip',
+	]) {
 		const detected = detectUploadTarget(filename, catalog);
 		assert.equal(detected.target?.vehicle, 'Corvette C8.R GTE', filename);
 		assert.equal(detected.target?.category, 'GTE', filename);
