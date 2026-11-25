@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-25T18:09:04.734Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Vantage GTE Barcelona HYMO.zip",
+  "vehicle": "Aston Martin Vantage AMR",
+  "track": "Vantage GTE Barcelona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.3.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
