@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-25T18:01:17.996Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Paul Ricard HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Paul Ricard HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
