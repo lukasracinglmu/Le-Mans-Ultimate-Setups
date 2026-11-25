@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-25T18:09:49.422Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "911 RSR GTE Barcelona HYMO.zip",
+  "vehicle": "Porsche 911 RSR-19",
+  "track": "911 RSR GTE Barcelona HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.3.2",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
