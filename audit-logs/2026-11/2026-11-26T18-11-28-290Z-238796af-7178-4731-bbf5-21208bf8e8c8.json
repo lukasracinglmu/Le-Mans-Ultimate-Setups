@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-26T18:11:28.290Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "FreddiC7",
+  "discordUserId": "999265474078593164",
+  "setup": "Cadillac Spa HYMO.zip",
+  "vehicle": "Cadillac V-Series.R",
+  "track": "Cadillac Spa HYMO",
+  "manufacturer": "HYMO",
+  "version": "V1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
