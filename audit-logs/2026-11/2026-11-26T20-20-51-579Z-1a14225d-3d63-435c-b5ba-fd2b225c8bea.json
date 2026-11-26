@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-26T20:20:51.579Z",
+  "action": "SETUP_UPLOAD",
+  "discordAccount": "Grandmasterfck",
+  "discordUserId": "640948738445279261",
+  "setup": "Lexus Paul Ricard GO.zip",
+  "vehicle": "Lexus RC F LMGT3",
+  "track": "Lexus Paul Ricard GO",
+  "manufacturer": "GO",
+  "version": "1.4.3",
+  "result": "SUCCESS",
+  "category": "SETUPS"
+}
